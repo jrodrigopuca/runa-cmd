@@ -1,7 +1,18 @@
 {
 	"name": "@runa-cmd/mcp",
 	"version": "0.1.0",
+	"description": "MCP (Model Context Protocol) server mode for Runa CLIs. Turn commands into AI-callable tools.",
+	"license": "MIT",
 	"type": "module",
+	"keywords": [
+		"cli",
+		"mcp",
+		"model-context-protocol",
+		"ai",
+		"llm",
+		"tools",
+		"runa"
+	],
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {

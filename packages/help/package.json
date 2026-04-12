@@ -1,7 +1,18 @@
 {
 	"name": "@runa-cmd/help",
 	"version": "0.1.0",
+	"description": "Themeable help output for Runa CLIs with composable layout primitives.",
+	"license": "MIT",
 	"type": "module",
+	"keywords": [
+		"cli",
+		"help",
+		"ansi",
+		"terminal",
+		"layout",
+		"theme",
+		"runa"
+	],
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
