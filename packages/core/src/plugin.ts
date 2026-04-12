@@ -217,6 +217,10 @@ export function createPluginAPI(
 		getSchema(): CLISchema {
 			return refs.getSchema();
 		},
+
+		getCommands(): CommandTree {
+			return refs.commands;
+		},
 	};
 }
 

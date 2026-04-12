@@ -164,6 +164,7 @@ export interface PluginAPI {
 	addMiddleware(middleware: Middleware): void;
 	hook(name: HookName, handler: HookHandler): void;
 	getSchema(): CLISchema;
+	getCommands(): CommandTree;
 }
 
 // ─── Lifecycle Hooks ────────────────────────────────────────
