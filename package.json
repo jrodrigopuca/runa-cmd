@@ -13,5 +13,8 @@
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
     "clean": "pnpm -r run clean"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.4"
   }
 }

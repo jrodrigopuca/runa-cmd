@@ -22,6 +22,9 @@ export {
 // ─── Config utilities ───────────────────────────────────────
 export { jsonLoader } from './config/loader.js'
 
+// ─── Introspection ──────────────────────────────────────────
+export { getSchema } from './introspect.js'
+
 // ─── Types (type-only re-exports) ───────────────────────────
 export type {
   // Builder input types
