@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test coverage
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Env
+.env
+.env.*
+!.env.example
+
+# pnpm
+.pnpm-debug.log
+
+# Project-specific
+openspec/*
+RUNA-RESEARCH.md
+RUNA-SPEC.md
