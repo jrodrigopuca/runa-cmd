@@ -27,6 +27,21 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
+  packages/help:
+    devDependencies:
+      '@runa-cmd/core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+
 packages:
 
   '@biomejs/biome@2.4.11':
