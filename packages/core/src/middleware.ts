@@ -4,7 +4,7 @@
  * Simple wrapper that brands a MiddlewareFn into a Middleware object.
  * Middleware follows the Koa/Hono onion model with next().
  */
-import type { MiddlewareFn, Middleware } from './types.js'
+import type { Middleware, MiddlewareFn } from './types.js';
 
 // ─── Public API ─────────────────────────────────────────────
 
@@ -16,8 +16,8 @@ import type { MiddlewareFn, Middleware } from './types.js'
  * Code before next() runs before the command; code after runs after.
  */
 export function defineMiddleware(handler: MiddlewareFn): Middleware {
-  return {
-    _type: 'runa:middleware' as const,
-    handler,
-  }
+	return {
+		_type: 'runa:middleware' as const,
+		handler,
+	};
 }

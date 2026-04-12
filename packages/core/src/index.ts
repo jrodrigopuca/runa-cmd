@@ -5,80 +5,67 @@
  * Internal modules (schema-walker, parseargs-bridge, resolve, variadic) are NOT exported.
  */
 
+export { defineCLI, runCLI } from './cli.js';
 // ─── Builder functions ──────────────────────────────────────
-export { defineCommand } from './command.js'
-export { defineCLI, runCLI } from './cli.js'
-export { defineMiddleware } from './middleware.js'
-export { definePlugin } from './plugin.js'
-
+export { defineCommand } from './command.js';
+// ─── Config utilities ───────────────────────────────────────
+export { jsonLoader } from './config/loader.js';
 // ─── Error classes ──────────────────────────────────────────
 export {
-  RunaError,
-  ValidationError,
-  CommandNotFoundError,
-  CommandError,
-} from './errors.js'
-
-// ─── Config utilities ───────────────────────────────────────
-export { jsonLoader } from './config/loader.js'
-
+	CommandError,
+	CommandNotFoundError,
+	RunaError,
+	ValidationError,
+} from './errors.js';
 // ─── Introspection ──────────────────────────────────────────
-export { getSchema } from './introspect.js'
+export { getSchema } from './introspect.js';
+export { defineMiddleware } from './middleware.js';
+export { definePlugin } from './plugin.js';
 
 // ─── Types (type-only re-exports) ───────────────────────────
 export type {
-  // Builder input types
-  CommandConfig,
-  CLIConfig,
-  CLIConfigOptions,
-
-  // Metadata types
-  CommandMeta,
-  CLIMeta,
-  OptionMeta,
-
-  // Runtime types
-  RunContext,
-  RunReturn,
-
-  // Inference helpers
-  InferArgs,
-  InferOptions,
-
-  // Branded objects
-  Command,
-  CLI,
-  CommandTree,
-
-  // Plugin system
-  PluginConfig,
-  PluginMeta,
-  PluginCapabilities,
-  PluginAPI,
-
-  // Middleware
-  Middleware,
-  MiddlewareFn,
-  MiddlewareContext,
-
-  // Lifecycle
-  HookName,
-  HookHandler,
-  HookContext,
-
-  // Config
-  ConfigLoader,
-
-  // Introspection
-  CLISchema,
-  CommandSchema,
-  ArgSchema,
-  OptionSchema,
-
-  // Schema walker output (useful for advanced consumers)
-  ParamMetadata,
-  ParamType,
-} from './types.js'
+	ArgSchema,
+	CLI,
+	CLIConfig,
+	CLIConfigOptions,
+	CLIMeta,
+	// Introspection
+	CLISchema,
+	// Branded objects
+	Command,
+	// Builder input types
+	CommandConfig,
+	// Metadata types
+	CommandMeta,
+	CommandSchema,
+	CommandTree,
+	// Config
+	ConfigLoader,
+	HookContext,
+	HookHandler,
+	// Lifecycle
+	HookName,
+	// Inference helpers
+	InferArgs,
+	InferOptions,
+	// Middleware
+	Middleware,
+	MiddlewareContext,
+	MiddlewareFn,
+	OptionMeta,
+	OptionSchema,
+	// Schema walker output (useful for advanced consumers)
+	ParamMetadata,
+	ParamType,
+	PluginAPI,
+	PluginCapabilities,
+	// Plugin system
+	PluginConfig,
+	PluginMeta,
+	// Runtime types
+	RunContext,
+	RunReturn,
+} from './types.js';
 
 // ─── Runtime constants ──────────────────────────────────────
-export { HOOK_NAMES, PARAM_TYPES } from './types.js'
+export { HOOK_NAMES, PARAM_TYPES } from './types.js';

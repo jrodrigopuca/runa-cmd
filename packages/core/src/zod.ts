@@ -4,4 +4,4 @@
  * Subpath: @runa-cmd/core/zod
  * Provides convenience import so consumers can use a single package.
  */
-export { z } from 'zod'
+export { z } from 'zod';

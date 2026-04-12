@@ -5,177 +5,179 @@
  * Maps positionals to args by insertion order.
  * Pre-coerces number strings before Zod .parse().
  */
-import { z, type ZodType, ZodError } from 'zod'
-import type { OptionMeta, ParamMetadata } from '../types.js'
-import { ValidationError } from '../errors.js'
-import { walkSchema, walkSingleSchema } from './schema-walker.js'
-import { isVariadic } from './variadic.js'
+import { ZodError, type ZodType, z } from 'zod';
+import { ValidationError } from '../errors.js';
+import type { OptionMeta, ParamMetadata } from '../types.js';
+import { walkSchema } from './schema-walker.js';
+import { isVariadic } from './variadic.js';
 
 // ─── Types ──────────────────────────────────────────────────
 
 export interface ParseArgsResult {
-  values: Record<string, unknown>
-  positionals: string[]
+	values: Record<string, unknown>;
+	positionals: string[];
 }
 
 export interface ResolveInput {
-  /** Raw output from util.parseArgs */
-  parseArgsResult: ParseArgsResult
-  /** Long alias map from parseargs-bridge */
-  longAliasMap?: Record<string, string>
-  /** Command schemas */
-  schemas: {
-    args?: Record<string, ZodType>
-    options?: Record<string, ZodType>
-  }
-  /** Option metadata (for env var mapping) */
-  meta?: { options?: Record<string, OptionMeta> }
-  /** Config file values */
-  configValues?: Record<string, unknown>
-  /** Environment variables (defaults to process.env, injectable for testing) */
-  env?: Record<string, string | undefined>
+	/** Raw output from util.parseArgs */
+	parseArgsResult: ParseArgsResult;
+	/** Long alias map from parseargs-bridge */
+	longAliasMap?: Record<string, string>;
+	/** Command schemas */
+	schemas: {
+		args?: Record<string, ZodType>;
+		options?: Record<string, ZodType>;
+	};
+	/** Option metadata (for env var mapping) */
+	meta?: { options?: Record<string, OptionMeta> };
+	/** Config file values */
+	configValues?: Record<string, unknown>;
+	/** Environment variables (defaults to process.env, injectable for testing) */
+	env?: Record<string, string | undefined>;
 }
 
 export interface ResolveOutput {
-  parsedArgs: Record<string, unknown>
-  parsedOptions: Record<string, unknown>
+	parsedArgs: Record<string, unknown>;
+	parsedOptions: Record<string, unknown>;
 }
 
 // ─── Positional Mapping ─────────────────────────────────────
 
 function mapPositionals(
-  positionals: string[],
-  argsSchemas: Record<string, ZodType>,
+	positionals: string[],
+	argsSchemas: Record<string, ZodType>,
 ): Record<string, unknown> {
-  const keys = Object.keys(argsSchemas)
-  const result: Record<string, unknown> = {}
+	const keys = Object.keys(argsSchemas);
+	const result: Record<string, unknown> = {};
 
-  if (keys.length === 0) {
-    // No args defined but positionals provided
-    if (positionals.length > 0) {
-      throw new ValidationError([
-        {
-          code: 'custom',
-          message: `Unexpected positional argument: '${positionals[0]}'`,
-          path: [],
-        },
-      ])
-    }
-    return result
-  }
+	if (keys.length === 0) {
+		// No args defined but positionals provided
+		if (positionals.length > 0) {
+			throw new ValidationError([
+				{
+					code: 'custom',
+					message: `Unexpected positional argument: '${positionals[0]}'`,
+					path: [],
+				},
+			]);
+		}
+		return result;
+	}
 
-  // Check if last arg is variadic
-  const lastKey = keys[keys.length - 1]!
-  const lastIsVariadic = isVariadic(argsSchemas[lastKey]!)
-  const fixedCount = lastIsVariadic ? keys.length - 1 : keys.length
+	// Check if last arg is variadic
+	const lastKey = keys[keys.length - 1];
+	if (!lastKey) return result;
+	const lastSchema = argsSchemas[lastKey];
+	const lastIsVariadic = lastSchema ? isVariadic(lastSchema) : false;
+	const fixedCount = lastIsVariadic ? keys.length - 1 : keys.length;
 
-  // Check for extra positionals without variadic
-  if (!lastIsVariadic && positionals.length > keys.length) {
-    throw new ValidationError([
-      {
-        code: 'custom',
-        message: `Unexpected positional argument: '${positionals[keys.length]}'`,
-        path: [],
-      },
-    ])
-  }
+	// Check for extra positionals without variadic
+	if (!lastIsVariadic && positionals.length > keys.length) {
+		throw new ValidationError([
+			{
+				code: 'custom',
+				message: `Unexpected positional argument: '${positionals[keys.length]}'`,
+				path: [],
+			},
+		]);
+	}
 
-  // Map fixed positionals
-  for (let i = 0; i < fixedCount; i++) {
-    const key = keys[i]!
-    if (i < positionals.length) {
-      result[key] = positionals[i]
-    }
-    // If not provided, omit — let Zod handle required/optional validation
-  }
+	// Map fixed positionals
+	for (let i = 0; i < fixedCount; i++) {
+		const key = keys[i];
+		if (!key) continue;
+		if (i < positionals.length) {
+			result[key] = positionals[i];
+		}
+		// If not provided, omit — let Zod handle required/optional validation
+	}
 
-  // Map variadic (remaining positionals go to last key as array)
-  if (lastIsVariadic) {
-    result[lastKey] = positionals.slice(fixedCount)
-  }
+	// Map variadic (remaining positionals go to last key as array)
+	if (lastIsVariadic) {
+		result[lastKey] = positionals.slice(fixedCount);
+	}
 
-  return result
+	return result;
 }
 
 // ─── Value Resolution ───────────────────────────────────────
 
 function resolveOptionValues(
-  parseArgsValues: Record<string, unknown>,
-  longAliasMap: Record<string, string>,
-  optionsSchemas: Record<string, ZodType>,
-  optionsMeta: Record<string, OptionMeta> | undefined,
-  configValues: Record<string, unknown> | undefined,
-  env: Record<string, string | undefined>,
-  optionsMetadata: ParamMetadata[],
+	parseArgsValues: Record<string, unknown>,
+	longAliasMap: Record<string, string>,
+	optionsSchemas: Record<string, ZodType>,
+	optionsMeta: Record<string, OptionMeta> | undefined,
+	configValues: Record<string, unknown> | undefined,
+	env: Record<string, string | undefined>,
+	optionsMetadata: ParamMetadata[],
 ): Record<string, unknown> {
-  const resolved: Record<string, unknown> = {}
+	const resolved: Record<string, unknown> = {};
 
-  // Build a set of number fields for pre-coercion
-  const numberFields = new Set<string>()
-  for (const meta of optionsMetadata) {
-    if (meta.zodType === 'number') {
-      numberFields.add(meta.name)
-    }
-  }
+	// Build a set of number fields for pre-coercion
+	const numberFields = new Set<string>();
+	for (const meta of optionsMetadata) {
+		if (meta.zodType === 'number') {
+			numberFields.add(meta.name);
+		}
+	}
 
-  // First, apply long alias mappings to parseArgs values
-  const normalizedValues: Record<string, unknown> = { ...parseArgsValues }
-  for (const [alias, canonical] of Object.entries(longAliasMap)) {
-    if (alias in normalizedValues && !(canonical in normalizedValues)) {
-      normalizedValues[canonical] = normalizedValues[alias]
-      delete normalizedValues[alias]
-    }
-  }
+	// First, apply long alias mappings to parseArgs values
+	const normalizedValues: Record<string, unknown> = { ...parseArgsValues };
+	for (const [alias, canonical] of Object.entries(longAliasMap)) {
+		if (alias in normalizedValues && !(canonical in normalizedValues)) {
+			normalizedValues[canonical] = normalizedValues[alias];
+			delete normalizedValues[alias];
+		}
+	}
 
-  for (const key of Object.keys(optionsSchemas)) {
-    // Priority 1: CLI arg
-    if (key in normalizedValues && normalizedValues[key] !== undefined) {
-      let value = normalizedValues[key]
-      // Pre-coerce numbers from string
-      if (numberFields.has(key) && typeof value === 'string') {
-        const num = Number(value)
-        if (!Number.isNaN(num)) {
-          value = num
-        }
-      }
-      resolved[key] = value
-      continue
-    }
+	for (const key of Object.keys(optionsSchemas)) {
+		// Priority 1: CLI arg
+		if (key in normalizedValues && normalizedValues[key] !== undefined) {
+			let value = normalizedValues[key];
+			// Pre-coerce numbers from string
+			if (numberFields.has(key) && typeof value === 'string') {
+				const num = Number(value);
+				if (!Number.isNaN(num)) {
+					value = num;
+				}
+			}
+			resolved[key] = value;
+			continue;
+		}
 
-    // Priority 2: Environment variable
-    const envName = optionsMeta?.[key]?.env
-    if (envName && envName in env && env[envName] !== undefined) {
-      let value: unknown = env[envName]
-      // Pre-coerce numbers from string
-      if (numberFields.has(key) && typeof value === 'string') {
-        const num = Number(value)
-        if (!Number.isNaN(num)) {
-          value = num
-        }
-      }
-      resolved[key] = value
-      continue
-    }
+		// Priority 2: Environment variable
+		const envName = optionsMeta?.[key]?.env;
+		if (envName && envName in env && env[envName] !== undefined) {
+			let value: unknown = env[envName];
+			// Pre-coerce numbers from string
+			if (numberFields.has(key) && typeof value === 'string') {
+				const num = Number(value);
+				if (!Number.isNaN(num)) {
+					value = num;
+				}
+			}
+			resolved[key] = value;
+			continue;
+		}
 
-    // Priority 3: Config file value
-    if (configValues && key in configValues && configValues[key] !== undefined) {
-      let value = configValues[key]
-      // Pre-coerce numbers from string (config values are usually already typed,
-      // but defensive handling)
-      if (numberFields.has(key) && typeof value === 'string') {
-        const num = Number(value)
-        if (!Number.isNaN(num)) {
-          value = num
-        }
-      }
-      resolved[key] = value
-      continue
-    }
+		// Priority 3: Config file value
+		if (configValues && key in configValues && configValues[key] !== undefined) {
+			let value = configValues[key];
+			// Pre-coerce numbers from string (config values are usually already typed,
+			// but defensive handling)
+			if (numberFields.has(key) && typeof value === 'string') {
+				const num = Number(value);
+				if (!Number.isNaN(num)) {
+					value = num;
+				}
+			}
+			resolved[key] = value;
+		}
 
-    // Priority 4: Omit — let Zod .default() handle it
-  }
+		// Priority 4: Omit — let Zod .default() handle it
+	}
 
-  return resolved
+	return resolved;
 }
 
 // ─── Public API ─────────────────────────────────────────────
@@ -191,59 +193,59 @@ function resolveOptionValues(
  * 5. Return typed results or throw ValidationError
  */
 export function resolveValues(input: ResolveInput): ResolveOutput {
-  const {
-    parseArgsResult,
-    longAliasMap = {},
-    schemas,
-    meta,
-    configValues,
-    env = process.env as Record<string, string | undefined>,
-  } = input
+	const {
+		parseArgsResult,
+		longAliasMap = {},
+		schemas,
+		meta,
+		configValues,
+		env = process.env as Record<string, string | undefined>,
+	} = input;
 
-  // ─── Args resolution ─────────────────────────────────
-  let parsedArgs: Record<string, unknown> = {}
+	// ─── Args resolution ─────────────────────────────────
+	let parsedArgs: Record<string, unknown> = {};
 
-  if (schemas.args && Object.keys(schemas.args).length > 0) {
-    const rawArgs = mapPositionals(parseArgsResult.positionals, schemas.args)
+	if (schemas.args && Object.keys(schemas.args).length > 0) {
+		const rawArgs = mapPositionals(parseArgsResult.positionals, schemas.args);
 
-    // Build Zod object schema for args and validate
-    const argsZodSchema = z.object(schemas.args as Record<string, ZodType>)
-    try {
-      parsedArgs = argsZodSchema.parse(rawArgs) as Record<string, unknown>
-    } catch (err) {
-      if (err instanceof ZodError) {
-        throw new ValidationError(err.issues)
-      }
-      throw err
-    }
-  }
+		// Build Zod object schema for args and validate
+		const argsZodSchema = z.object(schemas.args as Record<string, ZodType>);
+		try {
+			parsedArgs = argsZodSchema.parse(rawArgs) as Record<string, unknown>;
+		} catch (err) {
+			if (err instanceof ZodError) {
+				throw new ValidationError(err.issues);
+			}
+			throw err;
+		}
+	}
 
-  // ─── Options resolution ──────────────────────────────
-  let parsedOptions: Record<string, unknown> = {}
+	// ─── Options resolution ──────────────────────────────
+	let parsedOptions: Record<string, unknown> = {};
 
-  if (schemas.options && Object.keys(schemas.options).length > 0) {
-    const optionsMetadata = walkSchema(schemas.options)
-    const rawOptions = resolveOptionValues(
-      parseArgsResult.values,
-      longAliasMap,
-      schemas.options,
-      meta?.options,
-      configValues,
-      env,
-      optionsMetadata,
-    )
+	if (schemas.options && Object.keys(schemas.options).length > 0) {
+		const optionsMetadata = walkSchema(schemas.options);
+		const rawOptions = resolveOptionValues(
+			parseArgsResult.values,
+			longAliasMap,
+			schemas.options,
+			meta?.options,
+			configValues,
+			env,
+			optionsMetadata,
+		);
 
-    // Build Zod object schema for options and validate
-    const optionsZodSchema = z.object(schemas.options as Record<string, ZodType>)
-    try {
-      parsedOptions = optionsZodSchema.parse(rawOptions) as Record<string, unknown>
-    } catch (err) {
-      if (err instanceof ZodError) {
-        throw new ValidationError(err.issues)
-      }
-      throw err
-    }
-  }
+		// Build Zod object schema for options and validate
+		const optionsZodSchema = z.object(schemas.options as Record<string, ZodType>);
+		try {
+			parsedOptions = optionsZodSchema.parse(rawOptions) as Record<string, unknown>;
+		} catch (err) {
+			if (err instanceof ZodError) {
+				throw new ValidationError(err.issues);
+			}
+			throw err;
+		}
+	}
 
-  return { parsedArgs, parsedOptions }
+	return { parsedArgs, parsedOptions };
 }

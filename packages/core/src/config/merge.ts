@@ -5,9 +5,9 @@
  * and returns the raw config values. The actual merge priority
  * (CLI > env > config > defaults) is handled in resolve.ts.
  */
-import type { CLIConfigOptions } from '../types.js'
-import { jsonLoader } from './loader.js'
-import { searchConfig } from './search.js'
+import type { CLIConfigOptions } from '../types.js';
+import { jsonLoader } from './loader.js';
+import { searchConfig } from './search.js';
 
 // ─── Public API ─────────────────────────────────────────────
 
@@ -20,31 +20,31 @@ import { searchConfig } from './search.js'
  * 4. Returns undefined if no config file found
  */
 export async function loadAndMergeConfig(
-  configOptions: CLIConfigOptions,
+	configOptions: CLIConfigOptions,
 ): Promise<Record<string, unknown> | undefined> {
-  // Combine built-in JSON loader with additional loaders
-  const builtInLoader = jsonLoader()
-  const allLoaders = [builtInLoader, ...(configOptions.loaders ?? [])]
+	// Combine built-in JSON loader with additional loaders
+	const builtInLoader = jsonLoader();
+	const allLoaders = [builtInLoader, ...(configOptions.loaders ?? [])];
 
-  // Default search paths: current dir, then home dir
-  const searchPaths = configOptions.searchPaths ?? ['.', '~']
+	// Default search paths: current dir, then home dir
+	const searchPaths = configOptions.searchPaths ?? ['.', '~'];
 
-  // Search for config file
-  const result = await searchConfig(configOptions.name, allLoaders, searchPaths)
+	// Search for config file
+	const result = await searchConfig(configOptions.name, allLoaders, searchPaths);
 
-  if (!result) {
-    return undefined
-  }
+	if (!result) {
+		return undefined;
+	}
 
-  // Load and return config values
-  const config = await result.loader.load(result.filePath)
+	// Load and return config values
+	const config = await result.loader.load(result.filePath);
 
-  // Config files should return plain objects
-  if (config === null || typeof config !== 'object' || Array.isArray(config)) {
-    throw new Error(
-      `Config file '${result.filePath}' must export a plain object, got ${Array.isArray(config) ? 'array' : typeof config}.`,
-    )
-  }
+	// Config files should return plain objects
+	if (config === null || typeof config !== 'object' || Array.isArray(config)) {
+		throw new Error(
+			`Config file '${result.filePath}' must export a plain object, got ${Array.isArray(config) ? 'array' : typeof config}.`,
+		);
+	}
 
-  return config as Record<string, unknown>
+	return config as Record<string, unknown>;
 }
