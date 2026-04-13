@@ -48,7 +48,7 @@ HELLO, WORLD!
 | [`@runa-cmd/core`](./packages/core) | CLI engine — commands, parsing, plugins, middleware | Stable |
 | [`@runa-cmd/help`](./packages/help) | Themeable help output with layout primitives | Stable |
 | [`@runa-cmd/mcp`](./packages/mcp) | Model Context Protocol server mode | Stable |
-| `@runa-cmd/completions` | Shell completions (bash, zsh, fish) | Planned |
+| [`@runa-cmd/completions`](./packages/completions) | Shell completions (bash, zsh, fish) | Stable |
 
 ## Quick Start
 
@@ -57,6 +57,7 @@ pnpm add @runa-cmd/core zod
 # Optional:
 pnpm add @runa-cmd/help  # Themeable --help
 pnpm add @runa-cmd/mcp   # --mcp server mode
+pnpm add @runa-cmd/completions  # Shell completions
 ```
 
 ### Single Command
@@ -93,6 +94,7 @@ import { defineCLI, defineCommand } from '@runa-cmd/core';
 import { z } from '@runa-cmd/core/zod';
 import { helpPlugin } from '@runa-cmd/help';
 import { mcpPlugin } from '@runa-cmd/mcp';
+import { completionsPlugin } from '@runa-cmd/completions';
 
 const init = defineCommand({
   meta: { name: 'init', description: 'Initialize a new project' },
@@ -121,7 +123,7 @@ const deploy = defineCommand({
 const cli = defineCLI({
   meta: { name: 'my-tool', version: '1.0.0', description: 'My awesome CLI' },
   commands: { init, deploy },
-  plugins: [helpPlugin(), mcpPlugin()],
+  plugins: [helpPlugin(), mcpPlugin(), completionsPlugin()],
 });
 
 cli.run();
@@ -131,6 +133,7 @@ cli.run();
 $ my-tool --help          # Beautifully formatted help
 $ my-tool deploy -e staging
 $ my-tool --mcp           # Start as MCP server for AI agents
+$ my-tool completions bash  # Generate shell completions
 ```
 
 ## Core Concepts
@@ -218,7 +221,7 @@ CLI args > Environment variables > Config file values > Zod defaults
 @runa-cmd/core          Zero runtime deps. Parsing via node:util.parseArgs.
     ├── @runa-cmd/help   Themeable help. Layout primitives for custom UIs.
     ├── @runa-cmd/mcp    MCP server via @modelcontextprotocol/sdk.
-    └── @runa-cmd/completions  (planned)
+    └── @runa-cmd/completions  Shell completions (bash, zsh, fish).
 ```
 
 - **ESM-only** — `type: "module"` everywhere
@@ -232,7 +235,7 @@ CLI args > Environment variables > Config file values > Zod defaults
 # Install dependencies
 pnpm install
 
-# Run all tests (436 tests across 3 packages)
+# Run all tests (518 tests across 4 packages)
 pnpm test
 
 # Type check

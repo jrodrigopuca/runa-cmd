@@ -15,6 +15,21 @@ importers:
         specifier: ^4.1.4
         version: 4.1.4(@types/node@25.6.0)
 
+  packages/completions:
+    devDependencies:
+      '@runa-cmd/core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+
   packages/core:
     devDependencies:
       '@types/node':

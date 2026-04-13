@@ -1,0 +1,50 @@
+{
+	"name": "@runa-cmd/completions",
+	"version": "0.1.0",
+	"description": "Shell completion script generation for Runa CLIs. Auto-generate bash, zsh, and fish completions from your Zod schemas.",
+	"license": "MIT",
+	"type": "module",
+	"keywords": [
+		"cli",
+		"completions",
+		"bash",
+		"zsh",
+		"fish",
+		"shell",
+		"tab-completion",
+		"runa"
+	],
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"clean": "rm -rf dist"
+	},
+	"peerDependencies": {
+		"@runa-cmd/core": "workspace:*",
+		"zod": "^4.0.0"
+	},
+	"engines": {
+		"node": ">=18.3.0"
+	},
+	"files": [
+		"dist"
+	],
+	"devDependencies": {
+		"@runa-cmd/core": "workspace:*",
+		"@types/node": "^25.6.0",
+		"typescript": "^6.0.2",
+		"zod": "^4.3.6"
+	}
+}

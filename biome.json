@@ -7,7 +7,7 @@
 			"**/*.js",
 			"**/*.json",
 			"!node_modules",
-			"!dist",
+			"!**/dist",
 			"!coverage",
 			"!.DS_Store",
 			"!pnpm-lock.yaml"

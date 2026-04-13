@@ -1,0 +1,203 @@
+/**
+ * @runa-cmd/completions — Zsh completion script generator
+ *
+ * Generates a zsh completion script using _arguments -C with state
+ * machine dispatch. One function per command level.
+ */
+
+import type { CLISchema, CommandSchema, OptionSchema } from '@runa-cmd/core';
+import { escapeZsh } from './escape.js';
+
+/** Replace non-identifier characters with underscores */
+function safeName(name: string): string {
+	return name.replace(/[^a-zA-Z0-9_]/g, '_');
+}
+
+/** Format an option spec for _arguments */
+function formatOptionSpec(opt: OptionSchema): string[] {
+	const specs: string[] = [];
+	const desc = opt.description ? escapeZsh(opt.description) : '';
+	const shortAlias = opt.alias?.find((a) => a.startsWith('-') && !a.startsWith('--'));
+
+	if (opt.type === 'boolean') {
+		// Boolean with alias
+		if (shortAlias) {
+			specs.push(
+				`'(${shortAlias} --${opt.name})'` + `{${shortAlias},--${opt.name}}` + `'[${desc}]'`,
+			);
+			specs.push(`'--no-${opt.name}[${desc}]'`);
+		} else {
+			specs.push(`'--${opt.name}[${desc}]'`);
+			specs.push(`'--no-${opt.name}[${desc}]'`);
+		}
+	} else if (opt.type === 'enum' && opt.enumValues?.length) {
+		const vals = opt.enumValues.map((v) => escapeZsh(v)).join(' ');
+		if (shortAlias) {
+			specs.push(
+				`'(${shortAlias} --${opt.name})'` +
+					`{${shortAlias},--${opt.name}}` +
+					`'[${desc}]:${opt.name}:(${vals})'`,
+			);
+		} else {
+			specs.push(`'--${opt.name}[${desc}]` + `:${opt.name}:(${vals})'`);
+		}
+	} else {
+		// string, number, array — require value but no candidates
+		if (shortAlias) {
+			specs.push(
+				`'(${shortAlias} --${opt.name})'` +
+					`{${shortAlias},--${opt.name}}` +
+					`'[${desc}]:${opt.name}:'`,
+			);
+		} else {
+			specs.push(`'--${opt.name}[${desc}]` + `:${opt.name}:'`);
+		}
+	}
+	return specs;
+}
+
+/** Build _arguments option specs for a list of options */
+function buildArgSpecs(options: OptionSchema[], globalOptions: OptionSchema[]): string[] {
+	const all = [...globalOptions, ...options];
+	return all.flatMap(formatOptionSpec);
+}
+
+/**
+ * Recursively generate zsh functions for a command tree.
+ * Returns an array of function definition strings.
+ */
+function generateCommandFunctions(
+	commands: CommandSchema[],
+	globalOptions: OptionSchema[],
+	parentFunc: string,
+): string[] {
+	const blocks: string[] = [];
+
+	for (const cmd of commands) {
+		const funcName = `${parentFunc}_${safeName(cmd.name)}`;
+		const hasSubcmds = cmd.subcommands && cmd.subcommands.length > 0;
+		const argSpecs = buildArgSpecs(cmd.options, globalOptions);
+
+		const lines: string[] = [];
+		lines.push(`${funcName}() {`);
+
+		if (hasSubcmds) {
+			lines.push('    local -a commands');
+			lines.push('    local state line');
+			lines.push('');
+			lines.push('    _arguments -C \\');
+			for (const spec of argSpecs) {
+				lines.push(`        ${spec} \\`);
+			}
+			lines.push("        '1:command:->cmds' \\");
+			lines.push("        '*::arg:->args'");
+			lines.push('');
+			lines.push('    case "$state" in');
+			lines.push('        cmds)');
+			lines.push('            commands=(');
+			for (const sub of cmd.subcommands ?? []) {
+				const d = sub.description ? escapeZsh(sub.description) : '';
+				lines.push(`                '${escapeZsh(sub.name)}:${d}'`);
+			}
+			lines.push('            )');
+			lines.push("            _describe 'command' commands");
+			lines.push('            ;;');
+			lines.push('        args)');
+			lines.push('            case "$line[1]" in');
+			for (const sub of cmd.subcommands ?? []) {
+				lines.push(`                ${sub.name})`);
+				lines.push(`                    ${funcName}_${safeName(sub.name)}`);
+				lines.push('                    ;;');
+			}
+			lines.push('            esac');
+			lines.push('            ;;');
+			lines.push('    esac');
+		} else {
+			// Leaf command — just _arguments with options
+			if (argSpecs.length > 0) {
+				lines.push('    _arguments \\');
+				for (let i = 0; i < argSpecs.length; i++) {
+					const suffix = i < argSpecs.length - 1 ? ' \\' : '';
+					lines.push(`        ${argSpecs[i]}${suffix}`);
+				}
+			}
+		}
+
+		lines.push('}');
+		blocks.push(lines.join('\n'));
+
+		// Recurse into subcommands
+		if (hasSubcmds) {
+			blocks.push(...generateCommandFunctions(cmd.subcommands ?? [], globalOptions, funcName));
+		}
+	}
+
+	return blocks;
+}
+
+/**
+ * Generate a complete zsh completion script from a CLISchema.
+ *
+ * @param schema - Full CLI schema from api.getSchema()
+ * @param binName - The CLI binary name
+ * @returns Complete zsh script as a string
+ */
+export function generateZshCompletions(schema: CLISchema, binName: string): string {
+	const funcName = `_${safeName(binName)}`;
+	const { commands, globalOptions } = schema;
+
+	const globalArgSpecs = buildArgSpecs([], globalOptions);
+
+	const lines: string[] = [];
+	lines.push(`#compdef ${binName}`);
+	lines.push(`# Zsh completions for ${escapeZsh(binName)}`);
+	lines.push('# Generated by @runa-cmd/completions');
+	lines.push('');
+
+	// Main function
+	lines.push(`${funcName}() {`);
+	lines.push('    local -a commands');
+	lines.push('    local state line');
+	lines.push('');
+	lines.push('    _arguments -C \\');
+	for (const spec of globalArgSpecs) {
+		lines.push(`        ${spec} \\`);
+	}
+	lines.push("        '1:command:->cmds' \\");
+	lines.push("        '*::arg:->args'");
+	lines.push('');
+	lines.push('    case "$state" in');
+	lines.push('        cmds)');
+	lines.push('            commands=(');
+	for (const cmd of commands) {
+		const d = cmd.description ? escapeZsh(cmd.description) : '';
+		lines.push(`                '${escapeZsh(cmd.name)}:${d}'`);
+	}
+	lines.push('            )');
+	lines.push("            _describe 'command' commands");
+	lines.push('            ;;');
+	lines.push('        args)');
+	lines.push('            case "$line[1]" in');
+	for (const cmd of commands) {
+		lines.push(`                ${cmd.name})`);
+		lines.push(`                    ${funcName}_${safeName(cmd.name)}`);
+		lines.push('                    ;;');
+	}
+	lines.push('            esac');
+	lines.push('            ;;');
+	lines.push('    esac');
+	lines.push('}');
+	lines.push('');
+
+	// Command functions
+	const cmdFuncs = generateCommandFunctions(commands, globalOptions, funcName);
+	for (const fn of cmdFuncs) {
+		lines.push(fn);
+		lines.push('');
+	}
+
+	// Call the main function
+	lines.push(funcName);
+
+	return lines.join('\n');
+}
