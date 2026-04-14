@@ -1,12 +1,26 @@
 /**
  * deploy command — Showcases:
  * - Enum options with alias and env var
- * - Option groups
- * - Typed output schema
- * - Descriptive args
+ * - Option groups (Deploy / Safety)
+ * - Typed output schema (validated return)
+ * - Descriptive positional args
+ * - Deprecated options
  */
 import { defineCommand } from '@runa-cmd/core';
 import { z } from '@runa-cmd/core/zod';
+import {
+	bold,
+	cyan,
+	dim,
+	gray,
+	green,
+	kv,
+	magenta,
+	step,
+	successBox,
+	warn,
+	yellow,
+} from '../ui.js';
 
 export const deploy = defineCommand({
 	meta: {
@@ -44,16 +58,41 @@ export const deploy = defineCommand({
 	}),
 	run({ args, options }) {
 		const deployId = `dep_${Date.now().toString(36)}`;
+		const tag = options.tag ?? 'latest';
+
+		if (options.force) {
+			console.log(warn('--force is deprecated. Use --confirm instead.'));
+			console.log();
+		}
 
 		if (options.dryRun) {
-			console.log(`[DRY RUN] Would deploy ${args.service} to ${options.env}`);
-			console.log(`  Replicas: ${options.replicas}`);
-			console.log(`  Tag: ${options.tag ?? 'latest'}`);
+			console.log(`\n  ${yellow('⬡')} ${bold('Dry Run')} ${dim('— no changes will be made')}\n`);
+			console.log(kv('Service', bold(args.service)));
+			console.log(kv('Environment', cyan(options.env)));
+			console.log(kv('Replicas', String(options.replicas)));
+			console.log(kv('Tag', tag));
+			console.log();
 		} else {
-			console.log(`🚀 Deploying ${args.service} to ${options.env}...`);
-			console.log(`   Replicas: ${options.replicas}`);
-			console.log(`   Tag: ${options.tag ?? 'latest'}`);
-			console.log(`   Deploy ID: ${deployId}`);
+			const envColors: Record<string, (s: string) => string> = {
+				production: (s: string) => `\x1b[31m${s}\x1b[39m`,
+				staging: yellow,
+				preview: cyan,
+			};
+			const envColor = envColors[options.env] ?? cyan;
+
+			console.log();
+			console.log(step(1, 3, 'Building image...'));
+			console.log(step(2, 3, `Pushing ${gray(`${args.service}:${tag}`)} to registry...`));
+			console.log(step(3, 3, `Deploying to ${envColor(options.env)}...`));
+
+			console.log(
+				successBox(`Deployed ${bold(args.service)} to ${envColor(options.env)}`, [
+					kv('URL', magenta(`https://${options.env}.example.com/${args.service}`)),
+					kv('Replicas', green(String(options.replicas))),
+					kv('Tag', tag),
+					kv('Deploy ID', dim(deployId)),
+				]),
+			);
 		}
 
 		return {

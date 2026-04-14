@@ -2,6 +2,7 @@
  * Timer middleware — Showcases:
  * - Koa/Hono onion model (before/after next())
  * - Accessing globalOptions
+ * - Verbose-only output
  */
 import { defineMiddleware } from '@runa-cmd/core';
 
@@ -13,6 +14,6 @@ export const timer = defineMiddleware(async ({ next, globalOptions }) => {
 
 	if (verbose) {
 		const duration = (performance.now() - start).toFixed(0);
-		console.log(`\n⏱  Done in ${duration}ms`);
+		console.log(`\n  \x1b[2m⏱  Done in ${duration}ms\x1b[22m`);
 	}
 });

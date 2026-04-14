@@ -1,11 +1,31 @@
 /**
  * logs command — Showcases:
- * - Enum args (positional enum)
- * - Multiple option groups
- * - Boolean flags
+ * - Required positional arg
+ * - Multiple option groups (Filter / Output)
+ * - Boolean flags, number options
+ * - Env var binding
  */
 import { defineCommand } from '@runa-cmd/core';
 import { z } from '@runa-cmd/core/zod';
+import { bold, cyan, dim, gray, info, kv, yellow } from '../ui.js';
+
+// Simulated log entries
+const SAMPLE_LOGS = [
+	{ ts: '2026-04-14T12:00:00Z', level: 'INFO', msg: 'Server started on port 3000' },
+	{ ts: '2026-04-14T12:00:01Z', level: 'INFO', msg: 'Connected to database (pool=5)' },
+	{ ts: '2026-04-14T12:00:02Z', level: 'WARN', msg: 'Slow query detected (234ms)' },
+	{ ts: '2026-04-14T12:00:03Z', level: 'INFO', msg: 'Health check passed' },
+	{ ts: '2026-04-14T12:00:05Z', level: 'INFO', msg: 'Ready to accept connections' },
+	{ ts: '2026-04-14T12:00:10Z', level: 'INFO', msg: 'GET /api/users 200 12ms' },
+	{ ts: '2026-04-14T12:00:11Z', level: 'INFO', msg: 'POST /api/deploy 201 89ms' },
+	{ ts: '2026-04-14T12:00:15Z', level: 'WARN', msg: 'Memory usage at 78%' },
+];
+
+const levelColor: Record<string, (s: string) => string> = {
+	INFO: cyan,
+	WARN: yellow,
+	ERROR: (s: string) => `\x1b[31m${s}\x1b[39m`,
+};
 
 export const logs = defineCommand({
 	meta: {
@@ -31,17 +51,30 @@ export const logs = defineCommand({
 		since: z.string().optional().describe('Show logs since duration'),
 	},
 	run({ args, options }) {
-		console.log(`📋 Showing last ${options.tail} lines for ${args.service} (${options.env})`);
+		console.log();
+		console.log(
+			info(
+				`${bold(args.service)} ${dim('on')} ${cyan(options.env)} ${dim(`(last ${options.tail} lines)`)}`,
+			),
+		);
+
 		if (options.since) {
-			console.log(`   Since: ${options.since}`);
+			console.log(kv('Since', options.since));
 		}
+		console.log();
+
+		// Show simulated log entries
+		const entries = SAMPLE_LOGS.slice(0, Math.min(options.tail, SAMPLE_LOGS.length));
+		for (const entry of entries) {
+			const color = levelColor[entry.level] ?? dim;
+			const ts = gray(entry.ts);
+			const level = color(entry.level.padEnd(5));
+			console.log(`  ${ts} ${level} ${entry.msg}`);
+		}
+
 		if (options.follow) {
-			console.log('   Following... (Ctrl+C to stop)');
+			console.log();
+			console.log(dim('  Watching for new logs... (Ctrl+C to stop)'));
 		}
-		// Simulated log lines
-		console.log('');
-		console.log('[2026-04-13T12:00:00Z] INFO  Server started on port 3000');
-		console.log('[2026-04-13T12:00:01Z] INFO  Connected to database');
-		console.log('[2026-04-13T12:00:05Z] INFO  Ready to accept connections');
 	},
 });

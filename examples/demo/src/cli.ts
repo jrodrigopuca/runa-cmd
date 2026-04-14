@@ -12,16 +12,6 @@ import { completionsPlugin } from '@runa-cmd/completions';
  * - Global options (--verbose)
  * - Plugin system (help, mcp, completions — all 3 plugins)
  * - Config file loading (runa-demo.config.json)
- *
- * Try it:
- *   pnpm dev -- --help
- *   pnpm dev -- deploy api --env staging
- *   pnpm dev -- deploy api --env staging --verbose --dry-run
- *   pnpm dev -- config list
- *   pnpm dev -- config set deploy.replicas 4
- *   pnpm dev -- logs api -f -n 100
- *   pnpm dev -- completions bash
- *   pnpm dev -- --mcp
  */
 import { defineCLI, jsonLoader } from '@runa-cmd/core';
 import { z } from '@runa-cmd/core/zod';

@@ -180,6 +180,89 @@ function resolveOptionValues(
 	return resolved;
 }
 
+// ─── Human-friendly error messages ──────────────────────────
+
+type ZodIssue = z.core.$ZodIssue;
+
+/**
+ * Rewrite Zod issues into user-friendly CLI error messages.
+ * Handles common cases: missing required args/options, invalid enums, wrong types.
+ */
+function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodType>): ZodIssue[] {
+	const metadata = walkSchema(argsSchemas);
+	const metaByName = new Map(metadata.map((m) => [m.name, m]));
+
+	return issues.map((issue) => {
+		const name = issue.path[0];
+		if (typeof name !== 'string') return issue;
+		const param = metaByName.get(name);
+
+		// Missing required arg: Zod v4 produces "Invalid input: expected X, received undefined"
+		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
+			return {
+				code: 'custom' as const,
+				message: `Missing required argument: <${name}>${param?.description ? ` — ${param.description}` : ''}`,
+				path: issue.path,
+			};
+		}
+
+		// Invalid enum value (Zod v4 uses 'invalid_value' for enums)
+		if (issue.code === 'invalid_value' && param?.enumValues) {
+			return {
+				code: 'custom' as const,
+				message: `Invalid value for <${name}>. Expected one of: ${param.enumValues.join(', ')}`,
+				path: issue.path,
+			};
+		}
+
+		return issue;
+	});
+}
+
+function humanizeOptionIssues(
+	issues: ZodIssue[],
+	optionsSchemas: Record<string, ZodType>,
+): ZodIssue[] {
+	const metadata = walkSchema(optionsSchemas);
+	const metaByName = new Map(metadata.map((m) => [m.name, m]));
+
+	return issues.map((issue) => {
+		const name = issue.path[0];
+		if (typeof name !== 'string') return issue;
+		const param = metaByName.get(name);
+
+		// Missing required option
+		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
+			return {
+				code: 'custom' as const,
+				message: `Missing required option: --${name}${param?.description ? ` — ${param.description}` : ''}`,
+				path: issue.path,
+			};
+		}
+
+		// Invalid enum value
+		if (issue.code === 'invalid_value' && param?.enumValues) {
+			return {
+				code: 'custom' as const,
+				message: `Invalid value for --${name}. Expected one of: ${param.enumValues.join(', ')}`,
+				path: issue.path,
+			};
+		}
+
+		// Wrong type (e.g. expected number, got string)
+		if (issue.code === 'invalid_type') {
+			const expected = (issue as unknown as Record<string, unknown>).expected;
+			return {
+				code: 'custom' as const,
+				message: `Invalid value for --${name}: expected ${String(expected)}`,
+				path: issue.path,
+			};
+		}
+
+		return issue;
+	});
+}
+
 // ─── Public API ─────────────────────────────────────────────
 
 /**
@@ -214,7 +297,7 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 			parsedArgs = argsZodSchema.parse(rawArgs) as Record<string, unknown>;
 		} catch (err) {
 			if (err instanceof ZodError) {
-				throw new ValidationError(err.issues);
+				throw new ValidationError(humanizeArgIssues(err.issues, schemas.args));
 			}
 			throw err;
 		}
@@ -241,7 +324,7 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 			parsedOptions = optionsZodSchema.parse(rawOptions) as Record<string, unknown>;
 		} catch (err) {
 			if (err instanceof ZodError) {
-				throw new ValidationError(err.issues);
+				throw new ValidationError(humanizeOptionIssues(err.issues, schemas.options));
 			}
 			throw err;
 		}

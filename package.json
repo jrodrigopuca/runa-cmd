@@ -11,6 +11,8 @@
 	"packageManager": "pnpm@10.12.1",
 	"scripts": {
 		"build": "pnpm -r run build",
+		"dev": "pnpm -r --parallel --filter './packages/*' run dev",
+		"demo": "pnpm exec tsx examples/demo/src/cli.ts",
 		"typecheck": "pnpm -r run typecheck",
 		"test": "pnpm -r run test",
 		"lint": "biome check .",

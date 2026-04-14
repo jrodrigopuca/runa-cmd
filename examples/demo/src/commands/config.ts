@@ -2,16 +2,20 @@
  * config command group — Showcases:
  * - Nested subcommands (config get / config set / config list)
  * - Variadic args (config set key val1 val2 ...)
- * - Simple commands with no options
+ * - Typed output schema
+ * - JSON output option
  */
 import { defineCommand } from '@runa-cmd/core';
 import { z } from '@runa-cmd/core/zod';
+import { bold, cyan, dim, gray, green, yellow } from '../ui.js';
 
 // In-memory config store (simulated)
 const store: Record<string, string> = {
 	'deploy.env': 'staging',
 	'deploy.replicas': '2',
+	'deploy.region': 'us-east-1',
 	'project.name': 'my-app',
+	'project.org': 'acme-corp',
 };
 
 export const configGet = defineCommand({
@@ -25,11 +29,13 @@ export const configGet = defineCommand({
 	}),
 	run({ args }) {
 		const value = store[args.key] ?? null;
+		console.log();
 		if (value !== null) {
-			console.log(`${args.key} = ${value}`);
+			console.log(`  ${cyan(args.key)} ${dim('=')} ${bold(value)}`);
 		} else {
-			console.log(`${args.key} is not set`);
+			console.log(`  ${yellow('⚠')} ${dim(args.key)} is not set`);
 		}
+		console.log();
 		return { key: args.key, value };
 	},
 });
@@ -43,7 +49,9 @@ export const configSet = defineCommand({
 	run({ args }) {
 		const value = args.values.join(' ');
 		store[args.key] = value;
-		console.log(`Set ${args.key} = ${value}`);
+		console.log();
+		console.log(`  ${green('✔')} ${cyan(args.key)} ${dim('=')} ${bold(value)}`);
+		console.log();
 	},
 });
 
@@ -61,9 +69,24 @@ export const configList = defineCommand({
 		if (options.json) {
 			console.log(JSON.stringify(entries, null, 2));
 		} else {
+			console.log();
+			// Group by prefix
+			const groups = new Map<string, { key: string; subkey: string; value: string }[]>();
 			for (const { key, value } of entries) {
-				console.log(`${key} = ${value}`);
+				const dotIdx = key.indexOf('.');
+				const prefix = dotIdx > 0 ? key.slice(0, dotIdx) : '';
+				const subkey = dotIdx > 0 ? key.slice(dotIdx + 1) : key;
+				if (!groups.has(prefix)) groups.set(prefix, []);
+				groups.get(prefix)?.push({ key, subkey, value });
 			}
+
+			for (const [prefix, items] of groups) {
+				console.log(`  ${bold(prefix)}`);
+				for (const item of items) {
+					console.log(`    ${gray(item.subkey)} ${dim('=')} ${item.value}`);
+				}
+			}
+			console.log();
 		}
 
 		return { entries };
