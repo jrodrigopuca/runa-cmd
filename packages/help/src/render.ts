@@ -204,7 +204,12 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 	const flags: string[] = [];
 	if (opt.alias) {
 		for (const a of opt.alias) {
-			flags.push(a.length === 1 ? `-${a}` : `--${a}`);
+			// Aliases may come with dash prefix ('-e', '--env') or bare ('e', 'env')
+			if (a.startsWith('--') || a.startsWith('-')) {
+				flags.push(a);
+			} else {
+				flags.push(a.length === 1 ? `-${a}` : `--${a}`);
+			}
 		}
 	}
 	flags.push(`--${opt.name}`);

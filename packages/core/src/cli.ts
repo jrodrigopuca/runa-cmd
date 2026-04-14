@@ -248,9 +248,75 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 				true, // Allow positionals (command names + args)
 			);
 
+			// Build lookup maps for global options:
+			// longNames: '--verbose' → 'verbose' (canonical name)
+			// shortNames: '-V' → 'verbose' (canonical name)
+			// booleanGlobals: set of canonical names that are boolean type
+			const longNames = new Map<string, string>();
+			const shortNames = new Map<string, string>();
+			const booleanGlobals = new Set<string>();
+
+			const registeredOptions = parseArgsConfig.options ?? {};
+			for (const [name, opt] of Object.entries(registeredOptions)) {
+				const canonical = longAliasMap[name] ?? name;
+				longNames.set(`--${name}`, canonical);
+				// --no-* negation for booleans
+				if (opt?.type === 'boolean') {
+					booleanGlobals.add(canonical);
+					longNames.set(`--no-${name}`, canonical);
+				}
+				if (opt && 'short' in opt && opt.short) {
+					shortNames.set(`-${opt.short}`, canonical);
+				}
+			}
+			// Long aliases
+			for (const [alias, canonical] of Object.entries(longAliasMap)) {
+				longNames.set(`--${alias}`, canonical);
+			}
+
+			// Manual argv split: extract global option tokens, leave the rest
+			const globalArgv: string[] = [];
+			const commandArgv: string[] = [];
+			let i = 0;
+
+			while (i < currentArgv.length) {
+				const token = currentArgv[i] ?? '';
+
+				// Handle --opt=val form
+				const eqIdx = token.indexOf('=');
+				const tokenKey = eqIdx > 0 ? token.slice(0, eqIdx) : token;
+
+				if (longNames.has(tokenKey) || shortNames.has(tokenKey)) {
+					const canonical = longNames.get(tokenKey) ?? shortNames.get(tokenKey) ?? '';
+					const isBool = booleanGlobals.has(canonical);
+
+					if (eqIdx > 0) {
+						// --opt=val — single token, always extract
+						globalArgv.push(token);
+						i++;
+					} else if (isBool) {
+						// --verbose or --no-verbose — boolean, no value token
+						globalArgv.push(token);
+						i++;
+					} else {
+						// --opt val — string option, extract both tokens
+						globalArgv.push(token);
+						i++;
+						if (i < currentArgv.length) {
+							globalArgv.push(currentArgv[i] ?? '');
+							i++;
+						}
+					}
+				} else {
+					commandArgv.push(token);
+					i++;
+				}
+			}
+
+			// Now parse ONLY the extracted global tokens with parseArgs
 			const globalParseResult = parseArgs({
 				...parseArgsConfig,
-				args: currentArgv,
+				args: globalArgv,
 			});
 
 			const { parsedOptions } = resolveValues({
@@ -264,9 +330,8 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			});
 			parsedGlobalOptions = parsedOptions;
 
-			// Rebuild argv without consumed global flags for command parsing
-			// We use the positionals from global parse as the command argv
-			hookCtx.rawArgs = globalParseResult.positionals;
+			// Pass remaining argv (command tokens only) to command parsing
+			hookCtx.rawArgs = commandArgv;
 		}
 
 		hookCtx.globalOptions = parsedGlobalOptions;
