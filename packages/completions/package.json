@@ -39,8 +39,21 @@
 	"engines": {
 		"node": ">=18.3.0"
 	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/jrodrigopuca/runa-cmd.git",
+		"directory": "packages/completions"
+	},
+	"homepage": "https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/completions#readme",
+	"bugs": {
+		"url": "https://github.com/jrodrigopuca/runa-cmd/issues"
+	},
 	"files": [
-		"dist"
+		"dist",
+		"README.md"
 	],
 	"devDependencies": {
 		"@runa-cmd/core": "workspace:*",
