@@ -1,0 +1,27 @@
+{
+	"name": "@runa-cmd/demo",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Demo CLI showcasing all Runa framework features",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx src/cli.ts",
+		"build": "tsc",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@runa-cmd/core": "workspace:*",
+		"@runa-cmd/help": "workspace:*",
+		"@runa-cmd/mcp": "workspace:*",
+		"@runa-cmd/completions": "workspace:*",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/node": "^25.6.0",
+		"tsx": "^4.19.4",
+		"typescript": "^6.0.2"
+	},
+	"engines": {
+		"node": ">=18.3.0"
+	}
+}
