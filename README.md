@@ -225,7 +225,7 @@ CLI args > Environment variables > Config file values > Zod defaults
 ```
 
 - **ESM-only** — `type: "module"` everywhere
-- **Node 18.3+** — Uses `util.parseArgs` (no polyfill)
+- **Node 24+** — Uses stable `util.parseArgs` (no polyfill)
 - **Zod v4** — Peer dependency, not bundled
 - **TypeScript 6** — Strict mode, full inference
 

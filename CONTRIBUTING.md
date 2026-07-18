@@ -4,7 +4,7 @@ Thanks for your interest in contributing to Runa! This guide covers everything y
 
 ## Prerequisites
 
-- **Node.js** >= 18.3.0 (we target Node 22 LTS)
+- **Node.js** >= 24.0.0 (the supported baseline — Node 18/20 are EOL)
 - **pnpm** >= 10.x (the repo uses `packageManager` field, so corepack works too)
 
 ## Getting Started
