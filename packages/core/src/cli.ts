@@ -21,7 +21,14 @@ import { resolveValues } from './parse/resolve.js';
 import { walkSchema } from './parse/schema-walker.js';
 import { assertKnownOptions } from './parse/strict.js';
 import type { PluginHostRefs } from './plugin.js';
-import { resolvePlugins, runPluginCleanup, runPluginSetup, topologicalSort } from './plugin.js';
+import {
+	resolvePlugins,
+	runPluginCleanup,
+	runPluginSetup,
+	STATIC_GLOBAL_OPTION_SOURCE,
+	topologicalSort,
+	validateOptionCollisions,
+} from './plugin.js';
 import { findSuggestion } from './suggest.js';
 import type {
 	CLI,
@@ -143,6 +150,13 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 	const mutableMiddleware: Middleware[] = [...(config.middleware ?? [])];
 	let sortedPlugins: PluginConfig[] = [];
 
+	// Registrant per global option name (Decision 9): statically-declared
+	// globals are seeded here; plugin registrations append via addGlobalOption.
+	const globalOptionSources = new Map<string, string[]>();
+	for (const name of Object.keys(mutableGlobalOptions)) {
+		globalOptionSources.set(name, [STATIC_GLOBAL_OPTION_SOURCE]);
+	}
+
 	// Hook context that grows as we progress through the lifecycle
 	const hookCtx: HookContext = {
 		cli: config.meta,
@@ -171,10 +185,22 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 						mutableGlobalOptions,
 						mutableGlobalMeta.options,
 					),
+				globalOptionSources,
 			};
 
 			await runPluginSetup(sortedPlugins, pluginRefs);
 		}
+
+		// ─── Option collision validation (Decision 9) ─────
+		// Post-plugin-setup is the earliest point where the full option
+		// surface (plugin globals + plugin commands) exists. Runs before
+		// any parsing on every invocation; throws RunaError OPTION_COLLISION.
+		validateOptionCollisions(
+			mutableCommands,
+			mutableGlobalOptions,
+			mutableGlobalMeta,
+			globalOptionSources,
+		);
 
 		// ─── beforeParse ──────────────────────────────────
 		await hookRegistry.emit('beforeParse', hookCtx);
@@ -411,8 +437,11 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 
 		try {
 			await hookRegistry.emit('onError', hookCtx);
-		} catch {
-			// onError handler threw — swallow it, cleanup still needs to run
+		} catch (hookErr) {
+			// D8: log to stderr, never rethrow — a broken error handler must
+			// not prevent cleanup, but its own defect must not vanish either
+			// (spec 2.5). The ORIGINAL error still drives exit behavior below.
+			console.error('runa: onError handler threw:', hookErr);
 		}
 
 		// If error was not handled, fall back to default behavior
@@ -425,8 +454,9 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		// ─── cleanup (ALWAYS runs) ────────────────────────
 		try {
 			await hookRegistry.emit('cleanup', hookCtx);
-		} catch {
-			// Cleanup hook errors are swallowed
+		} catch (hookErr) {
+			// D8: same treatment as onError — log the defect, keep cleaning up.
+			console.error('runa: cleanup hook threw:', hookErr);
 		}
 
 		// Plugin cleanup in reverse topological order
