@@ -1,0 +1,64 @@
+# CI — beta-readiness task 1.1 (design D10)
+#
+# Every step mirrors a root package.json script so any CI failure is
+# reproducible locally with the same command.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    # Style/type checks are OS-independent — one cell is enough.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        # version intentionally omitted: read from the root "packageManager" field
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      # Build before typecheck: help/mcp/completions resolve @runa-cmd/core
+      # types from its dist/ (workspace dep) — a fresh checkout has no dist.
+      - run: pnpm build
+      - run: pnpm typecheck
+
+  test:
+    strategy:
+      # A Windows-only failure must not mask a Node-18-only failure (D10).
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Build before test: packages consume each other's dist/ via workspace deps.
+      - run: pnpm build
+      - run: pnpm test
+
+  coverage:
+    # Single canonical coverage cell (D10) — report-only until task 3.10
+    # flips threshold enforcement on in packages/core/vitest.config.ts.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test:coverage
