@@ -202,75 +202,86 @@ Plugins extend the CLI via hooks. See `packages/core/src/plugin.ts` and the exis
 - [ ] New features include tests
 - [ ] Commit messages follow conventional commits
 
-## Publishing to npm
+## Releases
 
-> **For maintainers only.**
+> **Publishing is for maintainers only** — but every contributor participates in
+> the first step: changesets.
 
-### Prerequisites
+Releases are driven by [Changesets](https://github.com/changesets/changesets).
+Versioning is automated; **publishing is deliberately manual** (local, with npm
+2FA in hand — no npm token lives in CI secrets).
 
-1. Be logged in to npm: `npm login`
-2. Have access to the `@runa-cmd` organization on npmjs.com
+### Declaring a Change (contributors)
 
-### Pre-Publish Checklist
-
-```bash
-# 1. Ensure everything is clean
-pnpm clean
-pnpm build
-pnpm test
-pnpm lint
-pnpm typecheck
-
-# 2. Verify package contents (no test files, correct files included)
-pnpm --filter @runa-cmd/core pack --dry-run
-pnpm --filter @runa-cmd/help pack --dry-run
-pnpm --filter @runa-cmd/mcp pack --dry-run
-pnpm --filter @runa-cmd/completions pack --dry-run
-
-# 3. Verify you're logged in
-npm whoami
-```
-
-### Publishing
-
-Packages must be published in dependency order — **core first**, then the rest:
+If your PR changes a published package (`core`, `help`, `mcp`, `completions`),
+add a changeset alongside it:
 
 ```bash
-# 1. Publish core (no deps on other @runa-cmd packages)
-pnpm --filter @runa-cmd/core publish --no-git-checks
-
-# 2. Publish the rest (they depend on core)
-pnpm --filter @runa-cmd/help publish --no-git-checks
-pnpm --filter @runa-cmd/mcp publish --no-git-checks
-pnpm --filter @runa-cmd/completions publish --no-git-checks
+pnpm changeset
 ```
 
-> **Note:** pnpm automatically resolves `workspace:*` peer dependencies to real version ranges (e.g., `^0.1.0`) during publish. You don't need to manually change them.
+Pick the affected package(s) and bump type, describe the change — the generated
+`.changeset/*.md` file is committed with your PR. The four published packages
+are a `fixed` group: they always version-bump together as one coherent
+framework release.
+
+> The repo is currently in changesets **pre-release mode** (`beta` tag), so
+> versions resolve to `0.2.0-beta.N` and publishes land under the npm `beta`
+> dist-tag; `latest` is untouched until `pnpm changeset pre exit`.
+
+### The Version Packages PR (automated)
+
+On every push to `main` with pending changesets, the `Release` workflow
+(`.github/workflows/release.yml`, `changesets/action`) opens or updates a
+**"Version Packages" PR** that applies all pending changesets: package.json
+version bumps + CHANGELOG entries. It does NOT publish anything.
+
+### Publishing (maintainers, local)
+
+1. Be logged in to npm (`npm whoami`) with access to the `@runa-cmd` org and
+   2FA enabled.
+2. Merge the **Version Packages** PR on `main`.
+3. Publish from an up-to-date local checkout:
+
+```bash
+git checkout main && git pull origin main
+pnpm release   # = pnpm build && changeset publish (asks for your npm OTP)
+```
+
+`changeset publish` publishes every package whose version is ahead of the
+registry, in dependency order, and creates git tags — push them afterwards:
+
+```bash
+git push --follow-tags
+```
+
+> **Note:** pnpm resolves `workspace:*` peer dependencies to real version
+> ranges (e.g., `^0.2.0-beta.0`) during publish. You don't need to change them
+> manually.
 
 ### Post-Publish Verification
 
 ```bash
-# Verify packages are available
-npm view @runa-cmd/core version
-npm view @runa-cmd/help version
-npm view @runa-cmd/mcp version
-npm view @runa-cmd/completions version
+# Verify versions and dist-tags (beta while in pre-mode; latest untouched)
+npm view @runa-cmd/core dist-tags
+npm view @runa-cmd/help dist-tags
+npm view @runa-cmd/mcp dist-tags
+npm view @runa-cmd/completions dist-tags
 
 # Test installation in a fresh directory
 mkdir /tmp/runa-test && cd /tmp/runa-test
 npm init -y
-npm install @runa-cmd/core @runa-cmd/help zod
+npm install @runa-cmd/core@beta @runa-cmd/help@beta zod
 ```
 
-### Version Bumping
+### Why No Automated Publish?
 
-When releasing a new version:
-
-1. Update `version` in each package's `package.json`
-2. Keep versions **in sync** across all packages
-3. Commit: `chore: bump version to x.y.z`
-4. Tag: `git tag vx.y.z`
-5. Push with tags: `git push && git push --tags`
+A classic npm automation token would bypass 2FA, and granular tokens expire
+every 90 days — at this release cadence, a Bypass-2FA secret sitting in CI is
+worse security than a human publishing locally with 2FA. Once the packages
+exist on the registry, the plan is to migrate to npm **Trusted Publishing
+(OIDC)** — tokenless, workflow-bound publishing from CI — and retire the local
+step.
 
 ## Questions?
 
