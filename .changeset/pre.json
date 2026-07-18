@@ -8,5 +8,7 @@
     "@runa-cmd/help": "0.1.0",
     "@runa-cmd/mcp": "0.1.0"
   },
-  "changesets": []
+  "changesets": [
+    "beta-readiness-hardening"
+  ]
 }

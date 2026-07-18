@@ -1,6 +1,6 @@
 {
 	"name": "@runa-cmd/core",
-	"version": "0.1.0",
+	"version": "0.2.0-beta.0",
 	"description": "Schema-driven, TypeScript-first CLI engine — commands, parsing, plugins, middleware. Zero runtime deps.",
 	"license": "MIT",
 	"type": "module",
