@@ -20,6 +20,8 @@ export {
 // ─── Introspection ──────────────────────────────────────────
 export { getSchema } from './introspect.js';
 export { defineMiddleware } from './middleware.js';
+// ─── Schema adapter (types only — selection stays internal, design D2) ──
+export type { SchemaAdapter, SchemaDescription } from './parse/schema-adapter.js';
 export { definePlugin } from './plugin.js';
 
 // ─── Types (type-only re-exports) ───────────────────────────

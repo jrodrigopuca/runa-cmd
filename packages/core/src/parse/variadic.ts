@@ -7,55 +7,17 @@
  */
 import type { ZodType } from 'zod';
 import { RunaError } from '../errors.js';
-
-// ─── Zod v4 internal access ────────────────────────────────
-
-interface ZodDef {
-	type: string;
-	innerType?: ZodType;
-	[key: string]: unknown;
-}
-
-interface ZodInternals {
-	def: ZodDef;
-}
-
-function getDefType(schema: ZodType): string {
-	const s = schema as unknown as { _zod: ZodInternals };
-	return s._zod?.def?.type ?? 'unknown';
-}
+import { defaultAdapter } from './schema-adapter.js';
 
 // ─── Public API ─────────────────────────────────────────────
 
 /**
  * Check if a Zod schema is a z.array() type.
- * Unwraps optional/default/nullable wrappers to find the base type.
+ * Wrapper unwrapping (optional/default/nullable) is handled by the
+ * SchemaAdapter seam — this is a thin delegate over `describe()`.
  */
 export function isVariadic(schema: ZodType): boolean {
-	let current = schema;
-	const maxDepth = 10;
-
-	for (let i = 0; i < maxDepth; i++) {
-		const defType = getDefType(current);
-
-		if (defType === 'array') {
-			return true;
-		}
-
-		// Unwrap wrappers
-		if (defType === 'optional' || defType === 'default' || defType === 'nullable') {
-			const s = current as unknown as { _zod: ZodInternals };
-			const inner = s._zod?.def?.innerType;
-			if (inner) {
-				current = inner;
-				continue;
-			}
-		}
-
-		return false;
-	}
-
-	return false;
+	return defaultAdapter.describe(schema).kind === 'array';
 }
 
 /**
