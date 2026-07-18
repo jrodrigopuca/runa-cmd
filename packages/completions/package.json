@@ -33,7 +33,7 @@
 		"clean": "rm -rf dist"
 	},
 	"peerDependencies": {
-		"@runa-cmd/core": "workspace:*",
+		"@runa-cmd/core": "^0.2.0-beta.0",
 		"zod": "^4.0.0"
 	},
 	"engines": {
