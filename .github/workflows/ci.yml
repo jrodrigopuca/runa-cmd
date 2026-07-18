@@ -30,11 +30,14 @@ jobs:
 
   test:
     strategy:
-      # A Windows-only failure must not mask a Node-18-only failure (D10).
+      # An OS-specific failure must not mask a failure in another cell (D10).
       fail-fast: false
+      # Node 24 baseline (decision 2026-07-18, D10 amendment): 18/20 are EOL and
+      # vitest 4's toolchain requires >=20.12 anyway. Matrix syntax kept so new
+      # Node versions are a one-line addition.
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node: [18, 20, 22]
+        node: [24]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
