@@ -1,0 +1,44 @@
+# Release — beta-readiness task 3.9 (design D12, amended 2026-07-18)
+#
+# Version-PR-only mode: on push to main with pending changesets,
+# changesets/action@v1 opens/updates the "Version Packages" PR. Publishing is
+# NOT automated — no NPM_TOKEN lives in repo secrets (decision 2026-07-18: a
+# Bypass-2FA token in secrets is worse security than local publish with 2FA in
+# hand, and 90-day granular-token rotation isn't worth it at this cadence).
+#
+# Publish flow after merging the Version Packages PR (see CONTRIBUTING.md):
+#   git pull origin main && pnpm release
+# (root script = pnpm build && changeset publish; pre-mode `beta` lands the
+# packages under the npm `beta` dist-tag). Trusted Publishing (OIDC) is the
+# post-beta migration path once the packages exist on the registry.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Never run two release jobs concurrently — the Version Packages PR branch is
+# shared mutable state.
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write # push the Version Packages PR branch
+  pull-requests: write # open/update the Version Packages PR
+
+jobs:
+  version-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        # version intentionally omitted: read from the root "packageManager" field
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action@v1
+        # No `publish` input and no NPM_TOKEN: this action only maintains the
+        # Version Packages PR. Publishing happens locally with 2FA (D12 amendment).
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
