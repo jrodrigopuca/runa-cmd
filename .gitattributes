@@ -1,0 +1,7 @@
+# Normalize line endings to LF in the repository AND in every checkout.
+#
+# GitHub's windows-latest runner images ship git with core.autocrlf=true;
+# without this file, CRLF checkouts would corrupt byte-exact test fixtures
+# (e.g. packages/completions/src/__tests__/__snapshots__/*.snap, whose
+# template literals are compared against '\n'-built strings).
+* text=auto eol=lf

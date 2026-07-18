@@ -4,6 +4,7 @@
  * Tests: searchConfig finds files in paths, tilde expansion, fallback behavior
  * References: Spec Section 8 — config search scenarios
  */
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { searchConfig } from '../../config/search.js';
 import type { ConfigLoader } from '../../types.js';
@@ -65,9 +66,11 @@ describe('searchConfig', () => {
 		const result = await searchConfig('myapp', [jsonLoader], ['.', '~']);
 
 		expect(result).not.toBeNull();
-		// The tilde should resolve to homedir
-		expect(result!.filePath).toContain('/home/testuser');
-		expect(result!.filePath).toContain('myapp.config.json');
+		// The tilde should resolve to homedir. Expected path is built with the
+		// same join() the source uses — on Windows, join('/home/testuser', ...)
+		// normalizes to backslashes, so a hardcoded '/home/testuser' substring
+		// assertion would fail there.
+		expect(result!.filePath).toBe(join('/home/testuser', 'myapp.config.json'));
 	});
 
 	it('checks all loader extensions per path', async () => {
@@ -104,7 +107,8 @@ describe('searchConfig', () => {
 		const result = await searchConfig('myapp', [jsonLoader], ['.', '~']);
 
 		expect(result).not.toBeNull();
-		expect(result!.filePath).toMatch(/^\/home\/testuser\//);
+		// Platform-agnostic: join() yields backslash separators on Windows.
+		expect(result!.filePath).toBe(join('/home/testuser', 'myapp.config.json'));
 	});
 
 	it('handles empty search paths', async () => {

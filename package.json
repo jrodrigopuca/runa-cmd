@@ -15,6 +15,7 @@
 		"demo": "pnpm exec tsx examples/demo/src/cli.ts",
 		"typecheck": "pnpm -r run typecheck",
 		"test": "pnpm -r run test",
+		"test:coverage": "pnpm -r run test --coverage",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"format": "biome format .",
@@ -23,6 +24,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.11",
-		"vitest": "^4.1.4"
+		"@vitest/coverage-v8": "^4.1.10",
+		"vitest": "^4.1.10"
 	}
 }
