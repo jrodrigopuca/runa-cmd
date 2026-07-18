@@ -211,6 +211,7 @@ describe('defineCommand + parsing pipeline integration', () => {
 				globalOptions: {},
 				command: cmd.meta,
 				rawArgs: [],
+				rest: [],
 			});
 
 			expect(cmd.output).toBeDefined();
@@ -230,6 +231,7 @@ describe('defineCommand + parsing pipeline integration', () => {
 				globalOptions: {},
 				command: cmd.meta,
 				rawArgs: [],
+				rest: [],
 			});
 
 			expect(() => cmd.output!.parse(result)).toThrow();

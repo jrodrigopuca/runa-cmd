@@ -1,8 +1,9 @@
 /**
  * Unit tests for helpPlugin (plugin.ts)
  *
- * Tests: plugin creation, onGlobalFlags hook, --help flag triggers render+exit,
- *        subcommand detection via rawArgs, custom render fn, shortCircuit called
+ * Tests: plugin creation, onGlobalFlags hook, --help renders + shortCircuits
+ *        WITHOUT process.exit (default), exitOnHelp opt-in, subcommand
+ *        detection via rawArgs, custom render fn
  */
 
 import type { CLISchema, HookContext, HookHandler, HookName, PluginConfig } from '@runa-cmd/core';
@@ -108,7 +109,7 @@ describe('helpPlugin — --help flag', () => {
 		expect(writeSpy).not.toHaveBeenCalled();
 	});
 
-	it('renders help and exits when --help is true', () => {
+	it('renders help WITHOUT calling process.exit (default behavior)', () => {
 		const { handler } = extractHandler(helpPlugin());
 		const ctx = makeHookCtx({
 			globalOptions: { help: true },
@@ -118,7 +119,7 @@ describe('helpPlugin — --help flag', () => {
 		expect(writeSpy).toHaveBeenCalledTimes(1);
 		const output = writeSpy.mock.calls[0]![0] as string;
 		expect(output).toContain('test-cli');
-		expect(exitSpy).toHaveBeenCalledWith(0);
+		expect(exitSpy).not.toHaveBeenCalled();
 	});
 
 	it('calls shortCircuit when available', () => {
@@ -131,6 +132,64 @@ describe('helpPlugin — --help flag', () => {
 		});
 		handler!(ctx);
 		expect(shortCircuit).toHaveBeenCalled();
+	});
+
+	it('helpPlugin() with no options pins the default: exitOnHelp is false', () => {
+		const { handler } = extractHandler(helpPlugin());
+		const ctx = makeHookCtx({
+			globalOptions: { help: true },
+			rawArgs: [],
+			shortCircuit: vi.fn(),
+		});
+		handler!(ctx);
+		expect(exitSpy).not.toHaveBeenCalled();
+	});
+});
+
+// ─── exitOnHelp Opt-In ──────────────────────────────────────
+
+describe('helpPlugin — exitOnHelp', () => {
+	it('exitOnHelp: true calls process.exit(0) after rendering', () => {
+		const { handler } = extractHandler(helpPlugin({ exitOnHelp: true }));
+		const ctx = makeHookCtx({
+			globalOptions: { help: true },
+			rawArgs: [],
+		});
+		handler!(ctx);
+		expect(writeSpy).toHaveBeenCalledTimes(1);
+		expect(exitSpy).toHaveBeenCalledWith(0);
+	});
+
+	it('exitOnHelp: true sets the shortCircuit flag BEFORE exiting', () => {
+		let shortCircuitedAtExit: boolean | undefined;
+		let shortCircuited = false;
+		exitSpy.mockImplementation((() => {
+			shortCircuitedAtExit = shortCircuited;
+		}) as never);
+
+		const { handler } = extractHandler(helpPlugin({ exitOnHelp: true }));
+		const ctx = makeHookCtx({
+			globalOptions: { help: true },
+			rawArgs: [],
+			shortCircuit: () => {
+				shortCircuited = true;
+			},
+		});
+		handler!(ctx);
+
+		expect(exitSpy).toHaveBeenCalledWith(0);
+		expect(shortCircuitedAtExit).toBe(true);
+	});
+
+	it('exitOnHelp: false behaves like the default (no exit)', () => {
+		const { handler } = extractHandler(helpPlugin({ exitOnHelp: false }));
+		const ctx = makeHookCtx({
+			globalOptions: { help: true },
+			rawArgs: [],
+			shortCircuit: vi.fn(),
+		});
+		handler!(ctx);
+		expect(exitSpy).not.toHaveBeenCalled();
 	});
 });
 

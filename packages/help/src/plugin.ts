@@ -55,9 +55,17 @@ export function helpPlugin(opts: HelpPluginOptions = {}): PluginConfig {
 
 				process.stdout.write(`${output}\n`);
 
-				// Stop further lifecycle execution
+				// Stop further lifecycle execution. Do NOT call process.exit()
+				// by default — core owns the process lifecycle: cleanup hooks and
+				// plugin cleanup() run, cli.run() resolves, and the process exits
+				// naturally with code 0 (same pattern as @runa-cmd/mcp).
 				ctx.shortCircuit?.();
-				process.exit(0);
+
+				if (opts.exitOnHelp) {
+					// Opt-in v0.1.0 behavior. shortCircuit was called FIRST so the
+					// flag is set even if exit is intercepted (e.g. mocked in tests).
+					process.exit(0);
+				}
 			});
 		},
 	});

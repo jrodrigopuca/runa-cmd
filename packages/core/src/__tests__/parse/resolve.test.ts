@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { ValidationError } from '../../errors.js';
-import { resolveValues } from '../../parse/resolve.js';
+import { coerceNumberValue, resolveValues } from '../../parse/resolve.js';
 
 describe('resolveValues — positional mapping', () => {
 	it('maps two positional args in order', () => {
@@ -175,6 +175,34 @@ describe('resolveValues — options merge priority', () => {
 				env: {},
 			}),
 		).toThrow(ValidationError);
+	});
+});
+
+describe('coerceNumberValue (task 2.8, design D7)', () => {
+	it('returns empty string unchanged (declines to coerce)', () => {
+		expect(coerceNumberValue('')).toBe('');
+	});
+
+	it('returns whitespace-only string unchanged', () => {
+		expect(coerceNumberValue('  ')).toBe('  ');
+	});
+
+	it("coerces '8080' → 8080", () => {
+		expect(coerceNumberValue('8080')).toBe(8080);
+	});
+
+	it("coerces '-1.5' → -1.5", () => {
+		expect(coerceNumberValue('-1.5')).toBe(-1.5);
+	});
+
+	it("returns non-numeric string 'abc' unchanged (Zod rejects it)", () => {
+		expect(coerceNumberValue('abc')).toBe('abc');
+	});
+
+	it('passes non-strings through untouched (number 0, undefined, boolean)', () => {
+		expect(coerceNumberValue(0)).toBe(0);
+		expect(coerceNumberValue(undefined)).toBeUndefined();
+		expect(coerceNumberValue(true)).toBe(true);
 	});
 });
 

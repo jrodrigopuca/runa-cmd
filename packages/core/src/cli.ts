@@ -19,8 +19,10 @@ import { createHookRegistry } from './lifecycle.js';
 import { buildParseArgsConfig } from './parse/parseargs-bridge.js';
 import { resolveValues } from './parse/resolve.js';
 import { walkSchema } from './parse/schema-walker.js';
+import { assertKnownOptions } from './parse/strict.js';
 import type { PluginHostRefs } from './plugin.js';
 import { resolvePlugins, runPluginCleanup, runPluginSetup, topologicalSort } from './plugin.js';
+import { findSuggestion } from './suggest.js';
 import type {
 	CLI,
 	CLIConfig,
@@ -45,64 +47,6 @@ interface ResolvedCommand {
  */
 function isCommand(value: Command | CommandTree): value is Command {
 	return '_type' in value && value._type === 'runa:command';
-}
-
-/**
- * Levenshtein distance for "did you mean" suggestions.
- */
-function levenshtein(a: string, b: string): number {
-	const rows = b.length + 1;
-	const cols = a.length + 1;
-
-	// Use a flat array for guaranteed index access without non-null assertions
-	const matrix = new Array<number>(rows * cols).fill(0);
-	const at = (i: number, j: number) => matrix[i * cols + j] ?? 0;
-	const set = (i: number, j: number, v: number) => {
-		matrix[i * cols + j] = v;
-	};
-
-	for (let i = 0; i < rows; i++) set(i, 0, i);
-	for (let j = 0; j < cols; j++) set(0, j, j);
-
-	for (let i = 1; i < rows; i++) {
-		for (let j = 1; j < cols; j++) {
-			if (b[i - 1] === a[j - 1]) {
-				set(i, j, at(i - 1, j - 1));
-			} else {
-				set(
-					i,
-					j,
-					Math.min(
-						at(i - 1, j - 1) + 1, // substitution
-						at(i, j - 1) + 1, // insertion
-						at(i - 1, j) + 1, // deletion
-					),
-				);
-			}
-		}
-	}
-
-	return at(b.length, a.length);
-}
-
-/**
- * Find the best suggestion for a misspelled command name.
- * Returns undefined if no close match exists (distance > 3).
- */
-function findSuggestion(input: string, candidates: string[]): string | undefined {
-	let best: string | undefined;
-	let bestDist = Infinity;
-
-	for (const candidate of candidates) {
-		const dist = levenshtein(input, candidate);
-		if (dist < bestDist) {
-			bestDist = dist;
-			best = candidate;
-		}
-	}
-
-	// Only suggest if reasonably close
-	return bestDist <= 3 ? best : undefined;
 }
 
 /**
@@ -237,6 +181,18 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		// Handlers may have mutated hookCtx.rawArgs
 		const currentArgv = hookCtx.rawArgs;
 
+		// ─── Rest split (Decision 5) ──────────────────────
+		// Split at the FIRST `--`: `head` flows through the entire pipeline
+		// (global extraction → resolution → parseArgs → strict check), `rest`
+		// bypasses everything and lands verbatim on the run context. Because
+		// the global extractor below only ever sees `head`, a token like
+		// `--help` after `--` can never be stolen as a global flag.
+		// Only the first `--` splits; later `--` tokens are ordinary rest content.
+		const sepIdx = currentArgv.indexOf('--');
+		const head = sepIdx === -1 ? currentArgv : currentArgv.slice(0, sepIdx);
+		const rest = sepIdx === -1 ? [] : currentArgv.slice(sepIdx + 1);
+		hookCtx.rawArgs = head;
+
 		// ─── Parse global options ─────────────────────────
 		let parsedGlobalOptions: Record<string, unknown> = {};
 
@@ -274,13 +230,14 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 				longNames.set(`--${alias}`, canonical);
 			}
 
-			// Manual argv split: extract global option tokens, leave the rest
+			// Manual argv split: extract global option tokens, leave the rest.
+			// Operates on `head` only — post-`--` tokens are never candidates.
 			const globalArgv: string[] = [];
 			const commandArgv: string[] = [];
 			let i = 0;
 
-			while (i < currentArgv.length) {
-				const token = currentArgv[i] ?? '';
+			while (i < head.length) {
+				const token = head[i] ?? '';
 
 				// Handle --opt=val form
 				const eqIdx = token.indexOf('=');
@@ -302,8 +259,8 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 						// --opt val — string option, extract both tokens
 						globalArgv.push(token);
 						i++;
-						if (i < currentArgv.length) {
-							globalArgv.push(currentArgv[i] ?? '');
+						if (i < head.length) {
+							globalArgv.push(head[i] ?? '');
 							i++;
 						}
 					}
@@ -352,7 +309,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		// ─── Parse command args + options ──────────────────
 		const optionMetadata = command.options ? walkSchema(command.options) : [];
 
-		const { parseArgsConfig, longAliasMap } = buildParseArgsConfig(
+		const { parseArgsConfig, longAliasMap, knownKeys, booleanKeys } = buildParseArgsConfig(
 			optionMetadata,
 			command.meta.options as Record<string, OptionMeta> | undefined,
 			!!command.args,
@@ -362,6 +319,35 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			...parseArgsConfig,
 			args: remainingArgv,
 		});
+
+		// ─── Strict options check ─────────────────────────
+		if (config.strictOptions !== false) {
+			// Command canonical names + long aliases (= keys of the parseArgs config)
+			const suggestionCandidates = Object.keys(parseArgsConfig.options ?? {});
+
+			// Globals are extracted before command parsing, but their names must
+			// still be known here: parseArgs maps a stray global short flag to its
+			// bare character, and typo'd globals should suggest the global name.
+			for (const name of Object.keys(mutableGlobalOptions)) {
+				knownKeys.add(name);
+				suggestionCandidates.push(name);
+				for (const alias of mutableGlobalMeta.options[name]?.alias ?? []) {
+					if (alias.startsWith('--')) {
+						knownKeys.add(alias.slice(2));
+						suggestionCandidates.push(alias.slice(2));
+					} else if (alias.startsWith('-') && alias.length === 2) {
+						knownKeys.add(alias.slice(1));
+					}
+				}
+			}
+
+			assertKnownOptions({
+				producedKeys: Object.keys(cmdParseResult.values),
+				knownKeys,
+				booleanKeys,
+				suggestionCandidates,
+			});
+		}
 
 		// Load config values if configured
 		let configValues: Record<string, unknown> | undefined;
@@ -399,6 +385,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			globalOptions: parsedGlobalOptions,
 			command: command.meta,
 			rawArgs: argv,
+			rest,
 		};
 
 		const innerFn = async () => {

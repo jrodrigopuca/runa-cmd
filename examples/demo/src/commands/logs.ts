@@ -50,7 +50,7 @@ export const logs = defineCommand({
 		tail: z.number().default(50).describe('Number of lines to show'),
 		since: z.string().optional().describe('Show logs since duration'),
 	},
-	run({ args, options }) {
+	run({ args, options, rest }) {
 		console.log();
 		console.log(
 			info(
@@ -60,6 +60,11 @@ export const logs = defineCommand({
 
 		if (options.since) {
 			console.log(kv('Since', options.since));
+		}
+
+		// Tokens after `--` arrive verbatim on ctx.rest (never parsed/validated)
+		if (rest.length > 0) {
+			console.log(kv('Pass-through (ctx.rest)', rest.join(' ')));
 		}
 		console.log();
 

@@ -13,6 +13,16 @@ export interface ParseArgsBridgeConfig {
 	parseArgsConfig: ParseArgsConfig;
 	/** Maps long alias names → canonical option name */
 	longAliasMap: Record<string, string>;
+	/**
+	 * Every key util.parseArgs may legitimately produce for this config:
+	 * canonical option names + registered long aliases, plus a defensive
+	 * `no-{name}` per boolean option (parseArgs folds `--no-x` into `x: false`
+	 * under allowNegative — pinned by parseargs-negation.test.ts — but the
+	 * allowance guards against a future representation change).
+	 */
+	knownKeys: Set<string>;
+	/** Canonical names of boolean options (for the strict check's `no-*` allowance) */
+	booleanKeys: Set<string>;
 }
 
 // ─── Public API ─────────────────────────────────────────────
@@ -31,6 +41,8 @@ export function buildParseArgsConfig(
 ): ParseArgsBridgeConfig {
 	const options: NonNullable<ParseArgsConfig['options']> = {};
 	const longAliasMap: Record<string, string> = {};
+	const knownKeys = new Set<string>();
+	const booleanKeys = new Set<string>();
 
 	for (const param of metadata) {
 		// Map Zod type → parseArgs type
@@ -57,6 +69,7 @@ export function buildParseArgsConfig(
 					longAliasMap[longName] = param.name;
 					// Register the long alias in parseArgs too
 					options[longName] = { type: parseArgsType };
+					knownKeys.add(longName);
 				} else if (alias.startsWith('-') && alias.length === 2) {
 					// Short alias: single char after '-'
 					optConfig.short = alias[1];
@@ -71,6 +84,11 @@ export function buildParseArgsConfig(
 		}
 
 		options[param.name] = optConfig;
+		knownKeys.add(param.name);
+		if (parseArgsType === 'boolean') {
+			booleanKeys.add(param.name);
+			knownKeys.add(`no-${param.name}`);
+		}
 	}
 
 	return {
@@ -81,5 +99,7 @@ export function buildParseArgsConfig(
 			allowNegative: true, // Enable --no-* boolean negation
 		},
 		longAliasMap,
+		knownKeys,
+		booleanKeys,
 	};
 }

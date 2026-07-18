@@ -73,4 +73,11 @@ export interface HelpPluginOptions {
 	theme?: Partial<Theme>;
 	/** Custom render function (Layer 3 — full control) */
 	render?: (ctx: RenderFnCtx) => string;
+	/**
+	 * Call process.exit(0) after rendering help. Default: false —
+	 * the lifecycle short-circuits instead, so cleanup hooks run and
+	 * cli.run() resolves (required for embedding/testing). Set to true
+	 * to restore the v0.1.0 hard-exit behavior.
+	 */
+	exitOnHelp?: boolean;
 }

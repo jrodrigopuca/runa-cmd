@@ -94,6 +94,7 @@ async function executeToolHandler(
 			globalOptions: {},
 			command: reg.command.meta,
 			rawArgs: [],
+			rest: [],
 		});
 
 		// Command has output schema — return structured content

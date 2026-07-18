@@ -63,6 +63,8 @@ export interface RunContext<
 	globalOptions: Record<string, unknown>;
 	command: CommandMeta<TOptions>;
 	rawArgs: string[];
+	/** Tokens after the first `--` separator, verbatim and unvalidated. `[]` when absent. */
+	rest: string[];
 }
 
 // ─── Conditional Return Type ────────────────────────────────
@@ -125,6 +127,12 @@ export interface CLIConfig {
 	config?: CLIConfigOptions;
 	globalOptions?: Record<string, ZodType>;
 	globalMeta?: { options?: Record<string, OptionMeta> };
+	/**
+	 * Reject unknown options with a ValidationError (exit 2) and a
+	 * did-you-mean suggestion. Default: true. Set to false to restore
+	 * the v0.1.0 lenient behavior (unknown flags silently ignored).
+	 */
+	strictOptions?: boolean;
 }
 
 // ─── CLI (Branded Runtime Object) ───────────────────────────

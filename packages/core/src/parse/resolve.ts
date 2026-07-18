@@ -102,6 +102,25 @@ function mapPositionals(
 
 // ─── Value Resolution ───────────────────────────────────────
 
+/**
+ * Pre-coerce a string to a number for z.number() fields.
+ * Empty/whitespace-only strings are returned UNCHANGED — Number('') === 0
+ * and Number('  ') === 0 would silently fabricate a value. Leaving the
+ * string intact lets Zod reject it as invalid_type, which flows through
+ * the existing humanizer to a ValidationError (exit 2).
+ *
+ * The single coercion site for ALL resolution sources (CLI arg, env var,
+ * config value) — a new source added later inherits the rule by construction.
+ *
+ * Exported for unit testing only — not part of the public API (not in index.ts).
+ */
+export function coerceNumberValue(value: unknown): unknown {
+	if (typeof value !== 'string') return value;
+	if (value.trim() === '') return value;
+	const num = Number(value);
+	return Number.isNaN(num) ? value : num;
+}
+
 function resolveOptionValues(
 	parseArgsValues: Record<string, unknown>,
 	longAliasMap: Record<string, string>,
@@ -133,45 +152,23 @@ function resolveOptionValues(
 	for (const key of Object.keys(optionsSchemas)) {
 		// Priority 1: CLI arg
 		if (key in normalizedValues && normalizedValues[key] !== undefined) {
-			let value = normalizedValues[key];
-			// Pre-coerce numbers from string
-			if (numberFields.has(key) && typeof value === 'string') {
-				const num = Number(value);
-				if (!Number.isNaN(num)) {
-					value = num;
-				}
-			}
-			resolved[key] = value;
+			const value = normalizedValues[key];
+			resolved[key] = numberFields.has(key) ? coerceNumberValue(value) : value;
 			continue;
 		}
 
 		// Priority 2: Environment variable
 		const envName = optionsMeta?.[key]?.env;
 		if (envName && envName in env && env[envName] !== undefined) {
-			let value: unknown = env[envName];
-			// Pre-coerce numbers from string
-			if (numberFields.has(key) && typeof value === 'string') {
-				const num = Number(value);
-				if (!Number.isNaN(num)) {
-					value = num;
-				}
-			}
-			resolved[key] = value;
+			const value: unknown = env[envName];
+			resolved[key] = numberFields.has(key) ? coerceNumberValue(value) : value;
 			continue;
 		}
 
 		// Priority 3: Config file value
 		if (configValues && key in configValues && configValues[key] !== undefined) {
-			let value = configValues[key];
-			// Pre-coerce numbers from string (config values are usually already typed,
-			// but defensive handling)
-			if (numberFields.has(key) && typeof value === 'string') {
-				const num = Number(value);
-				if (!Number.isNaN(num)) {
-					value = num;
-				}
-			}
-			resolved[key] = value;
+			const value = configValues[key];
+			resolved[key] = numberFields.has(key) ? coerceNumberValue(value) : value;
 		}
 
 		// Priority 4: Omit — let Zod .default() handle it

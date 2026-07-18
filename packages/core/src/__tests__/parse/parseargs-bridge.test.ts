@@ -119,4 +119,67 @@ describe('buildParseArgsConfig', () => {
 			default: true,
 		});
 	});
+
+	describe('known-key sets (strict-options input contract)', () => {
+		it('knownKeys contains canonical names, long aliases, and no-* for booleans', () => {
+			const metadata = walkSchema({
+				verbose: z.boolean(),
+				env: z.string(),
+				replicas: z.number(),
+			});
+
+			const { knownKeys } = buildParseArgsConfig(metadata, {
+				verbose: { alias: ['-v'] },
+				env: { alias: ['-e', '--environment'] },
+			});
+
+			expect(knownKeys).toEqual(
+				new Set(['verbose', 'no-verbose', 'env', 'environment', 'replicas']),
+			);
+		});
+
+		it('booleanKeys contains only canonical names of boolean options', () => {
+			const metadata = walkSchema({
+				verbose: z.boolean(),
+				force: z.boolean().default(false),
+				env: z.string(),
+				replicas: z.number(),
+			});
+
+			const { booleanKeys } = buildParseArgsConfig(metadata, {
+				verbose: { alias: ['-v', '--loud'] },
+			});
+
+			expect(booleanKeys).toEqual(new Set(['verbose', 'force']));
+		});
+
+		it('short aliases do not appear in knownKeys (parseArgs maps them to canonical)', () => {
+			const metadata = walkSchema({ verbose: z.boolean() });
+			const { knownKeys } = buildParseArgsConfig(metadata, {
+				verbose: { alias: ['-v'] },
+			});
+
+			expect(knownKeys.has('v')).toBe(false);
+			expect(knownKeys.has('verbose')).toBe(true);
+		});
+
+		it('empty metadata yields empty sets', () => {
+			const { knownKeys, booleanKeys } = buildParseArgsConfig([]);
+			expect(knownKeys.size).toBe(0);
+			expect(booleanKeys.size).toBe(0);
+		});
+
+		it('existing outputs (parseArgsConfig, longAliasMap) are unchanged by the new sets', () => {
+			const metadata = walkSchema({ env: z.string() });
+			const { parseArgsConfig, longAliasMap } = buildParseArgsConfig(metadata, {
+				env: { alias: ['-e', '--environment'] },
+			});
+
+			expect(parseArgsConfig.options!['env']).toMatchObject({ type: 'string', short: 'e' });
+			expect(parseArgsConfig.options!['environment']).toMatchObject({ type: 'string' });
+			expect(longAliasMap).toEqual({ environment: 'env' });
+			expect(parseArgsConfig.strict).toBe(false);
+			expect(parseArgsConfig.allowNegative).toBe(true);
+		});
+	});
 });
