@@ -255,9 +255,12 @@ registry, in dependency order, and creates git tags — push them afterwards:
 git push --follow-tags
 ```
 
-> **Note:** pnpm resolves `workspace:*` peer dependencies to real version
-> ranges (e.g., `^0.2.0-beta.0`) during publish. You don't need to change them
-> manually.
+> **Note:** the `@runa-cmd/core` peer dependency in `help`/`mcp`/`completions`
+> is an **explicit range** (`^0.2.0-beta.0`), not `workspace:*`. This is
+> deliberate: it prevents changesets from escalating every release to a major
+> bump (see `.changeset/config.json`'s `onlyUpdatePeerDependentsWhenOutOfRange`).
+> When a new minor series starts (e.g., `0.3.0`), widen these ranges manually or
+> the escalation returns. `devDependencies` still use `workspace:*` (unpublished).
 
 ### Post-Publish Verification
 
