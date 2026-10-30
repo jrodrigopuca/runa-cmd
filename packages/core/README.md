@@ -1,16 +1,16 @@
 # @runa-cmd/core
 
-The engine of the Runa CLI framework. Schema-driven, TypeScript-first, zero runtime dependencies.
+The engine of the Runa CLI framework. Schema-driven, TypeScript-first, with zero runtime dependencies besides Zod as a required peer.
 
-Define your CLI with Zod schemas and get full type inference, validation, help text, and more — from a single source of truth.
+Define your CLI with Zod schemas and get full type inference, validation, and metadata for help, completions and MCP plugins — from a single source of truth.
 
 ## Install
 
 ```bash
-pnpm add @runa-cmd/core zod
+pnpm add @runa-cmd/core@beta zod
 ```
 
-> Requires Node 18.3+ (uses `util.parseArgs`). Zod v4 is a peer dependency.
+> Requires Node 24+. Zod v4 is a required peer dependency. Without `@beta`, npm installs the older `0.1.0`.
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ runCLI(greet);
 ```
 
 ```
-$ my-cli greet world
+$ greet world
 Hello, world!
 ```
 
@@ -47,7 +47,7 @@ const deploy = defineCommand({
     description: 'Deploy to an environment',
     options: {
       env: { alias: ['-e'], env: 'DEPLOY_ENV' },
-      replicas: { group: 'Scaling', hint: '<count>' },
+      replicas: { group: 'Scaling' },
     },
   },
   args: {
@@ -95,8 +95,8 @@ Operational metadata lives in `meta.options`, separate from the Zod schema:
 | `alias` | `string[]` | Short flags, e.g. `['-e']` (must include dash prefix) |
 | `env` | `string` | Environment variable name, e.g. `'DEPLOY_ENV'` |
 | `group` | `string` | Group name for help display, e.g. `'Scaling'` |
-| `deprecated` | `string \| boolean` | Deprecation notice |
-| `hint` | `string` | Value hint for help, e.g. `'<count>'` |
+| `deprecated` | `string` | Deprecation notice, shown in help |
+| `hint` | `string` | Reserved: not used yet |
 
 #### Run Context
 
@@ -109,6 +109,7 @@ interface RunContext {
   globalOptions: Record<string, unknown>;
   command: CommandMeta;            // Current command metadata
   rawArgs: string[];               // Original argv
+  rest: string[];                  // Tokens after the first `--`, unvalidated
 }
 ```
 
@@ -151,8 +152,9 @@ cli.run();
 | `plugins` | `PluginConfig[]` | No | Plugins to load |
 | `middleware` | `Middleware[]` | No | Global middleware chain |
 | `globalOptions` | `Record<string, ZodType>` | No | Options available to all commands |
-| `globalMeta` | `Record<string, OptionMeta>` | No | Metadata for global options |
+| `globalMeta` | `{ options?: Record<string, OptionMeta> }` | No | Metadata for global options |
 | `config` | `CLIConfigOptions` | No | Config file loading settings |
+| `strictOptions` | `boolean` | No | Reject unknown options. Default: `true` |
 
 ### `runCLI(command, argv?)`
 
@@ -162,10 +164,12 @@ Shorthand for single-command CLIs. Wraps the command in `defineCLI` and runs it.
 runCLI(myCommand);
 // Equivalent to:
 defineCLI({
-  meta: { name: command.meta.name },
+  meta: { name: command.meta.name, description: command.meta.description },
   commands: { [command.meta.name]: command },
 }).run();
 ```
+
+`runCLI` doesn't accept plugins yet, so it has no `--help` or `--mcp`. To use plugins with a single command, call `defineCLI` directly. In that mode the command name is optional in argv: both `tool hola` and `tool tool hola` work, so a value equal to the command name needs repeating it.
 
 ### `defineMiddleware(handler)`
 
@@ -228,15 +232,15 @@ const schema = getSchema(cliConfig);
 
 ### `jsonLoader()`
 
-Built-in JSON config file loader:
+Built-in JSON config file loader, always active when `config` is set:
 
 ```ts
 const cli = defineCLI({
   // ...
   config: {
-    name: 'my-tool',          // Searches for my-tool.config.json, .my-toolrc.json, etc.
-    loaders: [jsonLoader()],
-    searchPaths: ['./'],       // Where to search
+    name: 'my-tool',          // Searches for my-tool.config.json
+    searchPaths: ['.', '~'],  // Where to search. This is the default
+    // loaders: [...]         // Extra formats. The first match wins
   },
 });
 ```
@@ -254,6 +258,21 @@ import {
 // Throw from run() handlers:
 throw new CommandError('Deployment failed', { code: 'DEPLOY_FAILED', exitCode: 3 });
 ```
+
+#### How a failed run ends
+
+No failure exits silently. The reason goes to stderr, `cleanup` runs, and then the process exits.
+
+| Case | stderr | Exit code |
+|---|---|---|
+| `RunaError` with a message | The message, as written | The error's |
+| Any other error | `Unexpected error in '<command>': <message>` and a hint | 1 |
+| Error without a message | `'<command>' failed without an error message (<type>).` and a hint | The error's, or 1 |
+| `onError` sets `ctx.handled` | Nothing from Runa | The error's, or 1 |
+
+- Throw `CommandError` for messages meant for people using your CLI.
+- Set `RUNA_DEBUG=1` to add the stack trace, error code and cause.
+- `ctx.handled` only stops the default output. If a plugin truly recovered, it sets `process.exitCode = 0` in `onError`.
 
 ### Constants
 
@@ -327,6 +346,8 @@ For example, if an option has `env: 'PORT'` and `z.number().default(3000)`:
 2. `PORT=4000` wins over config file and default
 3. Config file value wins over default
 4. `3000` is the fallback
+
+Known exception: boolean options don't follow this order yet. A boolean with `.default()` ignores env and config, and one without it rejects values from env.
 
 ## Types
 

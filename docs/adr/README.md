@@ -5,7 +5,7 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 ## Reglas
 
 - Antes de una decisión difícil de revertir, leé este índice y citá lo ya decidido.
-- Un ADR aceptado no se edita. Si cambia la decisión, se crea uno nuevo con `Reemplaza: ADR-n`, y en el viejo solo cambia el estado.
+- Un ADR aceptado no se edita. Si cambia la decisión, se crea uno nuevo con `Reemplaza: ADR-n`, y en el viejo solo cambia el estado. La excepción es una línea `Nota` que apunta a un known issue: se quita cuando el problema se resuelve.
 - Un cambio de implementación que respeta la decisión no necesita ADR.
 - "Revisar si" es una condición que se puede comprobar, no una fecha.
 - Si `Implementación` nombra una tarea, la decisión está aceptada pero el código todavía no la refleja.
@@ -41,3 +41,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0024](./0024-kebab-case.md) | Kebab-case en la terminal, camelCase en el código | Aceptada, pendiente de código |
 | [0025](./0025-control-de-mcp-en-el-plugin.md) | El control de tools MCP vive en el plugin | Aceptada, pendiente de código |
 | [0026](./0026-docs-como-fuente-de-verdad.md) | `docs/` como fuente de verdad | Aceptada |
+| [0027](./0027-toda-salida-explica-el-motivo.md) | Toda salida por error explica el motivo | Aceptada |

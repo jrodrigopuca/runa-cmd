@@ -107,7 +107,22 @@ La prioridad es **CLI, env, config y default de Zod**. El detalle está en [pars
 
 Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS` e `INVALID_VARIADIC_POSITION`.
 
-Si `onError` no marca `ctx.handled`, `core` imprime el mensaje en stderr y llama a `process.exit`.
+### Cómo termina una ejecución fallida
+
+Ninguna falla sale en silencio ([ADR-0027](../adr/0027-toda-salida-explica-el-motivo.md)). El motivo se imprime en stderr, corre `cleanup` y recién después sale el proceso.
+
+| Caso | stderr | Exit |
+|---|---|---|
+| `RunaError` con mensaje | El mensaje, tal cual | El del error |
+| Otro error | `Unexpected error in '<comando>': <mensaje>` y una pista para ver el detalle | 1 |
+| Error sin mensaje | `'<comando>' failed without an error message (<tipo>).` y la misma pista | El del error, o 1 |
+| Falla previa a resolver el comando | Igual, con el nombre de la CLI | El del error, o 1 |
+| `onError` marca `ctx.handled` | Nada de Runa | El del error, o 1 |
+
+- **Para quien desarrolla la CLI:** `RUNA_DEBUG=1` agrega stack, código y causa. `RUNA_DEBUG=0` lo desactiva.
+- **Mensajes para quien usa la CLI:** lanzá `CommandError`. Cualquier otro error se considera inesperado.
+- **`ctx.handled`:** solo evita la salida por defecto. Si el plugin se recuperó de verdad, fija `process.exitCode = 0` en `onError`.
+- **Sin `handled`:** `cli.run()` termina el proceso con `process.exit`, incluso si la CLI está embebida.
 
 ## Hooks y middleware
 
@@ -142,4 +157,4 @@ export const verbose = definePlugin({
 
 ## Decisiones
 
-[ADR-0001](../adr/0001-zod-como-fuente-de-verdad.md), [0002](../adr/0002-posicionales-por-orden-de-claves.md), [0003](../adr/0003-parseargs-extrae-zod-valida.md), [0004](../adr/0004-sistema-de-plugins.md), [0006](../adr/0006-ciclo-de-vida-con-hooks.md), [0007](../adr/0007-middleware-onion.md), [0008](../adr/0008-config-merge-en-core.md), [0009](../adr/0009-errores-y-codigos-de-salida.md), [0010](../adr/0010-schema-adapter.md), [0011](../adr/0011-opciones-estrictas.md), [0013](../adr/0013-coercion-numerica.md), [0014](../adr/0014-colision-de-opciones.md).
+[ADR-0001](../adr/0001-zod-como-fuente-de-verdad.md), [0002](../adr/0002-posicionales-por-orden-de-claves.md), [0003](../adr/0003-parseargs-extrae-zod-valida.md), [0004](../adr/0004-sistema-de-plugins.md), [0006](../adr/0006-ciclo-de-vida-con-hooks.md), [0007](../adr/0007-middleware-onion.md), [0008](../adr/0008-config-merge-en-core.md), [0009](../adr/0009-errores-y-codigos-de-salida.md), [0010](../adr/0010-schema-adapter.md), [0011](../adr/0011-opciones-estrictas.md), [0013](../adr/0013-coercion-numerica.md), [0014](../adr/0014-colision-de-opciones.md), [0027](../adr/0027-toda-salida-explica-el-motivo.md).

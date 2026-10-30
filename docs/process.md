@@ -35,7 +35,7 @@ Cada comportamiento que una tarea todavía no entregó se marca con `pending` y 
 - **Al resolverlo:** el caso se pone rojo. La tarea tiene que cambiar `pending` por `it`.
 - **Para ver el fallo real:** `RUNA_SHOW_PENDING=1 pnpm --filter @runa-cmd/core exec vitest run src/__tests__/acceptance`.
 
-Si un comportamiento depende de `process.exit`, stdout o exit codes, probalo acá. Un mock de `process.exit` ya ocultó KI-001.
+Si un comportamiento depende de `process.exit`, stdout o exit codes, probalo acá. Un mock de `process.exit` ya ocultó que `cleanup` no corría ante errores.
 
 ## Qué actualizar al terminar
 
@@ -59,7 +59,7 @@ Si un comportamiento depende de `process.exit`, stdout o exit codes, probalo ac�
 | Rutas | Un documento nombra un archivo de `packages/` que no existe |
 | ADRs | Un ADR no figura en el índice, o le faltan campos |
 | Backlog | Hay IDs repetidos, o un estado o valor de v1 inválido |
-| Known issues | Hay IDs repetidos, o una fila sin tarea |
+| Known issues | Hay IDs repetidos, una fila sin tarea, o un documento cita un issue que ya no existe |
 | Commits | Un commit cambia `packages/*/src` sin tocar también `docs/` y tests |
 
 **Lo que no se controla:** ninguna herramienta puede demostrar que el documento y la prueba se escribieron antes del código. El control comprueba que los tres lleguen juntos. El orden depende de la disciplina y de la revisión. Un test que nace fallando deja constancia cuando se hace visible, por eso [T-001](./backlog.md#t-001-tests-de-aceptación-con-procesos-reales) marca los casos pendientes como fallo esperado.

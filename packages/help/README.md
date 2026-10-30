@@ -7,7 +7,7 @@ Three layers of customization: zero-config defaults, theme colors, or build your
 ## Install
 
 ```bash
-pnpm add @runa-cmd/help
+pnpm add @runa-cmd/help@beta
 ```
 
 > Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.
@@ -32,7 +32,9 @@ $ my-tool --help
 $ my-tool deploy --help
 ```
 
-The plugin adds a `--help` / `-h` global flag. When triggered, it renders formatted help and exits.
+The plugin adds a `--help` / `-h` global flag. When triggered, it renders formatted help and stops the run, so `cleanup` still happens and the process ends with code 0.
+
+If any command declares its own `-h` option, the CLI refuses to start with an `OPTION_COLLISION` error. Use another alias for now.
 
 ## Three Layers
 
@@ -256,7 +258,7 @@ The built-in renderer (`defaultRenderer`) produces output with these sections (e
 4. **Options** — Named options table, grouped by `group` metadata
 5. **Commands** — Subcommands table
 
-The renderer is subcommand-aware: `my-tool deploy --help` shows help for the `deploy` command specifically.
+The renderer is subcommand-aware: `my-tool deploy --help` shows help for the `deploy` command specifically. Today this only looks at the first level, so `my-tool db migrate --help` shows the help for `db`. In a single-command CLI, use `my-tool my-tool --help` to reach the full command help.
 
 ## Types
 

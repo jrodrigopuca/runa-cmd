@@ -37,6 +37,7 @@ describe('defineCLI + lifecycle integration', () => {
 
 	afterEach(() => {
 		restoreMocks(spies);
+		process.exitCode = undefined;
 	});
 
 	describe('command resolution', () => {

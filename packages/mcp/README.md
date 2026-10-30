@@ -7,7 +7,7 @@ Every command becomes an MCP tool. Zod schemas pass directly to the MCP SDK — 
 ## Install
 
 ```bash
-pnpm add @runa-cmd/mcp
+pnpm add @runa-cmd/mcp@beta
 ```
 
 > Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.
@@ -88,8 +88,20 @@ The plugin tracks which keys are args vs options internally, so it can reconstru
 | Command has `output` schema | `structuredContent` with typed data |
 | Command returns a string (no output schema) | `text` content |
 | Command returns an object (no output schema) | `text` content (JSON stringified) |
-| Command returns void | `text: "ok"` |
+| Command returns void | `text`: `Command '<name>' executed successfully.` |
 | Command throws | `isError: true` with error message |
+
+## Current Limitations
+
+These matter when you expose a real CLI to an agent:
+
+- **Return your result, don't print it.** What a command writes with `console.log` doesn't reach the agent, and it mixes with the protocol on stdout.
+- **Every command becomes a tool.** There's no way yet to exclude one or mark it as destructive, so don't enable `--mcp` on a CLI whose commands an agent shouldn't run.
+- **Tools run `run()` directly.** Middleware, hooks, environment variables and config files don't apply, and `globalOptions` is empty. Don't rely on middleware for authorization.
+- **`runCLI` doesn't accept plugins.** Use `defineCLI`, even with a single command.
+- **stdio is the only transport.**
+
+The [backlog](https://github.com/jrodrigopuca/runa-cmd/blob/main/docs/backlog.md) tracks the fixes.
 
 ## API
 

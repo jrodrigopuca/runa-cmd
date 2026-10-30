@@ -7,4 +7,3 @@
 - **Costo aceptado:** un hook que corta debe seguir la convención; `core` no puede impedir un `process.exit` ajeno.
 - **Revisar si:** aparece un caso real que no entra en estos siete hooks.
 - **Código:** `packages/core/src/lifecycle.ts`, `packages/core/src/cli.ts`
-- **Nota:** `cleanup` todavía no corre ante un error no manejado; ver KI-001 en [known issues](../known-issues.md).

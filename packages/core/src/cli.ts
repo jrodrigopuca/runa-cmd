@@ -13,7 +13,7 @@
 import { parseArgs } from 'node:util';
 import type { ZodType } from 'zod';
 import { loadAndMergeConfig } from './config/merge.js';
-import { CommandNotFoundError, RunaError } from './errors.js';
+import { CommandNotFoundError, describeFailure, isDebugEnabled, RunaError } from './errors.js';
 import { getSchema } from './introspect.js';
 import { createHookRegistry } from './lifecycle.js';
 import { buildParseArgsConfig } from './parse/parseargs-bridge.js';
@@ -164,6 +164,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 	};
 
 	let lifecycleError: Error | undefined;
+	let failureExitCode: number | undefined;
 	let commandResult: unknown;
 
 	try {
@@ -430,7 +431,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		// ─── afterRun ─────────────────────────────────────
 		await hookRegistry.emit('afterRun', hookCtx);
 	} catch (err) {
-		lifecycleError = err instanceof Error ? err : new Error(String(err));
+		lifecycleError = err instanceof Error ? err : new Error(err == null ? '' : String(err));
 
 		// ─── onError ──────────────────────────────────────
 		hookCtx.error = lifecycleError;
@@ -444,11 +445,13 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			console.error('runa: onError handler threw:', hookErr);
 		}
 
-		// If error was not handled, fall back to default behavior
+		failureExitCode = lifecycleError instanceof RunaError ? lifecycleError.exitCode : 1;
+
+		// Report BEFORE cleanup: the reason stays visible even if cleanup hangs.
+		// `handled` means the plugin owns the output, not that the run succeeded.
 		if (!hookCtx.handled) {
-			const exitCode = lifecycleError instanceof RunaError ? lifecycleError.exitCode : 1;
-			console.error(lifecycleError.message);
-			process.exit(exitCode);
+			const subject = hookCtx.command?.name ?? config.meta.name;
+			console.error(describeFailure(lifecycleError, subject, isDebugEnabled()));
 		}
 	} finally {
 		// ─── cleanup (ALWAYS runs) ────────────────────────
@@ -468,6 +471,16 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 				}
 			}
 		}
+	}
+
+	// Exit only after cleanup: process.exit inside catch would skip the finally.
+	if (failureExitCode === undefined) return;
+
+	if (hookCtx.handled) {
+		// A plugin that truly recovered keeps control by setting process.exitCode.
+		process.exitCode ??= failureExitCode;
+	} else {
+		process.exit(failureExitCode);
 	}
 }
 

@@ -25,9 +25,9 @@
 |---|---|---|---|---|
 | 1. Base confiable | T-001 | Tests de aceptación con procesos reales | Requerido | Hecho |
 | | T-002 | Type tests en CI | Requerido | Hecho |
-| | T-003 | Documentación fiel al estado real | Requerido | Pendiente |
+| | T-003 | Documentación fiel al estado real | Requerido | Hecho |
 | | T-004 | Spec y decisiones visibles en el repo | Requerido | Hecho |
-| | T-101 | `cleanup` corre también ante errores | Requerido | Pendiente |
+| | T-101 | `cleanup` corre también ante errores | Requerido | Hecho |
 | | T-102 | Booleanos desde env y config | Requerido | Pendiente |
 | | T-103 | Errores de uso consistentes | Requerido | Pendiente |
 | | T-104 | Avisar cuando falta el valor de una opción | Requerido | Pendiente |
@@ -84,7 +84,7 @@
 ### T-003 Documentación fiel al estado real
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como dev que evalúa Runa, quiero que la documentación diga la verdad, para no descubrir las diferencias usando el producto.
 - **Criterios de aceptación:**
   - Los paquetes figuran como beta, no como `Stable`.
@@ -93,6 +93,9 @@
   - Los ejemplos muestran invocaciones reales de un comando único, sin `my-cli greet world`.
   - El README de MCP describe la respuesta real de un comando sin retorno.
   - "Zero runtime deps" aclara que Zod es un peer obligatorio.
+  - Las instrucciones instalan la versión documentada (`@beta`), y funcionan en un proyecto limpio.
+  - Los READMEs no prometen funciones que no existen ni tipos distintos de los reales.
+  - Las limitaciones que afectan el primer uso están visibles y enlazan a los known issues.
 
 ### T-004 Spec y decisiones visibles en el repo
 
@@ -108,12 +111,24 @@
 ### T-101 `cleanup` corre también ante errores
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Descripción:** como autor de plugins, quiero que `cleanup` corra siempre, para liberar recursos aunque el comando falle. Hoy `process.exit` en `cli.ts:451` se ejecuta antes del `finally`.
+- **Estado:** Hecho
+- **Descripción:** como autor de plugins, quiero que `cleanup` corra siempre, para liberar recursos aunque el comando falle. Hoy `process.exit` en `cli.ts:451` se ejecuta antes del `finally`. Además, ninguna salida por error debe ser silenciosa: quien usa la CLI necesita saber qué pasó, y quien la desarrolla, cómo investigarlo.
 - **Criterios de aceptación:**
-  - Dado un comando que lanza un error no manejado, el hook `cleanup` y el `cleanup()` del plugin corren antes de terminar.
-  - El exit code y el mensaje original no cambian.
-  - Un test con proceso real lo cubre, sin mockear `process.exit`.
+  - Dado un error no manejado, el hook `cleanup` y el `cleanup()` del plugin corren antes de terminar, incluso si son asíncronos.
+  - Los exit codes no cambian, salvo el de `handled`.
+  - Toda salida por error explica el motivo:
+
+  | Caso | stderr | Exit |
+  |---|---|---|
+  | `RunaError` con mensaje | El mensaje, tal cual | El del error |
+  | Error inesperado | `Unexpected error in '<comando>': <mensaje>`, y cómo ver el detalle | 1 |
+  | Error sin mensaje | `'<comando>' failed without an error message (<tipo>)`, y cómo ver el detalle | El del error, o 1 |
+  | Falla antes de resolver el comando | Igual, usando el nombre de la CLI | El del error, o 1 |
+  | Un plugin marca `ctx.handled` | Nada de Runa; la salida es del plugin | El del error, o 1 |
+  | El plugin se recuperó y fijó `process.exitCode = 0` | Nada de Runa | 0 |
+
+  - `RUNA_DEBUG=1` agrega stack, código de error y causa. Sin esa variable, no se muestra stack.
+  - Lo cubren tests con proceso real, sin mockear `process.exit`.
 
 ### T-102 Booleanos desde env y config
 

@@ -89,3 +89,46 @@ export class CommandError extends RunaError {
 		}
 	}
 }
+
+// ─── Exit reason (internal, not exported from the barrel) ───
+
+const DEBUG_HINT = 'Run with RUNA_DEBUG=1 for details.';
+
+/** Whether RUNA_DEBUG asks for diagnostic details. */
+export function isDebugEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+	const value = env.RUNA_DEBUG;
+	return Boolean(value) && value !== '0';
+}
+
+function debugDetails(error: Error): string[] {
+	const details = [error.stack ?? error.name];
+	if (error instanceof RunaError) details.push(`Code: ${error.code}`);
+	if (error.cause !== undefined) {
+		const cause = error.cause instanceof Error ? error.cause.stack : String(error.cause);
+		details.push(`Caused by: ${cause}`);
+	}
+	return details;
+}
+
+/**
+ * The reason shown when a CLI exits on an error: never empty, so no failure
+ * is silent. Typed errors were written for the person running the CLI and
+ * appear as they are. Anything else is a defect in the CLI, so it names the
+ * failing command and tells the developer how to see more.
+ *
+ * @param subject - The running command, or the CLI when none was resolved yet
+ */
+export function describeFailure(error: Error, subject: string, debug: boolean): string {
+	const message = error.message.trim();
+	const isExpected = error instanceof RunaError && message !== '';
+
+	let reason = error.message;
+	if (!isExpected) {
+		reason = message
+			? `Unexpected error in '${subject}': ${message}`
+			: `'${subject}' failed without an error message (${error.name}).`;
+	}
+
+	if (debug) return [reason, ...debugDetails(error)].join('\n');
+	return isExpected ? reason : `${reason}\n${DEBUG_HINT}`;
+}

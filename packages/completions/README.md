@@ -7,11 +7,13 @@ Your Zod schema is the source of truth: enum values become completion candidates
 ## Install
 
 ```bash
-pnpm add @runa-cmd/completions
+pnpm add @runa-cmd/completions@beta
 ```
 
 > Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.
 > Zero runtime dependencies.
+
+Adding this plugin to a CLI with a single command turns it into a multi-command CLI, so the command name becomes required in argv.
 
 ## Quick Start
 

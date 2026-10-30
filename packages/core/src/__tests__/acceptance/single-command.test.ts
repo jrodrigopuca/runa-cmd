@@ -9,26 +9,12 @@
  * it must then replace `pending` with `it`. To see the real failure of every
  * pending case, run with RUNA_SHOW_PENDING=1.
  */
-import { spawnSync } from 'node:child_process';
-import { readdirSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
-
-const here = dirname(fileURLToPath(import.meta.url));
-const fixture = join(here, 'fixtures', 'tool.js');
-const srcDir = join(here, '..', '..');
-const builtEntry = join(srcDir, '..', 'dist', 'index.js');
+import { assertFreshBuild, runFixture } from './harness.js';
 
 const pending = process.env.RUNA_SHOW_PENDING ? it : it.fails;
 
-function tool(...argv: string[]) {
-	const { status, stdout, stderr } = spawnSync(process.execPath, [fixture, ...argv], {
-		encoding: 'utf8',
-		env: { ...process.env, NO_COLOR: '1' },
-	});
-	return { status, stdout, stderr };
-}
+const tool = (...argv: string[]) => runFixture('tool.js', argv);
 
 /** The values run() received; fails with stderr when the command did not run. */
 function received(...argv: string[]) {
@@ -44,24 +30,8 @@ function expectFullHelp(result: ReturnType<typeof tool>) {
 	expect(result.stdout).toContain('--output');
 }
 
-/** Newest modification time among non-test sources. */
-function newestSource(dir: string): number {
-	return Math.max(
-		...readdirSync(dir, { withFileTypes: true }).map((entry) => {
-			const path = join(dir, entry.name);
-			if (entry.name === '__tests__') return 0;
-			return entry.isDirectory() ? newestSource(path) : statSync(path).mtimeMs;
-		}),
-	);
-}
-
-// `pending` also "passes" when the fixture cannot start, so a broken or stale
-// build must stop the suite instead of hiding behind expected failures.
 beforeAll(() => {
-	const built = statSync(builtEntry, { throwIfNoEntry: false });
-	if (!built || built.mtimeMs < newestSource(srcDir)) {
-		throw new Error('Acceptance tests run against dist/, which is missing or stale: pnpm build');
-	}
+	assertFreshBuild();
 	const smoke = tool('hola');
 	if (smoke.status !== 0) {
 		throw new Error(`The fixture does not run:\n${smoke.stderr}`);

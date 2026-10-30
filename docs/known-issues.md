@@ -16,7 +16,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
-| KI-001 | `cleanup` y `plugin.cleanup()` no corren ante un error no manejado | Observado | `process.exit` antes del `finally`, en `packages/core/src/cli.ts:451`; los tests lo mockean | [T-101](./backlog.md#t-101-cleanup-corre-también-ante-errores) |
 | KI-002 | Un booleano con `.default()` ignora env y config sin avisar: `MINIFY=true` da `false` | Observado | `packages/core/src/parse/parseargs-bridge.ts:82` pasa el default a `parseArgs`, que le gana a env y config | [T-102](./backlog.md#t-102-booleanos-desde-env-y-config) |
 | KI-003 | MCP pierde la salida de `console.log`, y esa salida ensucia el canal JSON-RPC | Observado | `packages/mcp/src/server.ts:91` ejecuta `run()` sin capturar stdout | [T-301](./backlog.md#t-301-capturar-la-salida-de-los-comandos) |
 | KI-004 | Una CLI de un comando con `runCLI` no puede usar `--mcp` ni ningún plugin | Leído | `packages/core/src/cli.ts:528` no recibe plugins | [T-203](./backlog.md#t-203-runcli-con-plugins-y-modo-raíz-explícito) |
@@ -53,4 +52,3 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | KI-026 | `--minify=false` da exit 2 | Observado | `parseArgs` no estricto lo entrega como string | [T-103](./backlog.md#t-103-errores-de-uso-consistentes) |
 | KI-027 | La ayuda muestra `[default: false]`, y el error repite el nombre del argumento | Observado | `render.ts` y `resolve.ts` | [T-106](./backlog.md#t-106-mensajes-y-ayuda-sin-ruido) |
 | KI-028 | Los tres plugins declaran `version: '0.1.0'` fijo | Leído | Literal en cada `plugin.ts` | [T-107](./backlog.md#t-107-versión-real-en-los-plugins) |
-| KI-029 | Los READMEs dicen `Stable`, 518 tests, Node 18.3+ y `text: "ok"` | Leído | Quedaron desactualizados | [T-003](./backlog.md#t-003-documentación-fiel-al-estado-real) |

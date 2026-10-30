@@ -25,11 +25,14 @@ flowchart TD
     P --> Q["Hook: afterRun"]
     Q --> Z
     B & C & D & E & G & I & J & K & L & M & N & O & P & Q -->|error| R["Hook: onError"]
-    R -->|handled| Z
-    R -->|"sin manejar"| S["stderr y process.exit"]
+    R -->|handled| Y["cleanup"]
+    R -->|"sin manejar"| S["Motivo por stderr"]
+    S --> X["cleanup"]
+    X --> W["process.exit con el código del error"]
+    Y --> V["process.exitCode, si el plugin no lo fijó"]
 ```
 
-> **Problema conocido:** `process.exit` corre dentro del `catch`, así que en esa rama el `finally` no llega a ejecutarse y `cleanup` no corre (KI-001 en [known issues](../known-issues.md)). El diagrama muestra el comportamiento actual.
+El motivo se imprime antes de `cleanup`, para que siga visible aunque `cleanup` se cuelgue. Los mensajes están en [core](../components/core.md#cómo-termina-una-ejecución-fallida).
 
 ## Hooks
 
@@ -50,7 +53,7 @@ flowchart TD
 - Si `onError` falla, se registra en stderr y decide el error original.
 - Cada handler de `cleanup` corre aunque otro falle.
 - `cleanup()` de los plugins corre en orden topológico inverso.
-- Marcar `ctx.handled = true` evita la salida por defecto, y `cli.run()` termina sin error.
+- Marcar `ctx.handled = true` evita la salida por defecto, y `cli.run()` resuelve sin forzar la salida, pero el exit code sigue siendo de falla.
 - `hookCtx.rawArgs` se reduce durante el parseo, mientras `run()` recibe el argv original en `ctx.rawArgs`.
 
 ## Resolver el comando

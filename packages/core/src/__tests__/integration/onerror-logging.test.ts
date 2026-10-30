@@ -24,6 +24,7 @@ describe('onError/cleanup hook failure logging', () => {
 	afterEach(() => {
 		exitSpy.mockRestore();
 		errorSpy.mockRestore();
+		process.exitCode = undefined;
 	});
 
 	function stderrText(): string {
@@ -100,9 +101,10 @@ describe('onError/cleanup hook failure logging', () => {
 		await cli.run(['boom']);
 
 		expect(stderrText()).not.toContain('onError handler threw:');
-		// Existing handled semantics untouched: no default output, no exit
+		// handled: no default output and no forced exit, but the run still failed
 		expect(stderrText()).not.toContain('original boom');
 		expect(exitSpy).not.toHaveBeenCalled();
+		expect(process.exitCode).toBe(1);
 	});
 
 	it('logs a throwing cleanup hook without affecting the command result', async () => {

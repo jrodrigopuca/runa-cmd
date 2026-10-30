@@ -134,6 +134,15 @@ function checkKnownIssues(taskIds) {
 		if (!task) fail('docs/known-issues.md', `${id} has no task`);
 		else if (!taskIds.has(task)) fail('docs/known-issues.md', `${id} points to unknown ${task}`);
 	}
+	return seen;
+}
+
+/** A closed issue leaves its row, so anything still citing it is stale. */
+function checkIssueReferences(file, text, issues) {
+	if (file.startsWith(RESEARCH)) return;
+	for (const [id] of text.matchAll(/\bKI-\d{3}\b/g)) {
+		if (!issues.has(id)) fail(rel(file), `cites closed or unknown issue ${id}`);
+	}
 }
 
 function checkChange(label, files, message) {
@@ -168,13 +177,14 @@ const option = (name) => {
 	return index === -1 ? undefined : args[index + 1];
 };
 
+const issues = checkKnownIssues(checkBacklog());
 for (const file of [...walk(DOCS).filter((path) => path.endsWith('.md')), join(ROOT, 'AGENTS.md')]) {
 	const text = withoutFences(readFileSync(file, 'utf8'));
 	checkLinks(file, text);
 	checkPaths(file, text);
+	checkIssueReferences(file, text, issues);
 }
 checkAdrs();
-checkKnownIssues(checkBacklog());
 
 if (args.includes('--staged')) {
 	const files = git('diff', '--cached', '--name-only').split('\n').filter(Boolean);

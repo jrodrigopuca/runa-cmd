@@ -1,8 +1,10 @@
 # Runa
 
-**Schema-driven, TypeScript-first CLI framework.**
+**One command, for people and agents.**
 
-One Zod schema powers your types, help text, validation, MCP tools, and shell completions. No duplication. No drift.
+Runa is a schema-driven, TypeScript-first CLI framework. One Zod schema powers your types, validation, help text, shell completions and MCP tools. No duplication. No drift.
+
+> **Beta.** The API can still change before 1.0: see the [status](./docs/status.md), the [known issues](./docs/known-issues.md) and the [roadmap](./docs/backlog.md).
 
 ```ts
 import { defineCommand, runCLI } from '@runa-cmd/core';
@@ -23,7 +25,7 @@ runCLI(greet);
 ```
 
 ```
-$ my-cli greet world --shout
+$ greet world --shout
 HELLO, WORLD!
 ```
 
@@ -35,8 +37,8 @@ HELLO, WORLD!
 | Built-in validation | Manual | Manual | **Zod v4** |
 | Help generation | Built-in (basic) | Built-in (basic) | **Themeable plugin** |
 | MCP server mode | No | No | **One flag: `--mcp`** |
-| Shell completions | Manual | Plugin | **Auto-generated** |
-| Zero runtime deps (core) | No | No | **Yes** |
+| Shell completions | Manual | Built-in | **Auto-generated** |
+| Zero runtime deps (core) | Yes | No | **Yes**, with Zod as a required peer |
 | Middleware (onion model) | No | Middleware | **Yes** |
 | Plugin system | No | No | **Yes** |
 | Config file loading | No | No | **Built-in** |
@@ -45,20 +47,24 @@ HELLO, WORLD!
 
 | Package | Description | Status |
 |---|---|---|
-| [`@runa-cmd/core`](./packages/core) | CLI engine — commands, parsing, plugins, middleware | Stable |
-| [`@runa-cmd/help`](./packages/help) | Themeable help output with layout primitives | Stable |
-| [`@runa-cmd/mcp`](./packages/mcp) | Model Context Protocol server mode | Stable |
-| [`@runa-cmd/completions`](./packages/completions) | Shell completions (bash, zsh, fish) | Stable |
+| [`@runa-cmd/core`](./packages/core) | CLI engine — commands, parsing, plugins, middleware | Beta |
+| [`@runa-cmd/help`](./packages/help) | Themeable help output with layout primitives | Beta |
+| [`@runa-cmd/mcp`](./packages/mcp) | Model Context Protocol server mode | Beta |
+| [`@runa-cmd/completions`](./packages/completions) | Shell completions (bash, zsh, fish) | Beta |
 
 ## Quick Start
 
+Requires Node 24+. This README describes the `beta` release: without `@beta`, npm installs the older `0.1.0`.
+
 ```bash
-pnpm add @runa-cmd/core zod
+pnpm add @runa-cmd/core@beta zod
 # Optional:
-pnpm add @runa-cmd/help  # Themeable --help
-pnpm add @runa-cmd/mcp   # --mcp server mode
-pnpm add @runa-cmd/completions  # Shell completions
+pnpm add @runa-cmd/help@beta  # --help and --version are not built in yet
+pnpm add @runa-cmd/mcp@beta   # --mcp server mode
+pnpm add @runa-cmd/completions@beta  # Shell completions
 ```
+
+Zod is required: it's how you define commands.
 
 ### Single Command
 
@@ -86,6 +92,8 @@ const build = defineCommand({
 
 runCLI(build);
 ```
+
+`runCLI` doesn't accept plugins yet, so a CLI built with it has no `--help` or `--mcp`. To use plugins with a single command, use `defineCLI` as shown below. `--version` isn't available yet in any mode. Both are planned for 1.0.
 
 ### Multi-Command with Plugins
 
@@ -136,6 +144,8 @@ $ my-tool --mcp           # Start as MCP server for AI agents
 $ my-tool completions bash  # Generate shell completions
 ```
 
+For MCP, commands should **return** their result: today, what a command prints with `console.log` doesn't reach the agent. See the [MCP package](./packages/mcp#current-limitations) for the details.
+
 ## Core Concepts
 
 ### Schema is the Source of Truth
@@ -146,7 +156,7 @@ Every command defines its interface with Zod schemas. From that single definitio
 - **Validation** — Args and options validated automatically with clear error messages
 - **Help text** — `z.describe()` becomes the help description
 - **MCP tools** — Each command becomes an MCP tool with the same schema
-- **Shell completions** — Enum values, file paths, all from the schema
+- **Shell completions** — Commands, flags and enum values, all from the schema
 
 ### Five Layers of Complexity
 
@@ -209,16 +219,27 @@ POSIX-aligned exit codes with typed error classes:
 | `CommandNotFoundError` | 127 | Unknown command (with "did you mean?" suggestions) |
 | `CommandError` | configurable | Thrown from `run()` handlers |
 
+No failure exits silently. Typed errors print as written, so throw `CommandError` for messages meant for people using your CLI. Any other error prints the failing command and a hint:
+
+```
+Unexpected error in 'deploy': kaboom
+Run with RUNA_DEBUG=1 for details.
+```
+
+`RUNA_DEBUG=1` adds the stack trace, error code and cause. `cleanup` always runs before the process exits.
+
 ### Value Resolution Order
 
 ```
 CLI args > Environment variables > Config file values > Zod defaults
 ```
 
+Known exception: boolean options don't follow this order yet ([KI-002](./docs/known-issues.md#severidad-alta)).
+
 ## Architecture
 
 ```
-@runa-cmd/core          Zero runtime deps. Parsing via node:util.parseArgs.
+@runa-cmd/core          Zero runtime deps, Zod as a peer. Parsing via node:util.parseArgs.
     ├── @runa-cmd/help   Themeable help. Layout primitives for custom UIs.
     ├── @runa-cmd/mcp    MCP server via @modelcontextprotocol/sdk.
     └── @runa-cmd/completions  Shell completions (bash, zsh, fish).
@@ -239,7 +260,10 @@ Everything about the project lives in [`docs/`](./docs/README.md): [status](./do
 # Install dependencies
 pnpm install
 
-# Run all tests (518 tests across 4 packages)
+# Build first: tests and packages use the compiled output
+pnpm build
+
+# Run all tests
 pnpm test
 
 # Type check
@@ -248,8 +272,8 @@ pnpm typecheck
 # Lint & format
 pnpm lint:fix
 
-# Build
-pnpm build
+# Check the documentation
+pnpm docs:check
 
 # Clean
 pnpm clean
