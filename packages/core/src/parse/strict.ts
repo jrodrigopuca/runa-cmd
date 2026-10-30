@@ -7,8 +7,10 @@
  * the SINGLE place the check lives — disabling it is one call-site guard
  * (`CLIConfig.strictOptions: false`).
  */
+import type { ParseArgsConfig } from 'node:util';
 import { ValidationError } from '../errors.js';
 import { findSuggestion } from '../suggest.js';
+import type { OptionMeta } from '../types.js';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -36,10 +38,58 @@ function renderFlag(key: string): string {
 
 // ─── Public API ─────────────────────────────────────────────
 
+/** The option tokens of a `parseArgs({ tokens: true })` result. */
+export interface OptionToken {
+	kind: string;
+	name?: string;
+	value?: string;
+	inlineValue?: boolean;
+}
+
+export interface AssertOptionValuesInput {
+	tokens: OptionToken[] | undefined;
+	/** Options registered in the parseArgs config */
+	options: NonNullable<ParseArgsConfig['options']>;
+	longAliasMap: Record<string, string>;
+	optionMeta?: Record<string, OptionMeta>;
+}
+
+/** Every token that would be read as one of these options. */
+function registeredFlags(options: AssertOptionValuesInput['options']): Set<string> {
+	const flags = new Set<string>();
+	for (const [name, option] of Object.entries(options)) {
+		flags.add(`--${name}`);
+		if (option.type === 'boolean') flags.add(`--no-${name}`);
+		if (option.short) flags.add(`-${option.short}`);
+	}
+	return flags;
+}
+
+/**
+ * Throw a ValidationError (exit 2) on the first option that takes a value but
+ * got none. Tokens tell the cases apart: with `--tag --force`, parseArgs takes
+ * `--force` as the value and silently drops the flag, while `--tag=--force`
+ * and `--tag -text` are values the user meant.
+ */
+export function assertOptionValues(input: AssertOptionValuesInput): void {
+	const { tokens = [], options, longAliasMap, optionMeta } = input;
+	const flags = registeredFlags(options);
+
+	for (const { kind, name: key = '', value, inlineValue } of tokens) {
+		if (kind !== 'option' || options[key]?.type !== 'string') continue;
+		if (value !== undefined && (inlineValue || !flags.has(value))) continue;
+
+		const name = longAliasMap[key] ?? key;
+		const names = [...(optionMeta?.[name]?.alias ?? []), `--${name}`].join(', ');
+		throw new ValidationError([
+			{ code: 'custom', message: `Option ${names} requires a value`, path: [] },
+		]);
+	}
+}
+
 /**
  * Throw a ValidationError (exit 2) on the first parseArgs-produced key that
- * is not registered, with a did-you-mean suggestion when a candidate is
- * within Levenshtein distance ≤ 3.
+ * is not registered, with a did-you-mean suggestion when a candidate is close.
  */
 export function assertKnownOptions(input: AssertKnownOptionsInput): void {
 	const { producedKeys, knownKeys, booleanKeys, suggestionCandidates } = input;

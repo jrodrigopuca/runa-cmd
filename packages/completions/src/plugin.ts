@@ -39,7 +39,6 @@ export function completionsPlugin(opts: CompletionsPluginOptions = {}): PluginCo
 	return definePlugin({
 		meta: {
 			name: '@runa-cmd/completions',
-			version: '0.1.0',
 			description: 'Shell completion script generation',
 		},
 		capabilities: { addCommands: true },

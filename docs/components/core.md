@@ -46,7 +46,7 @@ runCLI(deploy);
 ```
 
 - **`args`:** posicionales, por orden de claves. Solo el último puede ser `z.array()`.
-- **`options`:** Zod puro. Alias, env, grupo, deprecación y hint van en `meta.options`.
+- **`options`:** Zod puro. Alias, env, grupo y deprecación van en `meta.options`. `deprecated` se muestra en la ayuda y avisa por stderr al usar la opción.
 - **`output`:** si existe, `run()` debe cumplirlo; se comprueba en compilación y en ejecución.
 - **`run(ctx)`:** recibe `args`, `options`, `globalOptions`, `command`, `rawArgs` y `rest`.
 
@@ -79,7 +79,8 @@ interface CLIConfig {
 | `packages/core/src/errors.ts` | Jerarquía de errores |
 | `packages/core/src/suggest.ts` | Levenshtein y sugerencias |
 | `packages/core/src/parse/parseargs-bridge.ts` | Traduce schema a configuración de `parseArgs` |
-| `packages/core/src/parse/strict.ts` | Rechaza flags desconocidas |
+| `packages/core/src/parse/strict.ts` | Rechaza flags desconocidas y opciones sin valor |
+| `packages/core/src/parse/deprecated.ts` | Genera los avisos de opciones deprecadas |
 | `packages/core/src/parse/resolve.ts` | Mapea posicionales, resuelve valores, valida y humaniza errores |
 | `packages/core/src/parse/schema-walker.ts` | Convierte schemas en `ParamMetadata` |
 | `packages/core/src/parse/schema-adapter.ts` | Interfaz de introspección |
@@ -105,7 +106,7 @@ La prioridad es **CLI, env, config y default de Zod**. El detalle está en [pars
 | `RunaError` | Configurable | 1 por defecto |
 | Otro error | No aplica | 1 |
 
-Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS` e `INVALID_VARIADIC_POSITION`.
+Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION` e `INVALID_OUTPUT`.
 
 ### Cómo termina una ejecución fallida
 
@@ -113,7 +114,7 @@ Ninguna falla sale en silencio ([ADR-0027](../adr/0027-toda-salida-explica-el-mo
 
 | Caso | stderr | Exit |
 |---|---|---|
-| `RunaError` con mensaje | El mensaje, tal cual | El del error |
+| `RunaError` con mensaje | El mensaje, tal cual; en errores de uso, además `Run '<cli> --help' for usage.` si la CLI tiene ayuda | El del error |
 | Otro error | `Unexpected error in '<comando>': <mensaje>` y una pista para ver el detalle | 1 |
 | Error sin mensaje | `'<comando>' failed without an error message (<tipo>).` y la misma pista | El del error, o 1 |
 | Falla previa a resolver el comando | Igual, con el nombre de la CLI | El del error, o 1 |
@@ -146,6 +147,8 @@ export const verbose = definePlugin({
 });
 ```
 
+Solo `meta.name` es obligatorio. `meta.version` es informativo: Runa no lo lee, y la compatibilidad con `core` se declara en `peerDependencies`.
+
 `PluginAPI` ofrece `addCommand`, `addGlobalOption`, `addMiddleware`, `hook`, `getSchema` y `getCommands`. Ver [carga de plugins](../flows/plugin-setup.md).
 
 ## Tests
@@ -157,4 +160,4 @@ export const verbose = definePlugin({
 
 ## Decisiones
 
-[ADR-0001](../adr/0001-zod-como-fuente-de-verdad.md), [0002](../adr/0002-posicionales-por-orden-de-claves.md), [0003](../adr/0003-parseargs-extrae-zod-valida.md), [0004](../adr/0004-sistema-de-plugins.md), [0006](../adr/0006-ciclo-de-vida-con-hooks.md), [0007](../adr/0007-middleware-onion.md), [0008](../adr/0008-config-merge-en-core.md), [0009](../adr/0009-errores-y-codigos-de-salida.md), [0010](../adr/0010-schema-adapter.md), [0011](../adr/0011-opciones-estrictas.md), [0013](../adr/0013-coercion-numerica.md), [0014](../adr/0014-colision-de-opciones.md), [0027](../adr/0027-toda-salida-explica-el-motivo.md), [0028](../adr/0028-coercion-booleana.md).
+[ADR-0001](../adr/0001-zod-como-fuente-de-verdad.md), [0002](../adr/0002-posicionales-por-orden-de-claves.md), [0003](../adr/0003-parseargs-extrae-zod-valida.md), [0004](../adr/0004-sistema-de-plugins.md), [0006](../adr/0006-ciclo-de-vida-con-hooks.md), [0007](../adr/0007-middleware-onion.md), [0008](../adr/0008-config-merge-en-core.md), [0009](../adr/0009-errores-y-codigos-de-salida.md), [0010](../adr/0010-schema-adapter.md), [0011](../adr/0011-opciones-estrictas.md), [0013](../adr/0013-coercion-numerica.md), [0014](../adr/0014-colision-de-opciones.md), [0027](../adr/0027-toda-salida-explica-el-motivo.md), [0028](../adr/0028-coercion-booleana.md), [0029](../adr/0029-cada-campo-tiene-efecto.md).

@@ -7,9 +7,21 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import { defineCommand } from '../command.js';
-import type { InferArgs, InferOptions, RunReturn } from '../types.js';
+import { definePlugin } from '../plugin.js';
+import type { InferArgs, InferOptions, OptionMeta, PluginMeta, RunReturn } from '../types.js';
 
 describe('type-level tests', () => {
+	describe('public metadata', () => {
+		it('a plugin only needs a name', () => {
+			definePlugin({ meta: { name: 'minimal' }, setup() {} });
+			expectTypeOf<PluginMeta['version']>().toEqualTypeOf<string | undefined>();
+		});
+
+		it('OptionMeta has no hint', () => {
+			expectTypeOf<OptionMeta>().not.toHaveProperty('hint');
+		});
+	});
+
 	describe('defineCommand() inference', () => {
 		it('infers string arg type', () => {
 			defineCommand({

@@ -36,6 +36,19 @@ if (process.env.PLUGIN_HANDLES || process.env.PLUGIN_RECOVERS) {
 	);
 }
 
+// Stands in for any plugin that gives the CLI a --help option.
+if (process.env.HAS_HELP) {
+	plugins.push(
+		definePlugin({
+			meta: { name: 'help-option' },
+			capabilities: { addGlobalOptions: true },
+			setup(api) {
+				api.addGlobalOption('help', z.boolean().default(false));
+			},
+		}),
+	);
+}
+
 if (process.env.PLUGIN_CRASHES) {
 	plugins.push(
 		definePlugin({
@@ -50,6 +63,7 @@ if (process.env.PLUGIN_CRASHES) {
 await defineCLI({
 	meta: { name: 'app' },
 	plugins,
+	globalOptions: { profile: z.string().optional() },
 	commands: {
 		plain: failing('plain', () => {
 			throw new Error('kaboom');
@@ -73,9 +87,48 @@ await defineCLI({
 			throw 'just text';
 		}),
 		strict: defineCommand({
-			meta: { name: 'strict', description: 'strict' },
-			options: { port: z.number().default(1) },
+			meta: {
+				name: 'strict',
+				description: 'strict',
+				options: { label: { alias: ['-l', '--tag'] } },
+			},
+			options: {
+				port: z.number().default(1),
+				label: z.string().optional(),
+				level: z.enum(['low', 'high']).optional(),
+			},
 			run() {},
+		}),
+		required: defineCommand({
+			meta: { name: 'required', description: 'required' },
+			args: { target: z.string().describe('Where to go') },
+			options: { token: z.string().describe('Secret token') },
+			run() {},
+		}),
+		'bad-output': defineCommand({
+			meta: { name: 'bad-output', description: 'bad output' },
+			output: z.object({ url: z.string() }),
+			run: () => ({ url: 1 }),
+		}),
+		legacy: defineCommand({
+			meta: {
+				name: 'legacy',
+				description: 'legacy',
+				options: {
+					force: {
+						alias: ['--yes'],
+						env: 'LEGACY_FORCE',
+						deprecated: 'Use --confirm instead',
+					},
+					port: { deprecated: 'Set it in the config file' },
+				},
+			},
+			options: {
+				force: z.boolean().default(false),
+				confirm: z.boolean().default(false),
+				port: z.number().optional(),
+			},
+			run: ({ options }) => console.log(JSON.stringify(options)),
 		}),
 	},
 }).run();

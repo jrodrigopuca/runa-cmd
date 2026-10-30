@@ -26,7 +26,7 @@ function makeSimpleCLI(): CLIConfig {
 			name: 'deploy',
 			description: 'Deploy the app',
 			options: {
-				env: { alias: ['-e', '--environment'], env: 'DEPLOY_ENV', hint: 'staging|prod' },
+				env: { alias: ['-e', '--environment'], env: 'DEPLOY_ENV' },
 				replicas: { group: 'Scaling' },
 			},
 		},
@@ -83,7 +83,7 @@ describe('getSchema', () => {
 		expect(greet.options[0]!.defaultValue).toBe(false);
 	});
 
-	it('includes option metadata (alias, env, hint, group)', () => {
+	it('includes option metadata (alias, env, group)', () => {
 		const config = makeSimpleCLI();
 		const schema = getSchema(config);
 
@@ -92,7 +92,6 @@ describe('getSchema', () => {
 
 		expect(envOpt.alias).toEqual(['-e', '--environment']);
 		expect(envOpt.env).toBe('DEPLOY_ENV');
-		expect(envOpt.hint).toBe('staging|prod');
 		expect(envOpt.type).toBe('enum');
 		expect(envOpt.enumValues).toEqual(['staging', 'prod']);
 

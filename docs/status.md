@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-30, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. La fase 1 del [backlog](./backlog.md) está en curso, con T-001, T-002, T-003, T-004, T-101 y T-102 cerradas. Los cambios de T-101 y T-102 están en `main`, pendientes de la siguiente beta.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. La fase 1 del [backlog](./backlog.md) está cerrada, y sigue la fase 2. Sus cambios están en `main`, pendientes de la siguiente beta.
 
 ## Versiones
 
@@ -22,9 +22,9 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 706 pasan: core 385, help 206, completions 82, mcp 33 |
-| Aceptación con procesos reales | 49 de 59 casos pasan; los otros 10 son fallos esperados, cada uno con su tarea |
-| Cobertura de `core` | 95,53% de líneas, 83,97% de ramas; el mínimo exigido es 80% de líneas |
+| Tests | 773 pasan: core 451, help 207, completions 82, mcp 33 |
+| Aceptación con procesos reales | 80 de 89 casos pasan; los otros 9 son fallos esperados, cada uno con su tarea |
+| Cobertura de `core` | 95,1% de líneas, 84,97% de ramas; el mínimo exigido es 80% de líneas |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
 
 ## Dónde estamos
@@ -42,7 +42,6 @@ La 1.0 depende de que la API no necesite cambios incompatibles durante una venta
 
 | Tarea | Pregunta |
 |---|---|
-| [T-108](./backlog.md#t-108-resolver-metadatos-sin-efecto) | Implementar o quitar `hint`, y definir `deprecated` |
 | [T-303](./backlog.md#t-303-definir-qué-corre-en-una-llamada-mcp) | Si una llamada MCP corre el mismo pipeline que la CLI |
 | [T-504](./backlog.md#t-504-grupo-de-versiones-de-los-paquetes) | Si los paquetes siguen versionándose juntos |
 

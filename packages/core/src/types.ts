@@ -15,10 +15,8 @@ export interface OptionMeta {
 	env?: string;
 	/** Help group name, e.g. 'Deploy' */
 	group?: string;
-	/** Deprecation message, e.g. 'Use --confirm instead' */
+	/** Deprecation message, shown in help and when the option is used, e.g. 'Use --confirm instead' */
 	deprecated?: string;
-	/** Value hint for help, e.g. 'staging|prod' */
-	hint?: string;
 }
 
 // ─── Command Metadata ───────────────────────────────────────
@@ -147,7 +145,8 @@ export interface CLI {
 
 export interface PluginMeta {
 	name: string;
-	version: string;
+	/** Informative only: Runa does not read it. Compatibility belongs in peerDependencies */
+	version?: string;
 	description?: string;
 	/** Names of other plugins this depends on */
 	dependencies?: string[];
@@ -267,7 +266,6 @@ export interface OptionSchema {
 	env?: string;
 	group?: string;
 	deprecated?: string;
-	hint?: string;
 	enumValues?: string[];
 }
 

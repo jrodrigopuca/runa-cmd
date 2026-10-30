@@ -22,7 +22,6 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 	return definePlugin({
 		meta: {
 			name: '@runa-cmd/mcp',
-			version: '0.1.0',
 			description: 'MCP server generation from CLI commands',
 		},
 		capabilities: { addGlobalOptions: true },

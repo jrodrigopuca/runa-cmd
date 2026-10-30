@@ -24,7 +24,6 @@ export function helpPlugin(opts: HelpPluginOptions = {}): PluginConfig {
 	return definePlugin({
 		meta: {
 			name: '@runa-cmd/help',
-			version: '0.1.0',
 			description: 'Built-in help system with layout primitives and theming',
 		},
 		capabilities: { addGlobalOptions: true },

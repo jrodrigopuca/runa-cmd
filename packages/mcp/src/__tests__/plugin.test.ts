@@ -54,7 +54,6 @@ describe('mcpPlugin', () => {
 		const plugin = mcpPlugin();
 
 		expect(plugin.meta.name).toBe('@runa-cmd/mcp');
-		expect(plugin.meta.version).toBe('0.1.0');
 		expect(plugin.capabilities?.addGlobalOptions).toBe(true);
 		expect(typeof plugin.setup).toBe('function');
 	});

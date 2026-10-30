@@ -80,7 +80,7 @@ const deploy = defineCommand({
 | `meta.name` | `string` | Yes | Command name |
 | `meta.description` | `string` | Yes | One-line description |
 | `meta.version` | `string` | No | Command version |
-| `meta.options` | `Record<string, OptionMeta>` | No | Per-option metadata (alias, env, group, deprecated, hint) |
+| `meta.options` | `Record<string, OptionMeta>` | No | Per-option metadata (alias, env, group, deprecated) |
 | `args` | `Record<string, ZodType>` | No | Positional arguments (insertion order matters) |
 | `options` | `Record<string, ZodType>` | No | Named options (--flag style) |
 | `output` | `ZodType` | No | Output schema — if set, `run()` must return matching data |
@@ -95,8 +95,7 @@ Operational metadata lives in `meta.options`, separate from the Zod schema:
 | `alias` | `string[]` | Short flags, e.g. `['-e']` (must include dash prefix) |
 | `env` | `string` | Environment variable name, e.g. `'DEPLOY_ENV'` |
 | `group` | `string` | Group name for help display, e.g. `'Scaling'` |
-| `deprecated` | `string` | Deprecation notice, shown in help |
-| `hint` | `string` | Reserved: not used yet |
+| `deprecated` | `string` | Deprecation notice, shown in help and as a stderr warning when the option is used |
 
 #### Run Context
 
@@ -270,6 +269,7 @@ No failure exits silently. The reason goes to stderr, `cleanup` runs, and then t
 | Error without a message | `'<command>' failed without an error message (<type>).` and a hint | The error's, or 1 |
 | `onError` sets `ctx.handled` | Nothing from Runa | The error's, or 1 |
 
+- Usage errors end with `Run '<cli> --help' for usage.` when the CLI has a `--help` option.
 - Throw `CommandError` for messages meant for people using your CLI.
 - Set `RUNA_DEBUG=1` to add the stack trace, error code and cause.
 - `ctx.handled` only stops the default output. If a plugin truly recovered, it sets `process.exitCode = 0` in `onError`.

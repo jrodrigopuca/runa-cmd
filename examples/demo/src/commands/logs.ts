@@ -34,8 +34,8 @@ export const logs = defineCommand({
 		options: {
 			env: { alias: ['-e'], env: 'DEPLOY_ENV', group: 'Filter' },
 			follow: { alias: ['-f'], group: 'Output' },
-			tail: { alias: ['-n'], group: 'Output', hint: 'lines' },
-			since: { group: 'Filter', hint: '5m, 1h, 24h' },
+			tail: { alias: ['-n'], group: 'Output' },
+			since: { group: 'Filter' },
 		},
 	},
 	args: {

@@ -16,10 +16,11 @@ import { loadAndMergeConfig } from './config/merge.js';
 import { CommandNotFoundError, describeFailure, isDebugEnabled, RunaError } from './errors.js';
 import { getSchema } from './introspect.js';
 import { createHookRegistry } from './lifecycle.js';
+import { deprecationWarnings } from './parse/deprecated.js';
 import { buildParseArgsConfig } from './parse/parseargs-bridge.js';
 import { resolveValues } from './parse/resolve.js';
 import { walkSchema } from './parse/schema-walker.js';
-import { assertKnownOptions } from './parse/strict.js';
+import { assertKnownOptions, assertOptionValues } from './parse/strict.js';
 import type { PluginHostRefs } from './plugin.js';
 import {
 	resolvePlugins,
@@ -99,6 +100,22 @@ function resolveCommand(commands: CommandTree, tokens: string[]): ResolvedComman
 	}
 
 	throw new CommandNotFoundError(tokens.slice(0, consumed + 1).join(' '), suggestion);
+}
+
+// ─── Output Validation ──────────────────────────────────────
+
+/** A command returning the wrong shape is an author defect, reported by field. */
+function assertValidOutput(command: Command, output: ZodType, result: unknown): void {
+	const parsed = output.safeParse(result);
+	if (parsed.success) return;
+
+	const issues = parsed.error.issues.map(
+		(issue) => `  ${issue.path.join('.') || '(root)'}: ${issue.message}`,
+	);
+	throw new RunaError(
+		`Command '${command.meta.name}' returned invalid output:\n${issues.join('\n')}`,
+		{ code: 'INVALID_OUTPUT', exitCode: 1 },
+	);
 }
 
 // ─── Middleware Composition ─────────────────────────────────
@@ -301,18 +318,32 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			const globalParseResult = parseArgs({
 				...parseArgsConfig,
 				args: globalArgv,
+				tokens: true,
+			});
+			const globalValues = globalParseResult.values as Record<string, unknown>;
+
+			assertOptionValues({
+				tokens: globalParseResult.tokens,
+				options: registeredOptions,
+				longAliasMap,
+				optionMeta: mutableGlobalMeta.options,
 			});
 
 			const { parsedOptions } = resolveValues({
-				parseArgsResult: {
-					values: globalParseResult.values as Record<string, unknown>,
-					positionals: [],
-				},
+				parseArgsResult: { values: globalValues, positionals: [] },
 				longAliasMap,
 				schemas: { options: mutableGlobalOptions },
 				meta: { options: mutableGlobalMeta.options },
 			});
 			parsedGlobalOptions = parsedOptions;
+
+			for (const warning of deprecationWarnings({
+				provided: Object.keys(globalValues),
+				longAliasMap,
+				optionMeta: mutableGlobalMeta.options,
+			})) {
+				console.error(warning);
+			}
 
 			// Pass remaining argv (command tokens only) to command parsing
 			hookCtx.rawArgs = commandArgv;
@@ -336,16 +367,20 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		// ─── Parse command args + options ──────────────────
 		const optionMetadata = command.options ? walkSchema(command.options) : [];
 
+		const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
+
 		const { parseArgsConfig, longAliasMap, knownKeys, booleanKeys } = buildParseArgsConfig(
 			optionMetadata,
-			command.meta.options as Record<string, OptionMeta> | undefined,
-			!!command.args,
+			commandOptionMeta,
+			true, // Extra positionals are rejected in resolveValues, as a usage error
 		);
 
 		const cmdParseResult = parseArgs({
 			...parseArgsConfig,
 			args: remainingArgv,
+			tokens: true,
 		});
+		const commandValues = cmdParseResult.values as Record<string, unknown>;
 
 		// ─── Strict options check ─────────────────────────
 		if (config.strictOptions !== false) {
@@ -369,12 +404,19 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			}
 
 			assertKnownOptions({
-				producedKeys: Object.keys(cmdParseResult.values),
+				producedKeys: Object.keys(commandValues),
 				knownKeys,
 				booleanKeys,
 				suggestionCandidates,
 			});
 		}
+
+		assertOptionValues({
+			tokens: cmdParseResult.tokens,
+			options: parseArgsConfig.options ?? {},
+			longAliasMap,
+			optionMeta: commandOptionMeta,
+		});
 
 		// Load config values if configured
 		let configValues: Record<string, unknown> | undefined;
@@ -384,7 +426,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 
 		const { parsedArgs, parsedOptions } = resolveValues({
 			parseArgsResult: {
-				values: cmdParseResult.values as Record<string, unknown>,
+				values: commandValues,
 				positionals: cmdParseResult.positionals,
 			},
 			longAliasMap,
@@ -392,9 +434,18 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 				args: command.args,
 				options: command.options,
 			},
-			meta: { options: command.meta.options as Record<string, OptionMeta> | undefined },
+			meta: { options: commandOptionMeta },
 			configValues,
 		});
+
+		for (const warning of deprecationWarnings({
+			provided: Object.keys(commandValues),
+			longAliasMap,
+			optionMeta: commandOptionMeta,
+			configValues,
+		})) {
+			console.error(warning);
+		}
 
 		hookCtx.args = parsedArgs;
 		hookCtx.options = parsedOptions;
@@ -420,7 +471,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 
 			// Validate output schema if present
 			if (command.output) {
-				command.output.parse(commandResult);
+				assertValidOutput(command, command.output, commandResult);
 			}
 		};
 
@@ -451,7 +502,8 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		// `handled` means the plugin owns the output, not that the run succeeded.
 		if (!hookCtx.handled) {
 			const subject = hookCtx.command?.name ?? config.meta.name;
-			console.error(describeFailure(lifecycleError, subject, isDebugEnabled()));
+			const helpCommand = 'help' in mutableGlobalOptions ? config.meta.name : undefined;
+			console.error(describeFailure(lifecycleError, subject, isDebugEnabled(), helpCommand));
 		}
 	} finally {
 		// ─── cleanup (ALWAYS runs) ────────────────────────

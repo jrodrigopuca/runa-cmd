@@ -45,8 +45,9 @@ export function levenshtein(a: string, b: string): number {
 }
 
 /**
- * Find the best suggestion for a misspelled name.
- * Returns undefined if no close match exists (distance > 3).
+ * Find the best suggestion for a misspelled name, or undefined if none is
+ * close. The allowed distance grows with the input, up to 3: on a short name,
+ * a distance of 3 means nothing in common, and a wrong suggestion misleads.
  */
 export function findSuggestion(input: string, candidates: string[]): string | undefined {
 	let best: string | undefined;
@@ -60,6 +61,6 @@ export function findSuggestion(input: string, candidates: string[]): string | un
 		}
 	}
 
-	// Only suggest if reasonably close
-	return bestDist <= 3 ? best : undefined;
+	const maxDistance = Math.min(3, Math.floor(input.length / 2));
+	return bestDist <= maxDistance ? best : undefined;
 }

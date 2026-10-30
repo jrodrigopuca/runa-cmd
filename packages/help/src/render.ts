@@ -228,7 +228,7 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 	const descParts: string[] = [];
 	if (opt.description) descParts.push(opt.description);
 	if (opt.required) descParts.push(fg('(required)', theme.secondary));
-	if (opt.defaultValue !== undefined)
+	if (opt.defaultValue !== undefined && opt.defaultValue !== false)
 		descParts.push(fg(`[default: ${String(opt.defaultValue)}]`, theme.muted));
 	if (opt.deprecated) descParts.push(fg(`(deprecated: ${opt.deprecated})`, theme.warning));
 	if (opt.env) descParts.push(fg(`[env: ${opt.env}]`, theme.muted));

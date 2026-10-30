@@ -105,16 +105,20 @@ describe('usage errors', () => {
 		expect(result.stderr).toContain("Did you mean '--output'?");
 	});
 
-	pending('a missing value exits 2 and says so (T-104)', () => {
+	it('a missing value exits 2 and says so', () => {
 		const result = tool('hola', '-e');
 		expect(result.status).toBe(2);
 		expect(result.stderr).toMatch(/--ecl requires a value/);
 	});
 
-	pending('an unrelated flag exits 2 without a suggestion (T-105)', () => {
+	it('an unrelated flag exits 2 without a suggestion', () => {
 		const result = tool('hola', '--nope');
 		expect(result.status).toBe(2);
 		expect(result.stderr).toContain('Unknown option: --nope');
 		expect(result.stderr).not.toContain('Did you mean');
+	});
+
+	pending('a usage error points to --help (T-204)', () => {
+		expect(tool('hola', '--nope').stderr).toContain("Run 'tool --help' for usage.");
 	});
 });

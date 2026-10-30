@@ -81,7 +81,6 @@ describe('helpPlugin — structure', () => {
 	it('returns a valid PluginConfig', () => {
 		const plugin = helpPlugin();
 		expect(plugin.meta.name).toBe('@runa-cmd/help');
-		expect(plugin.meta.version).toBe('0.1.0');
 		expect(plugin.capabilities?.addGlobalOptions).toBe(true);
 		expect(typeof plugin.setup).toBe('function');
 	});

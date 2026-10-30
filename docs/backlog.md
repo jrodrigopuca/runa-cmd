@@ -29,12 +29,12 @@
 | | T-004 | Spec y decisiones visibles en el repo | Requerido | Hecho |
 | | T-101 | `cleanup` corre también ante errores | Requerido | Hecho |
 | | T-102 | Booleanos desde env y config | Requerido | Hecho |
-| | T-103 | Errores de uso consistentes | Requerido | Pendiente |
-| | T-104 | Avisar cuando falta el valor de una opción | Requerido | Pendiente |
-| | T-105 | Sugerencias de typo proporcionales | Requerido | Pendiente |
-| | T-106 | Mensajes y ayuda sin ruido | Requerido | Pendiente |
-| | T-107 | Versión real en los plugins | Requerido | Pendiente |
-| | T-108 | Resolver metadatos sin efecto | Requerido | Decisión pendiente |
+| | T-103 | Errores de uso consistentes | Requerido | Hecho |
+| | T-104 | Avisar cuando falta el valor de una opción | Requerido | Hecho |
+| | T-105 | Sugerencias de typo proporcionales | Requerido | Hecho |
+| | T-106 | Mensajes y ayuda sin ruido | Requerido | Hecho |
+| | T-107 | Versión real en los plugins | Requerido | Hecho |
+| | T-108 | Resolver metadatos sin efecto | Requerido | Hecho |
 | 2. Comando único | T-201 | `--version` integrado | Requerido | Pendiente |
 | | T-202 | `--` llena posicionales | Requerido | Pendiente |
 | | T-203 | `runCLI` con plugins y modo raíz explícito | Requerido | Pendiente |
@@ -149,7 +149,7 @@
 ### T-103 Errores de uso consistentes
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de scripts, quiero que todo error de uso salga con el mismo código, para poder distinguirlo de un fallo del comando.
 - **Criterios de aceptación:**
   - Un posicional de más en un comando sin args da exit 2, con el mismo formato que `Unexpected positional argument`.
@@ -159,16 +159,17 @@
 ### T-104 Avisar cuando falta el valor de una opción
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como usuario de una CLI, quiero que me digan que falta un valor, para no recibir un error de tipo engañoso.
 - **Criterios de aceptación:**
   - `tool hola -e`, `--label` y `--offset` dan exit 2 y un mensaje como `Option -e, --ecl requires a value`.
-  - Vale para enum, string y number.
+  - Vale para enum, string y number, también en opciones globales.
+  - `--tag --force` no toma la flag como valor. `--tag=--force`, `--tag -texto` y `--offset -1` siguen funcionando.
 
 ### T-105 Sugerencias de typo proporcionales
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como usuario de una CLI, quiero sugerencias relevantes, porque una mala confunde más que ninguna.
 - **Criterios de aceptación:**
   - `--nope` no sugiere `--size`, y `--help` no sugiere `--ecl`.
@@ -178,31 +179,31 @@
 ### T-106 Mensajes y ayuda sin ruido
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como usuario de una CLI, quiero errores y ayuda breves, con el siguiente paso claro.
 - **Criterios de aceptación:**
   - La ayuda omite `[default: false]` en booleanos.
   - El error de posicional dice `Missing required argument: <content>`, sin repetir el nombre.
-  - Los errores de uso terminan con `Run '<tool> --help' for usage.`.
+  - Si la CLI tiene `--help`, los errores de uso terminan con `Run '<tool> --help' for usage.`. Si no la tiene, la pista no aparece.
 
 ### T-107 Versión real en los plugins
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Descripción:** como mantenedor, quiero que los plugins informen su versión real. Hoy help, MCP y completions declaran `0.1.0` fijo.
+- **Estado:** Hecho
+- **Descripción:** como mantenedor, quiero que `meta.version` de un plugin no diga algo falso. Help, MCP y completions declaraban `0.1.0` fijo, y nadie lee ese campo.
 - **Criterios de aceptación:**
-  - Los tres plugins reportan la versión de su paquete, o el campo deja de ser obligatorio.
-  - Un test falla si la versión se desincroniza.
+  - `PluginMeta.version` es opcional, y un test de tipos lo comprueba.
+  - Help, MCP y completions no declaran una versión.
 
 ### T-108 Resolver metadatos sin efecto
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
-- **Descripción:** como dev, quiero que cada campo de la API haga algo. `meta.hint` no se usa, y `deprecated` no avisa al ejecutar.
-- **Decisión:** implementar o quitar cada campo antes de congelar la API.
+- **Estado:** Hecho
+- **Descripción:** como dev, quiero que cada campo de la API haga algo ([ADR-0029](./adr/0029-cada-campo-tiene-efecto.md)).
 - **Criterios de aceptación:**
-  - `hint` se muestra en la ayuda o sale del tipo público.
-  - Usar una opción con `deprecated` avisa por stderr, o el campo se documenta como informativo.
+  - `hint` sale del tipo público.
+  - Usar una opción con `deprecated` desde CLI, env o config avisa por stderr, y el comando corre normalmente.
+  - La demo no escribe ese aviso a mano.
 
 ## Fase 2: comando único
 
@@ -261,6 +262,7 @@
   - Un `run()` con `console.log` devuelve ese texto como resultado de la tool.
   - Stdout del servidor solo emite JSON-RPC válido, también con `process.stdout.write`.
   - Si hay `output`, se conserva `structuredContent`.
+  - Un `output` inválido llega al agente como un mensaje legible, sin JSON crudo de Zod.
   - Dos llamadas concurrentes no mezclan sus salidas.
   - Stderr del comando no llega al resultado por defecto, o la regla queda documentada.
 

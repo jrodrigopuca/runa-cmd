@@ -296,6 +296,25 @@ describe('defaultRenderer — command', () => {
 		expect(output).toContain('[default: 3000]');
 	});
 
+	it('omits the implicit false default, and keeps a meaningful true', () => {
+		const schema: CommandSchema = {
+			name: 'serve',
+			description: 'Start',
+			fullPath: ['serve'],
+			args: [],
+			options: [
+				{ name: 'watch', type: 'boolean', required: false, defaultValue: false },
+				{ name: 'cache', type: 'boolean', required: false, defaultValue: true },
+			],
+			hasOutput: false,
+		};
+
+		const output = renderRaw(schema);
+
+		expect(output).not.toContain('[default: false]');
+		expect(output).toContain('[default: true]');
+	});
+
 	it('renders deprecated marker', () => {
 		const output = renderRaw(commandWithArgs);
 		expect(output).toContain('(deprecated: use --deadline instead)');

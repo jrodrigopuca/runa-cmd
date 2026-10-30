@@ -209,7 +209,7 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
 			return {
 				code: 'custom' as const,
-				message: `Missing required argument: <${name}>${param?.description ? ` — ${param.description}` : ''}`,
+				message: `Missing required argument: <${name}>`,
 				path: issue.path,
 			};
 		}
@@ -243,7 +243,7 @@ function humanizeOptionIssues(
 		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
 			return {
 				code: 'custom' as const,
-				message: `Missing required option: --${name}${param?.description ? ` — ${param.description}` : ''}`,
+				message: `Missing required option: --${name}`,
 				path: issue.path,
 			};
 		}
@@ -296,16 +296,18 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 	// ─── Args resolution ─────────────────────────────────
 	let parsedArgs: Record<string, unknown> = {};
 
-	if (schemas.args && Object.keys(schemas.args).length > 0) {
-		const rawArgs = mapPositionals(parseArgsResult.positionals, schemas.args);
+	// Mapped even without declared args: that's what rejects extra positionals.
+	const argSchemas = schemas.args ?? {};
+	const rawArgs = mapPositionals(parseArgsResult.positionals, argSchemas);
 
+	if (Object.keys(argSchemas).length > 0) {
 		// Build Zod object schema for args and validate
-		const argsZodSchema = z.object(schemas.args as Record<string, ZodType>);
+		const argsZodSchema = z.object(argSchemas);
 		try {
 			parsedArgs = argsZodSchema.parse(rawArgs) as Record<string, unknown>;
 		} catch (err) {
 			if (err instanceof ZodError) {
-				throw new ValidationError(humanizeArgIssues(err.issues, schemas.args));
+				throw new ValidationError(humanizeArgIssues(err.issues, argSchemas));
 			}
 			throw err;
 		}

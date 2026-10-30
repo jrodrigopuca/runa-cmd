@@ -33,16 +33,19 @@ export class RunaError extends Error {
 
 // ─── ValidationError ────────────────────────────────────────
 
+/** Prefixes the path, unless the message already names it as `<name>` or `--name`. */
+function formatIssue(issue: ZodIssue): string {
+	const name = String(issue.path.at(-1));
+	const isNamed = issue.message.includes(`<${name}>`) || issue.message.includes(`--${name}`);
+	if (issue.path.length === 0 || isNamed) return issue.message;
+	return `${issue.path.join('.')}: ${issue.message}`;
+}
+
 export class ValidationError extends RunaError {
 	readonly issues: ZodIssue[];
 
 	constructor(issues: ZodIssue[]) {
-		const message = issues
-			.map((issue) => {
-				const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : '';
-				return `${path}${issue.message}`;
-			})
-			.join('\n');
+		const message = issues.map(formatIssue).join('\n');
 
 		super(message, { code: 'VALIDATION_ERROR', exitCode: 2 });
 		this.name = 'ValidationError';
@@ -117,10 +120,17 @@ function debugDetails(error: Error): string[] {
  * failing command and tells the developer how to see more.
  *
  * @param subject - The running command, or the CLI when none was resolved yet
+ * @param helpCommand - What to run for help, only if this CLI actually has it
  */
-export function describeFailure(error: Error, subject: string, debug: boolean): string {
+export function describeFailure(
+	error: Error,
+	subject: string,
+	debug: boolean,
+	helpCommand?: string,
+): string {
 	const message = error.message.trim();
 	const isExpected = error instanceof RunaError && message !== '';
+	const isUsageError = error instanceof ValidationError || error instanceof CommandNotFoundError;
 
 	let reason = error.message;
 	if (!isExpected) {
@@ -129,6 +139,9 @@ export function describeFailure(error: Error, subject: string, debug: boolean): 
 			: `'${subject}' failed without an error message (${error.name}).`;
 	}
 
-	if (debug) return [reason, ...debugDetails(error)].join('\n');
-	return isExpected ? reason : `${reason}\n${DEBUG_HINT}`;
+	const lines = [reason];
+	if (isUsageError && helpCommand) lines.push(`Run '${helpCommand} --help' for usage.`);
+	if (debug) lines.push(...debugDetails(error));
+	else if (!isExpected) lines.push(DEBUG_HINT);
+	return lines.join('\n');
 }

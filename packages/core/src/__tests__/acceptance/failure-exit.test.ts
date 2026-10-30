@@ -98,6 +98,131 @@ describe('RUNA_DEBUG', () => {
 	});
 });
 
+describe('usage errors', () => {
+	it('an extra positional on a command without args exits 2', () => {
+		const result = app(['strict', 'extra']);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain("Unexpected positional argument: 'extra'");
+		expect(result.stderr).not.toContain('Unexpected error');
+	});
+
+	it.each([
+		['a string option', ['strict', '--label'], 'Option -l, --tag, --label requires a value'],
+		['its short alias', ['strict', '-l'], 'Option -l, --tag, --label requires a value'],
+		['its long alias', ['strict', '--tag'], 'Option -l, --tag, --label requires a value'],
+		['a number option', ['strict', '--port'], 'Option --port requires a value'],
+		['an enum option', ['strict', '--level'], 'Option --level requires a value'],
+		['a global option', ['strict', '--profile'], 'Option --profile requires a value'],
+	])('a missing value on %s says so', (_case, argv, message) => {
+		const result = app(argv);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain(message);
+		expect(result.stderr).not.toContain('Invalid value');
+	});
+
+	it.each([
+		['a long flag', ['strict', '--label', '--port', '3']],
+		['a short flag', ['strict', '--label', '-l']],
+		['a long alias', ['strict', '--label', '--tag']],
+	])('does not swallow %s as a value', (_case, argv) => {
+		const result = app(argv);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain('--label requires a value');
+	});
+
+	it('does not swallow a negated boolean as a value', () => {
+		const result = app(['legacy', '--port', '--no-force']);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain('--port requires a value');
+	});
+
+	it.each([
+		['text starting with a dash', ['strict', '--label', '-text']],
+		['a negative number', ['strict', '--port', '-1']],
+		['an explicit value equal to a flag', ['strict', '--label=--port']],
+	])('accepts %s', (_case, argv) => {
+		const result = app(argv);
+		expect(result.status, result.stderr).toBe(0);
+	});
+
+	it('names a missing argument once, without the description', () => {
+		expect(app(['required', '--token', 'x']).stderr.trim()).toBe(
+			'Missing required argument: <target>',
+		);
+	});
+
+	it('names a missing option once, without the description', () => {
+		expect(app(['required', 'home']).stderr.trim()).toBe('Missing required option: --token');
+	});
+});
+
+describe('the next step after a usage error', () => {
+	const HELP_HINT = "Run 'app --help' for usage.";
+
+	it.each([
+		['an unknown option', ['strict', '--nope']],
+		['an unknown command', ['missing']],
+		['a missing argument', ['required', '--token', 'x']],
+	])('points to --help after %s when the CLI has help', (_case, argv) => {
+		expect(app(argv, { HAS_HELP: '1' }).stderr.trim().endsWith(HELP_HINT)).toBe(true);
+	});
+
+	it('does not point to a --help the CLI does not have', () => {
+		expect(app(['strict', '--nope']).stderr).not.toContain('--help');
+	});
+
+	it('does not point to --help when the command itself failed', () => {
+		expect(app(['expected'], { HAS_HELP: '1' }).stderr).not.toContain('--help');
+	});
+});
+
+describe('invalid output', () => {
+	it('names the command and the field, without dumping Zod JSON', () => {
+		const result = app(['bad-output']);
+		expect(result.status).toBe(1);
+		expect(result.stderr).toContain("Command 'bad-output' returned invalid output");
+		expect(result.stderr).toContain('url:');
+		expect(result.stderr).not.toContain('"code"');
+	});
+});
+
+describe('deprecated options', () => {
+	const WARNING = 'Warning: --force is deprecated. Use --confirm instead';
+
+	it('warns on stderr and still runs the command', () => {
+		const result = app(['legacy', '--force']);
+		expect(result.status).toBe(0);
+		expect(result.stderr).toContain(WARNING);
+		expect(result.stdout).toContain('"force":true');
+		expect(result.stdout).not.toContain('deprecated');
+	});
+
+	it('warns when the option arrives through an alias', () => {
+		expect(app(['legacy', '--yes']).stderr).toContain(WARNING);
+	});
+
+	it('warns when the option arrives from the environment', () => {
+		expect(app(['legacy'], { LEGACY_FORCE: 'true' }).stderr).toContain(WARNING);
+	});
+
+	it('warns when negated, because the option was still used', () => {
+		expect(app(['legacy', '--no-force']).stderr).toContain(WARNING);
+	});
+
+	it('stays quiet when the option is not used', () => {
+		expect(app(['legacy', '--confirm']).stderr).toBe('');
+	});
+
+	it('warns once per deprecated option', () => {
+		const { stderr } = app(['legacy', '--force', '--port', '1']);
+		expect(stderr.match(/Warning:/g)).toHaveLength(2);
+	});
+
+	it('does not warn when the command never starts', () => {
+		expect(app(['legacy', '--force', '--nope']).stderr).not.toContain('Warning');
+	});
+});
+
 describe('errors handled by a plugin', () => {
 	it('keeps a failing exit code and leaves the output to the plugin', () => {
 		const result = app(['expected'], { PLUGIN_HANDLES: '1' });

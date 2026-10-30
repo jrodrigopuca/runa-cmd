@@ -108,7 +108,7 @@ describe('assertKnownOptions', () => {
 		).toThrow(/Unknown option: --no-verbose/);
 	});
 
-	it('appends a did-you-mean suggestion within distance 3', () => {
+	it('appends a did-you-mean suggestion for a close match', () => {
 		expect(() =>
 			assertKnownOptions(
 				input({
@@ -120,7 +120,7 @@ describe('assertKnownOptions', () => {
 		).toThrow("Unknown option: --forse. Did you mean '--force'?");
 	});
 
-	it('omits the suggestion clause beyond distance 3', () => {
+	it('omits the suggestion clause when nothing is close', () => {
 		try {
 			assertKnownOptions(
 				input({

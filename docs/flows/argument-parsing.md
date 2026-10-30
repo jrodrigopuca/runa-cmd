@@ -30,8 +30,10 @@ flowchart TD
 3. **Resolver el comando.** Ver [ciclo de vida](./cli-lifecycle.md).
 4. **Configurar `parseArgs`.** `buildParseArgsConfig` declara booleanos como `boolean` y todo lo demás como `string`, con `strict: false` y `allowNegative: true`.
 5. **Rechazar desconocidas.** `assertKnownOptions` compara las claves producidas con las registradas, salvo que `strictOptions` sea `false`.
-6. **Cargar config**, si `config` está definido.
-7. **Resolver y validar.** `resolveValues` mapea, mezcla y llama a Zod.
+6. **Detectar valores faltantes.** `assertOptionValues` revisa los tokens de `parseArgs`. Una opción sin valor, o seguida de una flag registrada, es un error de uso. `--tag=--force` y `--tag -texto` son valores válidos.
+7. **Cargar config**, si `config` está definido.
+8. **Resolver y validar.** `resolveValues` mapea, mezcla y llama a Zod.
+9. **Avisar deprecaciones.** `deprecationWarnings` escribe en stderr por cada opción deprecada que se haya usado, desde cualquier fuente.
 
 ## Prioridad de valores
 
@@ -58,7 +60,7 @@ Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte q
 - El último `z.array()` recibe el resto.
 - Si sobran y no hay variádico, es un error de uso.
 - Si faltan, se omiten y Zod decide.
-- Sin `args` declarados, `allowPositionals` queda en `false` y `parseArgs` lanza su propio error (KI-024).
+- Un comando sin `args` también pasa por este mapeo: cualquier posicional es un error de uso.
 
 ## Mensajes de error
 
@@ -71,5 +73,9 @@ Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte q
 | Enum inválido | `Invalid value for --name. Expected one of: a, b` |
 | Tipo inválido | `Invalid value for --name: expected number` |
 | Flag desconocida | `Unknown option: --name. Did you mean '--other'?` |
+| Falta el valor | `Option -n, --name requires a value` |
+| Posicional de más | `Unexpected positional argument: 'x'` |
 
-`ValidationError` antepone la ruta del issue, por ejemplo `content: Missing…` (KI-027).
+`ValidationError` antepone la ruta del issue, salvo que el mensaje ya la nombre como `<name>` o `--name`. Las sugerencias toleran una distancia de la mitad del largo del texto, hasta 3.
+
+Si la CLI tiene una opción global `help`, los errores de uso terminan con `Run '<cli> --help' for usage.`.

@@ -43,3 +43,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0026](./0026-docs-como-fuente-de-verdad.md) | `docs/` como fuente de verdad | Aceptada |
 | [0027](./0027-toda-salida-explica-el-motivo.md) | Toda salida por error explica el motivo | Aceptada |
 | [0028](./0028-coercion-booleana.md) | Los booleanos aceptan solo true, false, 1 y 0 | Aceptada |
+| [0029](./0029-cada-campo-tiene-efecto.md) | Cada campo de la API tiene efecto | Aceptada |

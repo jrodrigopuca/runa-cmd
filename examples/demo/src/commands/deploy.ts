@@ -8,19 +8,7 @@
  */
 import { defineCommand } from '@runa-cmd/core';
 import { z } from '@runa-cmd/core/zod';
-import {
-	bold,
-	cyan,
-	dim,
-	gray,
-	green,
-	kv,
-	magenta,
-	step,
-	successBox,
-	warn,
-	yellow,
-} from '../ui.js';
+import { bold, cyan, dim, gray, green, kv, magenta, step, successBox, yellow } from '../ui.js';
 
 export const deploy = defineCommand({
 	meta: {
@@ -28,7 +16,7 @@ export const deploy = defineCommand({
 		description: 'Deploy a service to the cloud',
 		options: {
 			env: { alias: ['-e'], env: 'DEPLOY_ENV', group: 'Deploy' },
-			replicas: { alias: ['-r'], group: 'Deploy', hint: '1-10' },
+			replicas: { alias: ['-r'], group: 'Deploy' },
 			tag: { alias: ['-t'], group: 'Deploy' },
 			dryRun: { group: 'Safety' },
 			force: { alias: ['-f'], group: 'Safety', deprecated: 'Use --confirm instead' },
@@ -59,11 +47,6 @@ export const deploy = defineCommand({
 	run({ args, options }) {
 		const deployId = `dep_${Date.now().toString(36)}`;
 		const tag = options.tag ?? 'latest';
-
-		if (options.force) {
-			console.log(warn('--force is deprecated. Use --confirm instead.'));
-			console.log();
-		}
 
 		if (options.dryRun) {
 			console.log(`\n  ${yellow('⬡')} ${bold('Dry Run')} ${dim('— no changes will be made')}\n`);
