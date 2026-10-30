@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-30, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. La fase 1 del [backlog](./backlog.md) está en curso, con T-001 y T-004 cerradas.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. La fase 1 del [backlog](./backlog.md) está en curso, con T-001, T-002 y T-004 cerradas.
 
 ## Versiones
 
@@ -25,7 +25,7 @@ Changesets está en modo pre-release con el tag `beta`.
 | Tests | 633 pasan: core 312, help 206, completions 82, mcp 33 |
 | Aceptación con procesos reales | 3 de 13 casos pasan; los otros 10 son fallos esperados, cada uno con su tarea |
 | Cobertura de `core` | 95,39% de líneas, 83,54% de ramas; el mínimo exigido es 80% de líneas |
-| Type tests | 11 pasan con `--typecheck`, pero `pnpm test` no los ejecuta |
+| Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
 
 ## Dónde estamos
 

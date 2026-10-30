@@ -39,7 +39,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | KI-016 | `--dark-color` no funciona para `darkColor` | Observado | La flag se arma directo desde la clave | [T-206](./backlog.md#t-206-kebab-case-por-defecto) |
 | KI-017 | `tool -- -text` no llena el posicional | Observado | Lo posterior a `--` se separa antes de parsear | [T-202](./backlog.md#t-202----llena-posicionales) |
 | KI-018 | Un booleano sin default rechaza `MINIFY=true` | Observado | Falta coerción a booleano | [T-102](./backlog.md#t-102-booleanos-desde-env-y-config) |
-| KI-019 | `types.test-d.ts` no corre en `pnpm test` ni en CI | Observado | Falta `--typecheck`, y `tsc` excluye los tests | [T-002](./backlog.md#t-002-type-tests-en-ci) |
 | KI-020 | `hint` no se usa, y `deprecated` no avisa al ejecutar | Leído | Solo se copian al schema; la ayuda muestra `deprecated` | [T-108](./backlog.md#t-108-resolver-metadatos-sin-efecto) |
 | KI-021 | Booleanos con clave `noX`: `--no-cache` se interpreta como negación de `cache` | Observado | Comportamiento de `allowNegative` en `parseArgs` | [T-206](./backlog.md#t-206-kebab-case-por-defecto) |
 

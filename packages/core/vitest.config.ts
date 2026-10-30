@@ -2,9 +2,13 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	test: {
-		include: ['src/__tests__/**/*.test.ts', 'src/__tests__/**/*.test-d.ts'],
+		include: ['src/__tests__/**/*.test.ts'],
 		typecheck: {
+			enabled: true,
 			include: ['src/__tests__/**/*.test-d.ts'],
+			// tsconfig.json excludes tests, so tsc would never open these files
+			// and every type assertion would pass unchecked.
+			tsconfig: './tsconfig.test.json',
 		},
 		coverage: {
 			// ADR-0015: 80% lines on core. The threshold lives HERE, not in workflow

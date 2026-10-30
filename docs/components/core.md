@@ -136,7 +136,7 @@ export const verbose = definePlugin({
 ## Tests
 
 - Viven en `packages/core/src/__tests__`.
-- `types.test-d.ts` cubre la inferencia, pero requiere `--typecheck` (KI-019).
+- `types.test-d.ts` cubre la inferencia y corre con `pnpm test`. Usa `packages/core/tsconfig.test.json`, porque `tsconfig.json` excluye los tests y `tsc` no los abriría.
 - `parseargs-negation.test.ts` fija el comportamiento de `parseArgs`.
 - Muchos tests mockean `process.exit`. Para validar salida real usá `packages/core/src/__tests__/acceptance/single-command.test.ts`, que lanza un proceso real ([tests de aceptación](../process.md#tests-de-aceptación)).
 

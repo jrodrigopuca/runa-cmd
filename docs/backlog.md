@@ -24,7 +24,7 @@
 | Fase | ID | Tarea | v1 | Estado |
 |---|---|---|---|---|
 | 1. Base confiable | T-001 | Tests de aceptación con procesos reales | Requerido | Hecho |
-| | T-002 | Type tests en CI | Requerido | Pendiente |
+| | T-002 | Type tests en CI | Requerido | Hecho |
 | | T-003 | Documentación fiel al estado real | Requerido | Pendiente |
 | | T-004 | Spec y decisiones visibles en el repo | Requerido | Hecho |
 | | T-101 | `cleanup` corre también ante errores | Requerido | Pendiente |
@@ -75,7 +75,7 @@
 ### T-002 Type tests en CI
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como mantenedor, quiero que CI verifique la inferencia de tipos, porque es una de las promesas centrales de Runa y hoy `pnpm test` no la comprueba.
 - **Criterios de aceptación:**
   - `pnpm test` ejecuta `types.test-d.ts` con typecheck.
