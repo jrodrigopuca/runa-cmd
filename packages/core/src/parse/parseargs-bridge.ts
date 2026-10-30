@@ -54,7 +54,6 @@ export function buildParseArgsConfig(
 			type: 'string' | 'boolean';
 			short?: string;
 			multiple?: boolean;
-			default?: string | boolean | string[] | boolean[];
 		} = {
 			type: parseArgsType,
 		};
@@ -77,12 +76,8 @@ export function buildParseArgsConfig(
 			}
 		}
 
-		// Set boolean defaults so parseArgs returns them correctly
-		// For booleans with defaults, pass the default to parseArgs
-		if (parseArgsType === 'boolean' && param.defaultValue !== undefined) {
-			optConfig.default = param.defaultValue as boolean;
-		}
-
+		// Never pass schema defaults here: a value from parseArgs counts as a CLI
+		// argument and would beat env and config. Zod applies them last.
 		options[param.name] = optConfig;
 		knownKeys.add(param.name);
 		if (parseArgsType === 'boolean') {

@@ -16,7 +16,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
-| KI-002 | Un booleano con `.default()` ignora env y config sin avisar: `MINIFY=true` da `false` | Observado | `packages/core/src/parse/parseargs-bridge.ts:82` pasa el default a `parseArgs`, que le gana a env y config | [T-102](./backlog.md#t-102-booleanos-desde-env-y-config) |
 | KI-003 | MCP pierde la salida de `console.log`, y esa salida ensucia el canal JSON-RPC | Observado | `packages/mcp/src/server.ts:91` ejecuta `run()` sin capturar stdout | [T-301](./backlog.md#t-301-capturar-la-salida-de-los-comandos) |
 | KI-004 | Una CLI de un comando con `runCLI` no puede usar `--mcp` ni ningún plugin | Leído | `packages/core/src/cli.ts:528` no recibe plugins | [T-203](./backlog.md#t-203-runcli-con-plugins-y-modo-raíz-explícito) |
 | KI-005 | Toda opción `z.array()` falla, incluso `--tag a` | Observado | No se usa `multiple` en `parseArgs` | [T-207](./backlog.md#t-207-opciones-repetidas-con-zarray) |
@@ -37,7 +36,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | KI-015 | `tool tool` consume el dato como nombre del comando | Observado | `resolveCommandFromTree` | [T-203](./backlog.md#t-203-runcli-con-plugins-y-modo-raíz-explícito) |
 | KI-016 | `--dark-color` no funciona para `darkColor` | Observado | La flag se arma directo desde la clave | [T-206](./backlog.md#t-206-kebab-case-por-defecto) |
 | KI-017 | `tool -- -text` no llena el posicional | Observado | Lo posterior a `--` se separa antes de parsear | [T-202](./backlog.md#t-202----llena-posicionales) |
-| KI-018 | Un booleano sin default rechaza `MINIFY=true` | Observado | Falta coerción a booleano | [T-102](./backlog.md#t-102-booleanos-desde-env-y-config) |
 | KI-020 | `hint` no se usa, y `deprecated` no avisa al ejecutar | Leído | Solo se copian al schema; la ayuda muestra `deprecated` | [T-108](./backlog.md#t-108-resolver-metadatos-sin-efecto) |
 | KI-021 | Booleanos con clave `noX`: `--no-cache` se interpreta como negación de `cache` | Observado | Comportamiento de `allowNegative` en `parseArgs` | [T-206](./backlog.md#t-206-kebab-case-por-defecto) |
 
@@ -49,6 +47,5 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | KI-023 | Sugerencias irrelevantes: `--nope` sugiere `--size` | Observado | Umbral fijo de 3 en `packages/core/src/suggest.ts:64` | [T-105](./backlog.md#t-105-sugerencias-de-typo-proporcionales) |
 | KI-024 | Un posicional de más en un comando sin args da exit 1, no 2 | Observado | Sale un error propio de `parseArgs` | [T-103](./backlog.md#t-103-errores-de-uso-consistentes) |
 | KI-025 | Un `output` inválido vuelca JSON crudo de Zod | Observado | `command.output.parse` sin humanizar | [T-103](./backlog.md#t-103-errores-de-uso-consistentes) |
-| KI-026 | `--minify=false` da exit 2 | Observado | `parseArgs` no estricto lo entrega como string | [T-103](./backlog.md#t-103-errores-de-uso-consistentes) |
 | KI-027 | La ayuda muestra `[default: false]`, y el error repite el nombre del argumento | Observado | `render.ts` y `resolve.ts` | [T-106](./backlog.md#t-106-mensajes-y-ayuda-sin-ruido) |
 | KI-028 | Los tres plugins declaran `version: '0.1.0'` fijo | Leído | Literal en cada `plugin.ts` | [T-107](./backlog.md#t-107-versión-real-en-los-plugins) |

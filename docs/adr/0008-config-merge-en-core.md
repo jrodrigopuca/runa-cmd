@@ -7,4 +7,3 @@
 - **Costo aceptado:** otros formatos requieren un loader externo.
 - **Revisar si:** un formato necesita mergear por capas, como config de proyecto y de usuario.
 - **Código:** `packages/core/src/config/merge.ts`, `packages/core/src/config/search.ts`, `packages/core/src/parse/resolve.ts`
-- **Nota:** los booleanos con default no respetan este orden; ver KI-002 en [known issues](../known-issues.md).

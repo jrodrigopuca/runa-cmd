@@ -347,7 +347,7 @@ For example, if an option has `env: 'PORT'` and `z.number().default(3000)`:
 3. Config file value wins over default
 4. `3000` is the fallback
 
-Known exception: boolean options don't follow this order yet. A boolean with `.default()` ignores env and config, and one without it rejects values from env.
+Boolean options accept `true`, `1`, `false` and `0`, in any case, from every source: `MINIFY=1`, `--minify=false`, or `"minify": true` in a config file. Any other value is a usage error.
 
 ## Types
 

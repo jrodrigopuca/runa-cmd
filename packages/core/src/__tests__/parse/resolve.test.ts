@@ -1,12 +1,12 @@
 /**
  * Unit tests for value resolution (parse/resolve.ts)
  *
- * Tests: merge priority, positional mapping, number coercion, env vars
+ * Tests: merge priority, positional mapping, number and boolean coercion, env vars
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { ValidationError } from '../../errors.js';
-import { coerceNumberValue, resolveValues } from '../../parse/resolve.js';
+import { coerceBooleanValue, coerceNumberValue, resolveValues } from '../../parse/resolve.js';
 
 describe('resolveValues — positional mapping', () => {
 	it('maps two positional args in order', () => {
@@ -202,6 +202,36 @@ describe('coerceNumberValue (ADR-0013)', () => {
 		expect(coerceNumberValue(0)).toBe(0);
 		expect(coerceNumberValue(undefined)).toBeUndefined();
 		expect(coerceNumberValue(true)).toBe(true);
+	});
+});
+
+describe('coerceBooleanValue', () => {
+	it.each([
+		['true', true],
+		['1', true],
+		[' TRUE ', true],
+		['false', false],
+		['0', false],
+		['False', false],
+	])('coerces %j → %s', (value, expected) => {
+		expect(coerceBooleanValue(value)).toBe(expected);
+	});
+
+	it.each([
+		'',
+		'  ',
+		'quizas',
+		'2',
+		'yes',
+		'no',
+	])('returns %j unchanged (Zod rejects it)', (value) => {
+		expect(coerceBooleanValue(value)).toBe(value);
+	});
+
+	it('passes non-strings through untouched', () => {
+		expect(coerceBooleanValue(true)).toBe(true);
+		expect(coerceBooleanValue(false)).toBe(false);
+		expect(coerceBooleanValue(undefined)).toBeUndefined();
 	});
 });
 

@@ -3,7 +3,7 @@
  *
  * Merge priority: CLI args > env vars > config file > Zod defaults.
  * Maps positionals to args by insertion order.
- * Pre-coerces number strings before Zod .parse().
+ * Pre-coerces number and boolean strings before Zod .parse().
  */
 import { ZodError, type ZodType, z } from 'zod';
 import { ValidationError } from '../errors.js';
@@ -109,9 +109,6 @@ function mapPositionals(
  * string intact lets Zod reject it as invalid_type, which flows through
  * the existing humanizer to a ValidationError (exit 2).
  *
- * The single coercion site for ALL resolution sources (CLI arg, env var,
- * config value) — a new source added later inherits the rule by construction.
- *
  * Exported for unit testing only — not part of the public API (not in index.ts).
  */
 export function coerceNumberValue(value: unknown): unknown {
@@ -119,6 +116,29 @@ export function coerceNumberValue(value: unknown): unknown {
 	if (value.trim() === '') return value;
 	const num = Number(value);
 	return Number.isNaN(num) ? value : num;
+}
+
+/**
+ * Pre-coerce a string to a boolean for z.boolean() fields. Env vars are always
+ * strings, and `--flag=false` also reaches here as one. Anything but
+ * true/false/1/0 is returned UNCHANGED so Zod rejects it instead of guessing:
+ * `MINIFY=quizas` must not silently mean either value.
+ *
+ * Exported for unit testing only — not part of the public API (not in index.ts).
+ */
+export function coerceBooleanValue(value: unknown): unknown {
+	if (typeof value !== 'string') return value;
+	const normalized = value.trim().toLowerCase();
+	if (normalized === 'true' || normalized === '1') return true;
+	if (normalized === 'false' || normalized === '0') return false;
+	return value;
+}
+
+/** The single coercion site for ALL resolution sources (CLI arg, env var, config value). */
+function coerceByType(value: unknown, type: ParamMetadata['zodType'] | undefined): unknown {
+	if (type === 'number') return coerceNumberValue(value);
+	if (type === 'boolean') return coerceBooleanValue(value);
+	return value;
 }
 
 function resolveOptionValues(
@@ -132,13 +152,7 @@ function resolveOptionValues(
 ): Record<string, unknown> {
 	const resolved: Record<string, unknown> = {};
 
-	// Build a set of number fields for pre-coercion
-	const numberFields = new Set<string>();
-	for (const meta of optionsMetadata) {
-		if (meta.zodType === 'number') {
-			numberFields.add(meta.name);
-		}
-	}
+	const fieldTypes = new Map(optionsMetadata.map((meta) => [meta.name, meta.zodType]));
 
 	// First, apply long alias mappings to parseArgs values
 	const normalizedValues: Record<string, unknown> = { ...parseArgsValues };
@@ -152,23 +166,20 @@ function resolveOptionValues(
 	for (const key of Object.keys(optionsSchemas)) {
 		// Priority 1: CLI arg
 		if (key in normalizedValues && normalizedValues[key] !== undefined) {
-			const value = normalizedValues[key];
-			resolved[key] = numberFields.has(key) ? coerceNumberValue(value) : value;
+			resolved[key] = coerceByType(normalizedValues[key], fieldTypes.get(key));
 			continue;
 		}
 
 		// Priority 2: Environment variable
 		const envName = optionsMeta?.[key]?.env;
 		if (envName && envName in env && env[envName] !== undefined) {
-			const value: unknown = env[envName];
-			resolved[key] = numberFields.has(key) ? coerceNumberValue(value) : value;
+			resolved[key] = coerceByType(env[envName], fieldTypes.get(key));
 			continue;
 		}
 
 		// Priority 3: Config file value
 		if (configValues && key in configValues && configValues[key] !== undefined) {
-			const value = configValues[key];
-			resolved[key] = numberFields.has(key) ? coerceNumberValue(value) : value;
+			resolved[key] = coerceByType(configValues[key], fieldTypes.get(key));
 		}
 
 		// Priority 4: Omit — let Zod .default() handle it

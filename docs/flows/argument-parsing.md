@@ -42,16 +42,14 @@ flowchart LR
     C -->|"si falta"| D["default de Zod"]
 ```
 
-Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte que falta.
-
-Una excepción involuntaria: los booleanos con default reciben ese valor desde `parseArgs`, que cuenta como CLI (KI-002 en [known issues](../known-issues.md)).
+Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte que falta. Por eso los defaults nunca se pasan a `parseArgs`: lo que devuelve cuenta como argumento de CLI y le ganaría a env y config.
 
 ## Coerción
 
 | Tipo | Regla |
 |---|---|
 | Número | `coerceNumberValue` convierte strings, salvo vacíos o de espacios |
-| Booleano | Sin coerción desde env o config (KI-018) |
+| Booleano | `coerceBooleanValue` acepta `true`, `1`, `false` y `0`, sin distinguir mayúsculas; el resto lo rechaza Zod ([ADR-0028](../adr/0028-coercion-booleana.md)) |
 | Enum y string | Sin coerción |
 
 ## Posicionales

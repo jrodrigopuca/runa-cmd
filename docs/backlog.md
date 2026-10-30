@@ -28,7 +28,7 @@
 | | T-003 | Documentación fiel al estado real | Requerido | Hecho |
 | | T-004 | Spec y decisiones visibles en el repo | Requerido | Hecho |
 | | T-101 | `cleanup` corre también ante errores | Requerido | Hecho |
-| | T-102 | Booleanos desde env y config | Requerido | Pendiente |
+| | T-102 | Booleanos desde env y config | Requerido | Hecho |
 | | T-103 | Errores de uso consistentes | Requerido | Pendiente |
 | | T-104 | Avisar cuando falta el valor de una opción | Requerido | Pendiente |
 | | T-105 | Sugerencias de typo proporcionales | Requerido | Pendiente |
@@ -133,7 +133,7 @@
 ### T-102 Booleanos desde env y config
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como usuario de una CLI, quiero activar opciones booleanas por env o config, para que se respete el orden CLI > env > config > default documentado.
 - **Criterios de aceptación:**
 
@@ -154,7 +154,7 @@
 - **Criterios de aceptación:**
   - Un posicional de más en un comando sin args da exit 2, con el mismo formato que `Unexpected positional argument`.
   - Si `run()` devuelve algo que no cumple `output`, el mensaje nombra el comando y el campo, sin volcar JSON de Zod.
-  - `--minify=false` funciona, o da un error claro con la forma correcta.
+  - `--minify=false` funciona. Resuelto en T-102.
 
 ### T-104 Avisar cuando falta el valor de una opción
 

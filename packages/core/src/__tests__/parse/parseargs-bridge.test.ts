@@ -110,13 +110,10 @@ describe('buildParseArgsConfig', () => {
 		expect(parseArgsConfig.allowPositionals).toBe(false);
 	});
 
-	it('sets boolean default in parseArgs config', () => {
+	it('never passes schema defaults to parseArgs, so they cannot beat env or config', () => {
 		const metadata = walkSchema({ verbose: z.boolean().default(true) });
 		const { parseArgsConfig } = buildParseArgsConfig(metadata);
-		expect(parseArgsConfig.options!['verbose']).toMatchObject({
-			type: 'boolean',
-			default: true,
-		});
+		expect(parseArgsConfig.options!['verbose']).toEqual({ type: 'boolean' });
 	});
 
 	describe('known-key sets (strict-options input contract)', () => {

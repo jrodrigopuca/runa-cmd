@@ -234,7 +234,7 @@ Run with RUNA_DEBUG=1 for details.
 CLI args > Environment variables > Config file values > Zod defaults
 ```
 
-Known exception: boolean options don't follow this order yet ([KI-002](./docs/known-issues.md#severidad-alta)).
+Boolean options accept `true`, `1`, `false` and `0` from any source.
 
 ## Architecture
 

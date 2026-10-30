@@ -89,7 +89,7 @@ interface CLIConfig {
 
 ## Resolución de valores
 
-La prioridad es **CLI, env, config y default de Zod**. El detalle está en [parseo](../flows/argument-parsing.md). Hoy los booleanos con default no la respetan (KI-002 en [known issues](../known-issues.md)).
+La prioridad es **CLI, env, config y default de Zod**. El detalle está en [parseo](../flows/argument-parsing.md). Los booleanos aceptan `true`, `1`, `false` y `0` desde cualquier fuente, incluido `--flag=false`.
 
 ## Config
 
@@ -157,4 +157,4 @@ export const verbose = definePlugin({
 
 ## Decisiones
 
-[ADR-0001](../adr/0001-zod-como-fuente-de-verdad.md), [0002](../adr/0002-posicionales-por-orden-de-claves.md), [0003](../adr/0003-parseargs-extrae-zod-valida.md), [0004](../adr/0004-sistema-de-plugins.md), [0006](../adr/0006-ciclo-de-vida-con-hooks.md), [0007](../adr/0007-middleware-onion.md), [0008](../adr/0008-config-merge-en-core.md), [0009](../adr/0009-errores-y-codigos-de-salida.md), [0010](../adr/0010-schema-adapter.md), [0011](../adr/0011-opciones-estrictas.md), [0013](../adr/0013-coercion-numerica.md), [0014](../adr/0014-colision-de-opciones.md), [0027](../adr/0027-toda-salida-explica-el-motivo.md).
+[ADR-0001](../adr/0001-zod-como-fuente-de-verdad.md), [0002](../adr/0002-posicionales-por-orden-de-claves.md), [0003](../adr/0003-parseargs-extrae-zod-valida.md), [0004](../adr/0004-sistema-de-plugins.md), [0006](../adr/0006-ciclo-de-vida-con-hooks.md), [0007](../adr/0007-middleware-onion.md), [0008](../adr/0008-config-merge-en-core.md), [0009](../adr/0009-errores-y-codigos-de-salida.md), [0010](../adr/0010-schema-adapter.md), [0011](../adr/0011-opciones-estrictas.md), [0013](../adr/0013-coercion-numerica.md), [0014](../adr/0014-colision-de-opciones.md), [0027](../adr/0027-toda-salida-explica-el-motivo.md), [0028](../adr/0028-coercion-booleana.md).
