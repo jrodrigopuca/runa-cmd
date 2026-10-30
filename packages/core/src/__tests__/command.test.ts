@@ -2,7 +2,6 @@
  * Unit tests for defineCommand (command.ts)
  *
  * Tests: command creation, variadic validation, meta.options key validation
- * References: Spec Section 1 — defineCommand() scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';

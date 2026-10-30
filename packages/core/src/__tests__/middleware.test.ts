@@ -2,7 +2,6 @@
  * Unit tests for middleware (middleware.ts)
  *
  * Tests: defineMiddleware, onion model, next() chaining, short-circuit
- * References: Spec Section 6 — middleware scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { defineMiddleware } from '../middleware.js';

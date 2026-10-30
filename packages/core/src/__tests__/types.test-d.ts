@@ -3,8 +3,6 @@
  *
  * These tests use vitest's expectTypeOf to verify that TypeScript
  * infers the correct types from defineCommand() and related utilities.
- *
- * References: Spec Section 10 — type inference scenarios
  */
 import { describe, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';

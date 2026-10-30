@@ -2,7 +2,6 @@
  * Unit tests for config/search.ts — config file discovery
  *
  * Tests: searchConfig finds files in paths, tilde expansion, fallback behavior
- * References: Spec Section 8 — config search scenarios
  */
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

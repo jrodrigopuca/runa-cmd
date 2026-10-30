@@ -2,7 +2,6 @@
  * Unit tests for parseArgs bridge (parse/parseargs-bridge.ts)
  *
  * Tests: generating util.parseArgs config from schema walker output
- * References: Spec Section 2 — parseArgs bridge scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';

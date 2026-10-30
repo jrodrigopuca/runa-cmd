@@ -2,7 +2,6 @@
  * Unit tests for config/loader.ts — JSON config loader
  *
  * Tests: jsonLoader reads/parses JSON, error handling
- * References: Spec Section 8 — config loading scenarios
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { jsonLoader } from '../../config/loader.js';

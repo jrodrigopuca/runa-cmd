@@ -2,7 +2,6 @@
  * Unit tests for lifecycle engine (lifecycle.ts)
  *
  * Tests: hook registration, execution order, short-circuit, cleanup guarantees
- * References: Spec Section 5 — all lifecycle scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { createHookRegistry } from '../lifecycle.js';

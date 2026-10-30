@@ -3,8 +3,6 @@
  *
  * Tests the end-to-end flow: defineCommand → schema-walker → parseArgs-bridge →
  * util.parseArgs → resolve → Zod validation
- *
- * References: Spec Section 1, 2, 3, 4 integration scenarios
  */
 
 import { parseArgs } from 'node:util';

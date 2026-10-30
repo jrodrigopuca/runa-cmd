@@ -3,7 +3,6 @@
  *
  * Tests: definePlugin, resolvePlugins, topologicalSort, capability enforcement,
  *        setup/cleanup orchestration
- * References: Spec Section 4 — all plugin scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';

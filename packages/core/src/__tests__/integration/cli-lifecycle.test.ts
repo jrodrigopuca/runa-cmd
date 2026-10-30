@@ -3,12 +3,10 @@
  *
  * Tests the end-to-end CLI: command resolution, subcommands, plugins,
  * middleware, hooks, config loading, error handling.
- *
- * References: Spec Section 1, 4, 5, 6, 8, 9 integration scenarios
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { defineCLI } from '../../cli.js';
+import { defineCLI, runCLI } from '../../cli.js';
 import { defineCommand } from '../../command.js';
 import { RunaError } from '../../errors.js';
 import { defineMiddleware } from '../../middleware.js';
@@ -122,8 +120,25 @@ describe('defineCLI + lifecycle integration', () => {
 		});
 	});
 
-	describe('single-command mode (runCLI)', () => {
-		it('routes directly without command name', async () => {
+	describe('single-command mode', () => {
+		it('runCLI runs the command with the given argv', async () => {
+			const log: string[] = [];
+
+			const cmd = defineCommand({
+				meta: { name: 'build', description: 'Build' },
+				args: { target: z.string() },
+				run: (ctx) => {
+					log.push(`build:${ctx.args.target}`);
+				},
+			});
+
+			await runCLI(cmd, ['production']);
+
+			expect(log).toEqual(['build:production']);
+			expect(spies.exitSpy).not.toHaveBeenCalled();
+		});
+
+		it('defineCLI routes directly without command name', async () => {
 			const log: string[] = [];
 
 			const cmd = defineCommand({

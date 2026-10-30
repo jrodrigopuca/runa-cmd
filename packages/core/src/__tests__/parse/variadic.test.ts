@@ -2,7 +2,6 @@
  * Unit tests for variadic validation (parse/variadic.ts)
  *
  * Tests: isVariadic detection, validateVariadicArgs position checks
- * References: Spec Section 4 — variadic definition-time scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';

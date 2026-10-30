@@ -2,7 +2,6 @@
  * Unit tests for value resolution (parse/resolve.ts)
  *
  * Tests: merge priority, positional mapping, number coercion, env vars
- * References: Spec Section 3 (value resolution), Section 2 (positionals)
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';

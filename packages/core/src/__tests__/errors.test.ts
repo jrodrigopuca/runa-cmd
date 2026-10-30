@@ -2,7 +2,6 @@
  * Unit tests for error hierarchy (errors.ts)
  *
  * Tests: RunaError, ValidationError, CommandNotFoundError, CommandError
- * References: Spec Section 7 — all error scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { CommandError, CommandNotFoundError, RunaError, ValidationError } from '../errors.js';

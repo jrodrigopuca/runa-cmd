@@ -23,7 +23,7 @@
 
 | Fase | ID | Tarea | v1 | Estado |
 |---|---|---|---|---|
-| 1. Base confiable | T-001 | Tests de aceptación con procesos reales | Requerido | Pendiente |
+| 1. Base confiable | T-001 | Tests de aceptación con procesos reales | Requerido | Hecho |
 | | T-002 | Type tests en CI | Requerido | Pendiente |
 | | T-003 | Documentación fiel al estado real | Requerido | Pendiente |
 | | T-004 | Spec y decisiones visibles en el repo | Requerido | Hecho |
@@ -65,7 +65,7 @@
 ### T-001 Tests de aceptación con procesos reales
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como mantenedor, quiero probar la CLI como la usa una persona, para no depender de mocks de `process.exit`, que ya ocultaron un bug.
 - **Criterios de aceptación:**
   - La [tabla de aceptación del feedback de qr-plus](./research/2026-10-qr-plus-migration.md#casos-para-tests-de-aceptación) existe como tests que lanzan un proceso real y verifican stdout, stderr y exit code.

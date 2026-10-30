@@ -138,7 +138,7 @@ export const verbose = definePlugin({
 - Viven en `packages/core/src/__tests__`.
 - `types.test-d.ts` cubre la inferencia, pero requiere `--typecheck` (KI-019).
 - `parseargs-negation.test.ts` fija el comportamiento de `parseArgs`.
-- Muchos tests mockean `process.exit`; para validar salida real usá un proceso real.
+- Muchos tests mockean `process.exit`. Para validar salida real usá `packages/core/src/__tests__/acceptance/single-command.test.ts`, que lanza un proceso real ([tests de aceptación](../process.md#tests-de-aceptación)).
 
 ## Decisiones
 

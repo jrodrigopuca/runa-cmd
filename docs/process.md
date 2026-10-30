@@ -25,6 +25,18 @@ flowchart LR
 | 5. Verificar | Comprobar cada criterio. Si hay interfaz, ejecutar la CLI real | Cada criterio tiene evidencia |
 | 6. Documentar | Actualizar lo que cambió, según la tabla de abajo, y cerrar la tarea | `pnpm docs:check` pasa |
 
+## Tests de aceptación
+
+`packages/core/src/__tests__/acceptance/` ejecuta una CLI real como proceso hijo, sin mocks, contra el `dist` compilado. Si `dist` falta o está desactualizado, la suite se detiene y pide `pnpm build`.
+
+Cada comportamiento que una tarea todavía no entregó se marca con `pending` y su ID:
+
+- **Mientras falta:** el caso cuenta como fallo esperado.
+- **Al resolverlo:** el caso se pone rojo. La tarea tiene que cambiar `pending` por `it`.
+- **Para ver el fallo real:** `RUNA_SHOW_PENDING=1 pnpm --filter @runa-cmd/core exec vitest run src/__tests__/acceptance`.
+
+Si un comportamiento depende de `process.exit`, stdout o exit codes, probalo acá. Un mock de `process.exit` ya ocultó KI-001.
+
 ## Qué actualizar al terminar
 
 | Si cambió… | Actualizá |

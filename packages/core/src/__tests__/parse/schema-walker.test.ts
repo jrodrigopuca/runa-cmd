@@ -2,7 +2,6 @@
  * Unit tests for schema walker (parse/schema-walker.ts)
  *
  * Tests: walking Zod schemas to extract parameter metadata
- * References: Spec Section 2 — all schema walking scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';

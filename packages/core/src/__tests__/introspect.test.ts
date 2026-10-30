@@ -2,7 +2,6 @@
  * Unit tests for introspect.ts — getSchema() API
  *
  * Tests: CLI schema extraction, nested commands, option metadata, hasOutput
- * References: Spec Section 11 — introspection scenarios
  */
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
