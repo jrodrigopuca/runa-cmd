@@ -52,6 +52,8 @@ $ my-tool --mcp
 
 When `--mcp` is passed, the CLI starts a stdio-based MCP server instead of normal execution. AI agents can then discover and call your commands as tools.
 
+For a CLI made of one command, use `runCLI(deploy, { plugins: [mcpPlugin()] })`.
+
 ## How It Works
 
 1. The plugin adds a `--mcp` global boolean flag
@@ -98,7 +100,6 @@ These matter when you expose a real CLI to an agent:
 - **Return your result, don't print it.** What a command writes with `console.log` doesn't reach the agent, and it mixes with the protocol on stdout.
 - **Every command becomes a tool.** There's no way yet to exclude one or mark it as destructive, so don't enable `--mcp` on a CLI whose commands an agent shouldn't run.
 - **Tools run `run()` directly.** Middleware, hooks, environment variables and config files don't apply, and `globalOptions` is empty. Don't rely on middleware for authorization.
-- **`runCLI` doesn't accept plugins.** Use `defineCLI`, even with a single command.
 - **stdio is the only transport.**
 
 The [backlog](https://github.com/jrodrigopuca/runa-cmd/blob/main/docs/backlog.md) tracks the fixes.

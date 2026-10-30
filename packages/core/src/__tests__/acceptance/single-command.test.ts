@@ -52,14 +52,14 @@ describe('help (T-204)', () => {
 	});
 });
 
-describe('version (T-201)', () => {
-	pending('tool --version prints the version', () => {
+describe('version', () => {
+	it('tool --version prints the version', () => {
 		const result = tool('--version');
 		expect(result.status, result.stderr).toBe(0);
 		expect(result.stdout.trim()).toBe('9.9.9');
 	});
 
-	pending('tool hola --version prints the version', () => {
+	it('tool hola --version prints the version', () => {
 		const result = tool('hola', '--version');
 		expect(result.status, result.stderr).toBe(0);
 		expect(result.stdout.trim()).toBe('9.9.9');
@@ -72,14 +72,14 @@ describe('option names (T-206)', () => {
 	});
 });
 
-describe('single-command routing (T-203)', () => {
-	pending('tool tool passes "tool" as content', () => {
+describe('single-command routing', () => {
+	it('tool tool passes "tool" as content', () => {
 		expect(received('tool').args.content).toBe('tool');
 	});
 });
 
 describe('the -- separator', () => {
-	pending('tool -- -text fills the positional (T-202)', () => {
+	it('tool -- -text fills the positional', () => {
 		const { args, rest } = received('--', '-text');
 		expect(args.content).toBe('-text');
 		expect(rest).toEqual([]);

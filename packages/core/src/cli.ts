@@ -18,7 +18,7 @@ import { getSchema } from './introspect.js';
 import { createHookRegistry } from './lifecycle.js';
 import { deprecationWarnings } from './parse/deprecated.js';
 import { buildParseArgsConfig } from './parse/parseargs-bridge.js';
-import { resolveValues } from './parse/resolve.js';
+import { distributeRest, resolveValues } from './parse/resolve.js';
 import { walkSchema } from './parse/schema-walker.js';
 import { assertKnownOptions, assertOptionValues } from './parse/strict.js';
 import type { PluginHostRefs } from './plugin.js';
@@ -41,6 +41,7 @@ import type {
 	MiddlewareContext,
 	OptionMeta,
 	PluginConfig,
+	RunCLIOptions,
 } from './types.js';
 
 // ─── Command Resolution ─────────────────────────────────────
@@ -155,8 +156,14 @@ function composeMiddleware(
 
 /**
  * Run the full CLI lifecycle.
+ *
+ * @param rootName - The command that runs without a subcommand (runCLI only)
  */
-async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void> {
+async function runCLILifecycle(
+	config: CLIConfig,
+	argv: string[],
+	rootName?: string,
+): Promise<void> {
 	// ─── State ─────────────────────────────────────────
 	const hookRegistry = createHookRegistry();
 	const mutableCommands: CommandTree = { ...config.commands };
@@ -197,12 +204,14 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 				globalMeta: mutableGlobalMeta,
 				middleware: mutableMiddleware,
 				hookRegister: (name, handler) => hookRegistry.register(name, handler),
-				getSchema: () =>
-					getSchema(
+				getSchema: () => ({
+					...getSchema(
 						{ ...config, commands: mutableCommands },
 						mutableGlobalOptions,
 						mutableGlobalMeta.options,
 					),
+					root: rootName,
+				}),
 				globalOptionSources,
 			};
 
@@ -358,9 +367,25 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			return;
 		}
 
-		// ─── Resolve command ──────────────────────────────
 		const commandArgv = hookCtx.rawArgs;
-		const { command, remainingArgv } = resolveCommandFromTree(mutableCommands, commandArgv, config);
+
+		// ─── Built-in --version (ADR-0021) ────────────────
+		// Globals were extracted above, so a plugin's own --version never gets here.
+		if (
+			config.meta.version !== undefined &&
+			commandArgv.includes('--version') &&
+			!commandDeclaresVersion(mutableCommands, commandArgv, rootName)
+		) {
+			console.log(config.meta.version);
+			return;
+		}
+
+		// ─── Resolve command ──────────────────────────────
+		const { command, remainingArgv } = resolveCommandFromTree(
+			mutableCommands,
+			commandArgv,
+			rootName,
+		);
 
 		hookCtx.command = command.meta;
 
@@ -424,10 +449,12 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			configValues = await loadAndMergeConfig(config.config);
 		}
 
+		const operands = distributeRest(cmdParseResult.positionals, rest, command.args ?? {});
+
 		const { parsedArgs, parsedOptions } = resolveValues({
 			parseArgsResult: {
 				values: commandValues,
-				positionals: cmdParseResult.positionals,
+				positionals: operands.positionals,
 			},
 			longAliasMap,
 			schemas: {
@@ -463,7 +490,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			globalOptions: parsedGlobalOptions,
 			command: command.meta,
 			rawArgs: argv,
-			rest,
+			rest: operands.rest,
 		};
 
 		const innerFn = async () => {
@@ -537,36 +564,66 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 }
 
 /**
- * Resolve command with single-command mode support.
- * If there's exactly one command, route directly without requiring
- * the command name in argv.
+ * Route argv to a command.
+ *
+ * Root mode (runCLI): the root command takes everything and consumes nothing,
+ * so a value equal to its name is data. Only another command's name routes
+ * away from it, and `--` passes even that as data (ADR-0023).
  */
 function resolveCommandFromTree(
 	commands: CommandTree,
 	argv: string[],
-	_config: CLIConfig,
+	rootName?: string,
 ): ResolvedCommand {
-	const commandEntries = Object.entries(commands);
-
-	// Single-command mode: if exactly one command and first token doesn't match it,
-	// route directly to that command
-	if (commandEntries.length === 1) {
-		const firstEntry = commandEntries[0];
-		if (firstEntry) {
-			const [name, entry] = firstEntry;
-			if (isCommand(entry)) {
-				// If argv is empty or first token doesn't match the command name
-				if (argv.length === 0 || argv[0] !== name) {
-					return { command: entry, remainingArgv: argv };
-				}
-				// First token matches — consume it
-				return { command: entry, remainingArgv: argv.slice(1) };
-			}
+	if (rootName !== undefined) {
+		const root = commands[rootName];
+		const first = argv[0] ?? '';
+		const isSubcommand = first !== rootName && Object.hasOwn(commands, first);
+		if (root && isCommand(root) && !isSubcommand) {
+			return { command: root, remainingArgv: argv };
 		}
+		return resolveCommand(commands, argv);
 	}
 
-	// Multi-command mode: resolve from tree
+	// Implicit single-command mode, retired before 1.0: it depends on counting
+	// commands, so a plugin that adds one silently turns it off.
+	const entries = Object.entries(commands);
+	const [name, entry] = entries[0] ?? [];
+	if (entries.length === 1 && entry && isCommand(entry)) {
+		if (argv[0] === name) return { command: entry, remainingArgv: argv.slice(1) };
+		warnImplicitMode();
+		return { command: entry, remainingArgv: argv };
+	}
+
 	return resolveCommand(commands, argv);
+}
+
+let warnedImplicitMode = false;
+
+function warnImplicitMode(): void {
+	if (warnedImplicitMode) return;
+	warnedImplicitMode = true;
+	process.emitWarning('defineCLI() with a single command is deprecated. Use runCLI().', {
+		type: 'DeprecationWarning',
+		code: 'RUNA_IMPLICIT_SINGLE_COMMAND',
+	});
+}
+
+/** Whether the command argv routes to declares its own --version, which then wins. */
+function commandDeclaresVersion(commands: CommandTree, argv: string[], rootName?: string): boolean {
+	let command: Command;
+	try {
+		command = resolveCommandFromTree(commands, argv, rootName).command;
+	} catch (err) {
+		if (err instanceof CommandNotFoundError) return false;
+		throw err;
+	}
+
+	const optionMeta = (command.meta.options ?? {}) as Record<string, OptionMeta>;
+	return (
+		Object.hasOwn(command.options ?? {}, 'version') ||
+		Object.values(optionMeta).some((meta) => meta.alias?.includes('--version'))
+	);
 }
 
 // ─── Public API ─────────────────────────────────────────────
@@ -587,13 +644,16 @@ export function defineCLI(config: CLIConfig): CLI {
 }
 
 /**
- * Single-command shorthand.
- * Wraps a command in defineCLI() and runs it.
+ * Run a CLI made of one command. Accepts everything defineCLI() does except
+ * meta and commands, which come from the command: plugins, middleware, config.
  */
-export async function runCLI(command: Command, argv?: string[]): Promise<void> {
-	const cli = defineCLI({
-		meta: { name: command.meta.name, description: command.meta.description },
-		commands: { [command.meta.name]: command },
-	});
-	await cli.run(argv);
+export async function runCLI(command: Command, options: RunCLIOptions = {}): Promise<void> {
+	const { argv = process.argv.slice(2), ...config } = options;
+	const { name, version, description } = command.meta;
+
+	await runCLILifecycle(
+		{ ...config, meta: { name, version, description }, commands: { [name]: command } },
+		argv,
+		name,
+	);
 }

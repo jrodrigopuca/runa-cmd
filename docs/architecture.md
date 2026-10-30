@@ -55,7 +55,7 @@ flowchart TD
     introspect --> parse
 ```
 
-`cli.ts` orquesta todo. Tiene 534 líneas y `runCLILifecycle` concentra casi toda la ejecución.
+`cli.ts` orquesta todo, y `runCLILifecycle` concentra casi toda la ejecución.
 
 ## Principios
 
@@ -70,7 +70,7 @@ Los principios y sus razones están en los ADRs. Los que más condicionan el dis
 ## Puntos débiles conocidos
 
 - **El ruteo está en dos lugares.** `core` resuelve el comando, y `helpPlugin` lo vuelve a resolver con `resolveTarget`.
-- **El modo de comando único es implícito.** Depende de que `commands` tenga una sola clave.
+- **`defineCLI` todavía tiene un modo implícito de comando único.** Depende de que `commands` tenga una sola clave. `runCLI` ya usa un modo raíz explícito.
 - **No existe "nombre de flag".** `--${name}` se arma por separado en `core`, help y completions.
 - **`isCommand` está cuatro veces:** `cli.ts`, `plugin.ts`, `introspect.ts` y `mcp/src/schema.ts`.
 

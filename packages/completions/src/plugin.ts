@@ -5,7 +5,7 @@
  * shell completion scripts. Each shell (bash, zsh, fish) gets a
  * self-contained script derived from the CLI's schema.
  */
-import type { PluginConfig } from '@runa-cmd/core';
+import type { CLISchema, PluginConfig } from '@runa-cmd/core';
 import { defineCommand, definePlugin } from '@runa-cmd/core';
 import { z } from 'zod';
 import { generateBashCompletions } from './generators/bash.js';
@@ -22,6 +22,21 @@ const generators: Record<
 	zsh: generateZshCompletions,
 	fish: generateFishCompletions,
 };
+
+/**
+ * A root command runs without its name, so for the generators its options sit
+ * at the top level, like globals, and it isn't a subcommand to complete.
+ */
+function withRootAtTopLevel(schema: CLISchema): CLISchema {
+	const root = schema.commands.find((command) => command.name === schema.root);
+	if (!root) return schema;
+
+	return {
+		...schema,
+		commands: schema.commands.filter((command) => command !== root),
+		globalOptions: [...schema.globalOptions, ...root.options],
+	};
+}
 
 /**
  * Create a completions plugin that adds a `completions` command.
@@ -59,7 +74,7 @@ export function completionsPlugin(opts: CompletionsPluginOptions = {}): PluginCo
 						.describe('Print install instructions instead of the script'),
 				},
 				run({ args, options }) {
-					const schema = api.getSchema();
+					const schema = withRootAtTopLevel(api.getSchema());
 					const binName = schema.meta.name;
 
 					if (options.instructions) {

@@ -22,7 +22,7 @@ sequenceDiagram
 
 ## Cómo se elige qué mostrar
 
-`resolveTarget` toma el primer token que no empieza con `-` y lo busca en el primer nivel de comandos.
+`resolveTarget` toma el primer token que no empieza con `-` y lo busca en el primer nivel de comandos. Si no lo encuentra y la CLI tiene comando raíz, como con `runCLI`, muestra ese comando. La tabla describe `defineCLI`.
 
 | Entrada | Muestra | ¿Correcto? |
 |---|---|---|

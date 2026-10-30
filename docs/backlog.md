@@ -35,9 +35,9 @@
 | | T-106 | Mensajes y ayuda sin ruido | Requerido | Hecho |
 | | T-107 | Versión real en los plugins | Requerido | Hecho |
 | | T-108 | Resolver metadatos sin efecto | Requerido | Hecho |
-| 2. Comando único | T-201 | `--version` integrado | Requerido | Pendiente |
-| | T-202 | `--` llena posicionales | Requerido | Pendiente |
-| | T-203 | `runCLI` con plugins y modo raíz explícito | Requerido | Pendiente |
+| 2. Comando único | T-201 | `--version` integrado | Requerido | Hecho |
+| | T-202 | `--` llena posicionales | Requerido | Hecho |
+| | T-203 | `runCLI` con plugins y modo raíz explícito | Requerido | Hecho |
 | 3. MCP utilizable | T-301 | Capturar la salida de los comandos | Requerido | Pendiente |
 | | T-302 | Excluir y anotar tools | Requerido | Pendiente |
 | | T-303 | Definir qué corre en una llamada MCP | Requerido | Decisión pendiente |
@@ -210,7 +210,7 @@
 ### T-201 `--version` integrado
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero que `--version` funcione si declaro `meta.version`, sin escribir un plugin.
 - **Criterios de aceptación:**
   - `tool --version` y `tool hola --version` imprimen la versión y salen con 0, sin `process.exit` en la ruta normal.
@@ -222,7 +222,7 @@
 ### T-202 `--` llena posicionales
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como usuario de una CLI, quiero pasar valores que empiezan con guion usando `--`, como indica POSIX. Ajusta el cambio 4 de la beta.
 - **Criterios de aceptación:**
 
@@ -233,13 +233,15 @@
   | `exec [target] -- ls -la` | `target === "ls"`, `rest === ["-la"]` |
   | Comando sin posicionales, `run -- npm test` | `rest === ["npm", "test"]` |
   | `tool -- --help` | No muestra ayuda, `--help` es dato |
+  | `lint -- -a -b`, con variádico vacío | `files === ["-a", "-b"]` |
+  | `lint a.ts -- --fix`, con variádico lleno | `files === ["a.ts"]`, `rest === ["--fix"]` |
 
   - La nota de migración explica el caso de `[target]`.
 
 ### T-203 `runCLI` con plugins y modo raíz explícito
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI de un comando, quiero usar plugins sin cambiar la forma de mi programa, y que ningún dato del usuario cambie de significado.
 - **Criterios de aceptación:**
   - `runCLI(cmd, { plugins })` funciona con help, MCP y completions.
@@ -298,6 +300,7 @@
 - **Descripción:** como dev que prueba Runa, quiero ayuda desde el primer comando, sin instalar otro paquete. `helpPlugin` queda para temas y renderers propios.
 - **Criterios de aceptación:**
   - `tool --help`, `tool -h` y `tool hola --help` salen con 0 y muestran argumentos y opciones, sin plugins.
+  - La ayuda y las completions listan `--version` cuando la CLI tiene versión.
   - Con `helpPlugin`, se usa su renderer.
   - Si un comando declara `-h`, gana el usuario y la CLI arranca, con o sin `helpPlugin`.
   - `core` sigue sin dependencias de runtime.

@@ -108,7 +108,7 @@ interface RunContext {
   globalOptions: Record<string, unknown>;
   command: CommandMeta;            // Current command metadata
   rawArgs: string[];               // Original argv
-  rest: string[];                  // Tokens after the first `--`, unvalidated
+  rest: string[];                  // After `--`, what didn't fill a positional. Unvalidated
 }
 ```
 
@@ -155,20 +155,36 @@ cli.run();
 | `config` | `CLIConfigOptions` | No | Config file loading settings |
 | `strictOptions` | `boolean` | No | Reject unknown options. Default: `true` |
 
-### `runCLI(command, argv?)`
+### `runCLI(command, options?)`
 
-Shorthand for single-command CLIs. Wraps the command in `defineCLI` and runs it.
+The API for a CLI made of one command. It takes the same options as `defineCLI`, except `meta` and `commands`, which come from the command, plus `argv`.
 
 ```ts
-runCLI(myCommand);
-// Equivalent to:
-defineCLI({
-  meta: { name: command.meta.name, description: command.meta.description },
-  commands: { [command.meta.name]: command },
-}).run();
+runCLI(myCommand, {
+  plugins: [helpPlugin(), mcpPlugin()],
+  argv: ['hello'], // Default: process.argv.slice(2)
+});
 ```
 
-`runCLI` doesn't accept plugins yet, so it has no `--help` or `--mcp`. To use plugins with a single command, call `defineCLI` directly. In that mode the command name is optional in argv: both `tool hola` and `tool tool hola` work, so a value equal to the command name needs repeating it.
+The command is the root of the CLI, so a value equal to its name is data: `tool tool` passes `"tool"`. If a plugin adds a subcommand, that name routes to it, and `--` passes it as data: `tool -- completions`.
+
+`defineCLI` with a single command also works, but it's deprecated: adding a plugin that registers a command silently changes how it routes.
+
+### `--version`
+
+Printed when `meta.version` is set, from `defineCLI` or from the command in `runCLI`. It has no short alias. If the command declares its own `--version` option, that option wins.
+
+### The `--` separator
+
+Everything after the first `--` is never read as a flag. Those tokens fill the positionals still empty, where a variadic counts as one, and what's left arrives in `ctx.rest`.
+
+| Input | Result |
+|---|---|
+| `tool -- -text` | `args.content` is `-text` |
+| `copy a b -- -c` | `ctx.rest` is `['-c']` |
+| `lint -- -a -b` | `args.files` is `['-a', '-b']` |
+| `lint a.ts -- --fix` | `args.files` is `['a.ts']`, `ctx.rest` is `['--fix']` |
+| `run -- npm test` (no positionals) | `ctx.rest` is `['npm', 'test']` |
 
 ### `defineMiddleware(handler)`
 

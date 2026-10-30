@@ -59,7 +59,7 @@ Requires Node 24+. This README describes the `beta` release: without `@beta`, np
 ```bash
 pnpm add @runa-cmd/core@beta zod
 # Optional:
-pnpm add @runa-cmd/help@beta  # --help and --version are not built in yet
+pnpm add @runa-cmd/help@beta  # --help is not built in yet
 pnpm add @runa-cmd/mcp@beta   # --mcp server mode
 pnpm add @runa-cmd/completions@beta  # Shell completions
 ```
@@ -93,7 +93,7 @@ const build = defineCommand({
 runCLI(build);
 ```
 
-`runCLI` doesn't accept plugins yet, so a CLI built with it has no `--help` or `--mcp`. To use plugins with a single command, use `defineCLI` as shown below. `--version` isn't available yet in any mode. Both are planned for 1.0.
+`runCLI` is the API for one command, and it takes plugins too: `runCLI(build, { plugins: [helpPlugin(), mcpPlugin()] })`. A value equal to the command name is data, never routing. `--version` works as soon as `meta.version` is set.
 
 ### Multi-Command with Plugins
 

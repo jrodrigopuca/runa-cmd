@@ -133,7 +133,7 @@ describe('defineCLI + lifecycle integration', () => {
 				},
 			});
 
-			await runCLI(cmd, ['production']);
+			await runCLI(cmd, { argv: ['production'] });
 
 			expect(log).toEqual(['build:production']);
 			expect(spies.exitSpy).not.toHaveBeenCalled();

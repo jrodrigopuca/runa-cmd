@@ -3,9 +3,8 @@
  *
  * The raw argv is split at the FIRST `--` before any option processing:
  * `head` flows through the pipeline (global extraction → parseArgs →
- * strict check), everything after `--` lands verbatim on ctx.rest.
- *
- * References: ADR-0012, replaced by ADR-0022 (pending, see T-202).
+ * strict check). Tokens after `--` fill the empty positionals, and the rest
+ * lands verbatim on ctx.rest (ADR-0022).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';

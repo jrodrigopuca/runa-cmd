@@ -21,6 +21,8 @@ defineCLI({
 my-tool --mcp
 ```
 
+Una CLI de un comando usa `runCLI(cmd, { plugins: [mcpPlugin()] })`, y su tool toma el nombre de `meta.name`.
+
 ## Opciones
 
 | Opción | Efecto | Por defecto |
@@ -62,7 +64,6 @@ my-tool --mcp
 Estas limitaciones afectan directamente el uso real:
 
 - **La salida impresa se pierde.** `console.log` no llega al agente y ensucia stdout (KI-003).
-- **`runCLI` no acepta plugins.** Una CLI de un comando debe usar `defineCLI` (KI-004).
 - **No hay control de exposición.** Todos los comandos son tools (KI-007).
 - **No corre el pipeline de la CLI.** `run()` se llama directo, sin middleware, hooks, env ni config, y `globalOptions` llega vacío (KI-008).
 - **Solo hay transporte stdio.**

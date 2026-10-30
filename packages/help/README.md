@@ -258,7 +258,7 @@ The built-in renderer (`defaultRenderer`) produces output with these sections (e
 4. **Options** — Named options table, grouped by `group` metadata
 5. **Commands** — Subcommands table
 
-The renderer is subcommand-aware: `my-tool deploy --help` shows help for the `deploy` command specifically. Today this only looks at the first level, so `my-tool db migrate --help` shows the help for `db`. In a single-command CLI, use `my-tool my-tool --help` to reach the full command help.
+The renderer is subcommand-aware: `my-tool deploy --help` shows help for the `deploy` command specifically. Today this only looks at the first level, so `my-tool db migrate --help` shows the help for `db`. With `runCLI(cmd, { plugins: [helpPlugin()] })`, `--help` shows the command itself.
 
 ## Types
 

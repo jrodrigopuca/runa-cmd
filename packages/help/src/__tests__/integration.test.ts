@@ -8,7 +8,7 @@
  * `deploy --help` regression lock and rest-args trap.
  */
 
-import { defineCLI, defineCommand, definePlugin } from '@runa-cmd/core';
+import { defineCLI, defineCommand, definePlugin, runCLI } from '@runa-cmd/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { strip } from '../ansi/codes.js';
@@ -164,6 +164,31 @@ describe('integration — defineCLI + helpPlugin', () => {
 		// Help should NOT have been triggered
 		expect(exitSpy).not.toHaveBeenCalled();
 		expect(runFn).toHaveBeenCalled();
+	});
+});
+
+// ─── Single command with runCLI (ADR-0023) ──────────────────
+
+describe('integration — runCLI + helpPlugin', () => {
+	const tool = defineCommand({
+		meta: { name: 'tool', description: 'Sample tool' },
+		args: { content: z.string().describe('Text to encode') },
+		options: { size: z.number().default(10).describe('Module size') },
+		run: () => {},
+	});
+
+	it.each([
+		['--help', ['--help']],
+		['-h', ['-h']],
+		['a value before --help', ['hola', '--help']],
+		['the command name before --help', ['tool', '--help']],
+	])('%s shows the command help, not a command list', async (_case, argv) => {
+		await runCLI(tool, { argv, plugins: [helpPlugin()] });
+
+		const output = getCapturedOutput();
+		expect(output).toContain('tool <content> [options]');
+		expect(output).toContain('--size');
+		expect(output).not.toContain('COMMANDS');
 	});
 });
 

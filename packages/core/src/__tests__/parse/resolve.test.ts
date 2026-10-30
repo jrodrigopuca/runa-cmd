@@ -6,7 +6,12 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { ValidationError } from '../../errors.js';
-import { coerceBooleanValue, coerceNumberValue, resolveValues } from '../../parse/resolve.js';
+import {
+	coerceBooleanValue,
+	coerceNumberValue,
+	distributeRest,
+	resolveValues,
+} from '../../parse/resolve.js';
 
 describe('resolveValues — positional mapping', () => {
 	it('maps two positional args in order', () => {
@@ -202,6 +207,28 @@ describe('coerceNumberValue (ADR-0013)', () => {
 		expect(coerceNumberValue(0)).toBe(0);
 		expect(coerceNumberValue(undefined)).toBeUndefined();
 		expect(coerceNumberValue(true)).toBe(true);
+	});
+});
+
+describe('distributeRest', () => {
+	const pair = { from: z.string(), to: z.string() };
+	const list = { from: z.string(), files: z.array(z.string()) };
+
+	it.each([
+		['no args', {}, [], ['a'], [], ['a']],
+		['empty slots', pair, [], ['a', 'b', 'c'], ['a', 'b'], ['c']],
+		['one free slot', pair, ['a'], ['b', 'c'], ['a', 'b'], ['c']],
+		['no free slot', pair, ['a', 'b'], ['c'], ['a', 'b'], ['c']],
+		['more positionals than slots', pair, ['a', 'b', 'x'], ['c'], ['a', 'b', 'x'], ['c']],
+		['an empty variadic', list, ['a'], ['b', 'c'], ['a', 'b', 'c'], []],
+		['nothing before it', list, [], ['a', 'b', 'c'], ['a', 'b', 'c'], []],
+		['a filled variadic', list, ['a', 'b'], ['c'], ['a', 'b'], ['c']],
+		['no rest', pair, ['a'], [], ['a'], []],
+	])('handles %s', (_case, schemas, positionals, rest, expectedPositionals, expectedRest) => {
+		expect(distributeRest(positionals, rest, schemas)).toEqual({
+			positionals: expectedPositionals,
+			rest: expectedRest,
+		});
 	});
 });
 

@@ -64,6 +64,7 @@ export type {
 	// Plugin system
 	PluginConfig,
 	PluginMeta,
+	RunCLIOptions,
 	// Runtime types
 	RunContext,
 	RunReturn,

@@ -100,6 +100,29 @@ function mapPositionals(
 	return result;
 }
 
+/**
+ * Decide which tokens after `--` are operands and which stay in ctx.rest
+ * (ADR-0022): they fill the positionals still empty, where a variadic counts
+ * as one. So `lint -- -a -b` fills `files`, while `lint a.ts -- --fix` keeps
+ * `--fix` for ctx.rest.
+ */
+export function distributeRest(
+	positionals: string[],
+	rest: string[],
+	argsSchemas: Record<string, ZodType>,
+): { positionals: string[]; rest: string[] } {
+	const keys = Object.keys(argsSchemas);
+	const free = Math.max(0, keys.length - positionals.length);
+	const lastSchema = argsSchemas[keys.at(-1) ?? ''];
+	const fillsVariadic = free > 0 && lastSchema !== undefined && isVariadic(lastSchema);
+	const taken = fillsVariadic ? rest.length : free;
+
+	return {
+		positionals: [...positionals, ...rest.slice(0, taken)],
+		rest: rest.slice(taken),
+	};
+}
+
 // ─── Value Resolution ───────────────────────────────────────
 
 /**

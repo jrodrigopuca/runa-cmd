@@ -14,6 +14,7 @@ flowchart TD
     F --> G["Extraer y parsear globales"]
     G --> H["Hook: onGlobalFlags"]
     H -->|shortCircuit| Z["cleanup y fin"]
+    H -->|"--version integrado"| Z
     H --> I["Resolver comando"]
     I --> J["Parsear args y opciones"]
     J --> K["Comprobar flags desconocidas"]
@@ -62,16 +63,20 @@ El motivo se imprime antes de `cleanup`, para que siga visible aunque `cleanup` 
 
 ```mermaid
 flowchart TD
-    A{"¿Una sola entrada y es comando?"} -->|No| D["Recorrer el árbol token por token"]
+    R{"¿runCLI?"} -->|Sí| R1{"¿El primer token es otro comando?"}
+    R1 -->|No| R2["Correr la raíz sin consumir tokens"]
+    R1 -->|Sí| D
+    R -->|No| A{"¿Una sola entrada y es comando?"}
+    A -->|No| D["Recorrer el árbol token por token"]
     A -->|Sí| B{"¿El primer token es su nombre?"}
     B -->|Sí| C1["Consumir el token y correr"]
-    B -->|No| C2["Correr sin consumir tokens"]
+    B -->|No| C2["Correr sin consumir tokens y avisar la deprecación"]
     D --> E{"¿Encontró comando?"}
     E -->|Sí| F["Correr con el resto de argv"]
     E -->|No| G["CommandNotFoundError con sugerencia"]
 ```
 
-Esa primera rama es el modo implícito, que causa KI-006 y KI-015, y que [ADR-0023](../adr/0023-runcli-y-modo-raiz.md) reemplaza.
+La rama `¿Una sola entrada?` es el modo implícito de `defineCLI`, que causa KI-006 y KI-015 y se retira en [T-208](../backlog.md#t-208-retirar-el-modo-implícito). Con `runCLI`, un dato igual al nombre de un subcomando se pasa con `--` ([ADR-0023](../adr/0023-runcli-y-modo-raiz.md)).
 
 ## Middleware
 

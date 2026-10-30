@@ -13,7 +13,7 @@ pnpm add @runa-cmd/completions@beta
 > Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.
 > Zero runtime dependencies.
 
-Adding this plugin to a CLI with a single command turns it into a multi-command CLI, so the command name becomes required in argv.
+For a single command, use `runCLI(cmd, { plugins: [completionsPlugin()] })`: its options complete at the top level. With `defineCLI` and one command, this plugin makes the command name required in argv.
 
 ## Quick Start
 

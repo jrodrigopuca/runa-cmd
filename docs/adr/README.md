@@ -36,8 +36,8 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0019](./0019-completions-como-comando.md) | Completions como comando, con generadores puros | Aceptada |
 | [0020](./0020-un-comando-para-personas-y-agentes.md) | Un comando, para personas y agentes | Aceptada |
 | [0021](./0021-help-y-version-en-core.md) | `--help` y `--version` en `core`, cediendo ante el usuario | Aceptada, pendiente de código |
-| [0022](./0022-separador-llena-posicionales.md) | `--` llena posicionales; lo que sobra va a `ctx.rest` | Aceptada, pendiente de código |
-| [0023](./0023-runcli-y-modo-raiz.md) | `runCLI` con plugins y modo raíz explícito | Aceptada, pendiente de código |
+| [0022](./0022-separador-llena-posicionales.md) | `--` llena posicionales; lo que sobra va a `ctx.rest` | Aceptada |
+| [0023](./0023-runcli-y-modo-raiz.md) | `runCLI` con plugins y modo raíz explícito | Aceptada; falta retirar el modo implícito |
 | [0024](./0024-kebab-case.md) | Kebab-case en la terminal, camelCase en el código | Aceptada, pendiente de código |
 | [0025](./0025-control-de-mcp-en-el-plugin.md) | El control de tools MCP vive en el plugin | Aceptada, pendiente de código |
 | [0026](./0026-docs-como-fuente-de-verdad.md) | `docs/` como fuente de verdad | Aceptada |

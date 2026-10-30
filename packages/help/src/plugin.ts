@@ -74,15 +74,15 @@ export function helpPlugin(opts: HelpPluginOptions = {}): PluginConfig {
 
 /**
  * Find the target schema for help rendering.
- * Looks at rawArgs positionals to find a matching subcommand.
- * Falls back to the root CLI schema if no match.
+ * Looks at rawArgs positionals to find a matching subcommand. Without one,
+ * the target is the root command if the CLI has it, or else the whole CLI.
  */
 function resolveTarget(schema: CLISchema, rawArgs: string[]): CLISchema | CommandSchema {
 	// Find first positional arg (not a flag)
 	const subName = rawArgs.find((a) => !a.startsWith('-'));
-	if (!subName) return schema;
 
 	// Search top-level commands
 	const match = schema.commands.find((cmd) => cmd.name === subName);
-	return match ?? schema;
+	const root = schema.commands.find((cmd) => cmd.name === schema.root);
+	return match ?? root ?? schema;
 }

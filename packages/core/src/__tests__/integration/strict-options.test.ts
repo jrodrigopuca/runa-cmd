@@ -213,9 +213,9 @@ describe('strict options integration', () => {
 	});
 
 	it('tokens after -- are exempt from strict checking', async () => {
-		// Exemption scenario: the rest split (ADR-0012) removes post-`--` tokens from the pipeline BEFORE parseArgs, so the
-		// strict check can never flag them — they arrive verbatim on ctx.rest,
-		// never as positionals. Full rest semantics: integration/rest-args.test.ts.
+		// The split at `--` happens BEFORE parseArgs, so the strict check can never
+		// flag these tokens. An empty variadic receives them as operands (ADR-0022).
+		// Full rest semantics: integration/rest-args.test.ts.
 		let receivedParts: unknown;
 		let receivedRest: unknown;
 		const exec = defineCommand({
@@ -234,7 +234,7 @@ describe('strict options integration', () => {
 		await cli.run(['exec', '--', '--not-a-defined-flag']);
 
 		expect(spies.exitSpy).not.toHaveBeenCalled();
-		expect(receivedParts).toEqual([]);
-		expect(receivedRest).toEqual(['--not-a-defined-flag']);
+		expect(receivedParts).toEqual(['--not-a-defined-flag']);
+		expect(receivedRest).toEqual([]);
 	});
 });

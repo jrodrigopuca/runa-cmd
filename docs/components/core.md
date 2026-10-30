@@ -12,7 +12,7 @@ Entradas: `@runa-cmd/core` y `@runa-cmd/core/zod`, que reexporta `z`.
 |---|---|
 | `defineCommand(config)` | Crea un comando tipado. Valida variádicos y claves de `meta.options` al definir |
 | `defineCLI(config)` | Crea una CLI con `.run(argv?)` |
-| `runCLI(command, argv?)` | Atajo para un comando. Hoy no acepta plugins y solo conserva `name` y `description` |
+| `runCLI(command, options?)` | CLI de un comando, en modo raíz. Acepta `argv`, `plugins`, `middleware`, `config`, `globalOptions`, `globalMeta` y `strictOptions` |
 | `defineMiddleware(fn)` | Crea un middleware |
 | `definePlugin(config)` | Valida y devuelve un plugin |
 | `getSchema(config, ...)` | Devuelve la introspección de la CLI |
@@ -49,6 +49,10 @@ runCLI(deploy);
 - **`options`:** Zod puro. Alias, env, grupo y deprecación van en `meta.options`. `deprecated` se muestra en la ayuda y avisa por stderr al usar la opción.
 - **`output`:** si existe, `run()` debe cumplirlo; se comprueba en compilación y en ejecución.
 - **`run(ctx)`:** recibe `args`, `options`, `globalOptions`, `command`, `rawArgs` y `rest`.
+
+## `--version`
+
+Existe si hay `meta.version`: la de `defineCLI`, o la del comando con `runCLI`. No tiene alias corto. Imprime la versión y termina con 0, en cualquier posición antes de `--`. Si el comando al que apunta argv declara una opción `version` o el alias `--version`, gana esa opción. También gana una opción global `version`.
 
 ## `defineCLI`
 

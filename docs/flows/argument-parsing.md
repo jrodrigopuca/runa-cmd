@@ -8,24 +8,27 @@ Describe cómo argv se convierte en `args` y `options` tipados.
 flowchart TD
     A["argv"] --> B{"¿Hay --?"}
     B -->|"Antes"| C["head"]
-    B -->|"Después"| R["ctx.rest, sin validar"]
+    B -->|"Después"| R["Operandos"]
     C --> D["Extraer tokens de globales"]
     D --> E["parseArgs de globales y Zod"]
     D --> F["Resolver comando"]
     F --> G["parseArgs del comando"]
     G --> H["assertKnownOptions"]
-    H --> I["Mapear posicionales"]
+    R --> S["distributeRest"]
+    H --> S
+    S -->|"Llenan posicionales vacíos"| I["Mapear posicionales"]
+    S -->|"Lo que sobra"| T["ctx.rest, sin validar"]
     H --> J["CLI > env > config"]
     I --> K["Zod valida args"]
     J --> L["Zod valida options y aplica defaults"]
     K --> M["run(ctx)"]
     L --> M
-    R --> M
+    T --> M
 ```
 
 ## Etapas
 
-1. **Separar `--`.** Solo el primero divide. Lo posterior no pasa por ningún parser.
+1. **Separar `--`.** Solo el primero divide. Lo posterior no pasa por ningún parser: nunca se interpreta como flag. `distributeRest` lo usa para llenar los posicionales vacíos, donde un variádico cuenta como uno, y lo que sobra llega a `ctx.rest` ([ADR-0022](../adr/0022-separador-llena-posicionales.md)). Por eso `lint -- -a -b` llena `files`, y `lint a.ts -- --fix` deja `--fix` en `ctx.rest`.
 2. **Extraer globales.** Un bucle propio saca los tokens que coinciden con opciones globales, con su valor si no son booleanas. El resto sigue al comando.
 3. **Resolver el comando.** Ver [ciclo de vida](./cli-lifecycle.md).
 4. **Configurar `parseArgs`.** `buildParseArgsConfig` declara booleanos como `boolean` y todo lo demás como `string`, con `strict: false` y `allowNegative: true`.

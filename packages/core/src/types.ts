@@ -133,6 +133,12 @@ export interface CLIConfig {
 	strictOptions?: boolean;
 }
 
+/** Options for runCLI(): a CLI config without what the command itself provides. */
+export interface RunCLIOptions extends Omit<CLIConfig, 'meta' | 'commands'> {
+	/** Arguments to parse. Default: process.argv.slice(2) */
+	argv?: string[];
+}
+
 // ─── CLI (Branded Runtime Object) ───────────────────────────
 
 export interface CLI {
@@ -233,6 +239,8 @@ export interface CLISchema {
 	meta: CLIMeta;
 	commands: CommandSchema[];
 	globalOptions: OptionSchema[];
+	/** Name of the command that runs without a subcommand: set by runCLI() */
+	root?: string;
 }
 
 export interface CommandSchema {

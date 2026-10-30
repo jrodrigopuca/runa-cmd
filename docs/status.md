@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-30, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. La fase 1 del [backlog](./backlog.md) está cerrada, y sigue la fase 2. Sus cambios están en `main`, pendientes de la siguiente beta.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sigue la fase 3. Sus cambios están en `main`, pendientes de la siguiente beta.
 
 ## Versiones
 
@@ -22,9 +22,9 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 773 pasan: core 451, help 207, completions 82, mcp 33 |
-| Aceptación con procesos reales | 80 de 89 casos pasan; los otros 9 son fallos esperados, cada uno con su tarea |
-| Cobertura de `core` | 95,1% de líneas, 84,97% de ramas; el mínimo exigido es 80% de líneas |
+| Tests | 821 pasan: core 487, help 211, completions 88, mcp 35 |
+| Aceptación con procesos reales | 107 de 112 casos pasan; los otros 5 son fallos esperados, cada uno con su tarea |
+| Cobertura de `core` | 93,92% de líneas, 83,47% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
 
 ## Dónde estamos
