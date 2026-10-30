@@ -1,4 +1,4 @@
-# CI — beta-readiness task 1.1 (design D10)
+# CI — see docs/adr/0015-plataforma-y-ci.md
 #
 # Every step mirrors a root package.json script so any CI failure is
 # reproducible locally with the same command.
@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # docs:check reads the pushed commits
       - uses: pnpm/action-setup@v4
         # version intentionally omitted: read from the root "packageManager" field
       - uses: actions/setup-node@v4
@@ -23,6 +25,14 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm docs:check
+      # Backstop for the local commit-msg hook: code, tests and docs change together.
+      - name: Check pushed commits follow docs/process.md
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: node scripts/check-docs.mjs --range "${{ github.event.before }}..${{ github.sha }}"
+      - name: Check PR commits follow docs/process.md
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-docs.mjs --range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
       # Build before typecheck: help/mcp/completions resolve @runa-cmd/core
       # types from its dist/ (workspace dep) — a fresh checkout has no dist.
       - run: pnpm build
@@ -30,11 +40,10 @@ jobs:
 
   test:
     strategy:
-      # An OS-specific failure must not mask a failure in another cell (D10).
+      # An OS-specific failure must not mask a failure in another cell.
       fail-fast: false
-      # Node 24 baseline (decision 2026-07-18, D10 amendment): 18/20 are EOL and
-      # vitest 4's toolchain requires >=20.12 anyway. Matrix syntax kept so new
-      # Node versions are a one-line addition.
+      # Node 24 baseline (ADR-0015). Matrix syntax kept so new Node versions are
+      # a one-line addition.
       matrix:
         os: [ubuntu-latest, windows-latest]
         node: [24]
@@ -52,8 +61,8 @@ jobs:
       - run: pnpm test
 
   coverage:
-    # Single canonical coverage cell (D10) — report-only until task 3.10
-    # flips threshold enforcement on in packages/core/vitest.config.ts.
+    # Single canonical coverage cell (ADR-0015). The threshold lives in
+    # packages/core/vitest.config.ts.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

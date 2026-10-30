@@ -5,7 +5,7 @@
  * Tests: describe() for every supported construct, wrapper unwrapping,
  * supports() probe, the "Ensure you are using Zod v4" guard, and the
  * internals-confinement meta-test (fs walk).
- * References: Spec 2.1 (all scenarios) — Design D1, D2.
+ * References: ADR-0010.
  *
  * NOTE: the Zod-internals property name is built dynamically (INTERNALS_TOKEN)
  * so this file itself never contains the literal token the confinement
@@ -29,7 +29,7 @@ describe('zodV4Adapter identity', () => {
 		expect(zodV4Adapter.name).toBe('zod-v4');
 	});
 
-	it('is the defaultAdapter (internal selection, design D2)', () => {
+	it('is the defaultAdapter (internal selection)', () => {
 		expect(defaultAdapter).toBe(zodV4Adapter);
 	});
 });
@@ -122,7 +122,7 @@ describe('zodV4Adapter.describe() — wrapper unwrapping', () => {
 	});
 });
 
-describe('spec 2.1 scenario: metadata extraction is unchanged', () => {
+describe('adapter scenario:metadata extraction is unchanged', () => {
 	it('z.number().optional().default(8080).describe(...) → exact ParamMetadata via walkSchema', () => {
 		const schema = z.number().optional().default(8080).describe('Port to bind');
 		const result = walkSchema({ port: schema });
@@ -140,7 +140,7 @@ describe('spec 2.1 scenario: metadata extraction is unchanged', () => {
 	});
 });
 
-describe('spec 2.1 scenario: variadic detection through the adapter', () => {
+describe('adapter scenario:variadic detection through the adapter', () => {
 	it('z.array(z.string()).optional() → isVariadic true', () => {
 		expect(isVariadic(z.array(z.string()).optional())).toBe(true);
 	});
@@ -166,7 +166,7 @@ describe('zodV4Adapter.supports()', () => {
 	});
 });
 
-describe('spec 2.1 scenario: unsupported schema object fails loudly', () => {
+describe('adapter scenario:unsupported schema object fails loudly', () => {
 	it('plain object masquerading as a schema → "Ensure you are using Zod v4" error', () => {
 		const fake = { description: 'not a schema' } as never;
 		expect(() => zodV4Adapter.describe(fake)).toThrow(/Ensure you are using Zod v4/);
@@ -177,7 +177,7 @@ describe('spec 2.1 scenario: unsupported schema object fails loudly', () => {
 	});
 });
 
-describe('spec 2.1 scenario: internals access is confined (meta-test)', () => {
+describe('adapter scenario:internals access is confined (meta-test)', () => {
 	it(`"${INTERNALS_TOKEN}" appears only in parse/adapters/zod-v4.ts under packages/core/src`, () => {
 		const srcRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 		const entries = readdirSync(srcRoot, { recursive: true, encoding: 'utf8' });

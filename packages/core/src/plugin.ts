@@ -165,7 +165,7 @@ export interface PluginHostRefs {
 	getSchema: () => CLISchema;
 	/**
 	 * Registrant(s) per global option name, for collision attribution
-	 * (design Decision 9). Statically-declared `config.globalOptions` are
+	 * (ADR-0014). Statically-declared `config.globalOptions` are
 	 * seeded with STATIC_GLOBAL_OPTION_SOURCE; `addGlobalOption` appends the
 	 * registering plugin's name. More than one registrant = a collision that
 	 * `validateOptionCollisions()` reports.
@@ -205,7 +205,7 @@ export function createPluginAPI(
 			if (meta) {
 				refs.globalMeta.options[name] = meta;
 			}
-			// Record the registrant for collision attribution (Decision 9).
+			// Record the registrant for collision attribution (ADR-0014).
 			// A duplicate registration is NOT rejected here — the single
 			// validation pass after setup reports it (order-independent).
 			if (refs.globalOptionSources) {
@@ -255,7 +255,7 @@ export async function runPluginSetup(plugins: PluginConfig[], refs: PluginHostRe
 	}
 }
 
-// ─── Option collision detection (Decision 9) ────────────────
+// ─── Option collision detection (ADR-0014) ────────────────
 
 /**
  * Sentinel registrant for global options declared statically in
@@ -305,7 +305,7 @@ interface GlobalTokenOwner {
 }
 
 /**
- * Single validation pass over the full option surface (design Decision 9).
+ * Single validation pass over the full option surface (ADR-0014).
  * Called once per `cli.run()`, immediately after plugin setup — the earliest
  * point where plugin-registered globals AND plugin-added commands both exist.
  *

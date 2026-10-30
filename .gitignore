@@ -1,6 +1,3 @@
-# feedback
-runa-cmd-feedback.md
-
 # Dependencies
 node_modules/
 
@@ -31,5 +28,4 @@ Thumbs.db
 
 # Project-specific
 openspec/*
-RUNA-RESEARCH.md
 RUNA-SPEC.md

@@ -72,7 +72,7 @@ export function createHookRegistry(): HookRegistry {
 					try {
 						await handler(context);
 					} catch (err) {
-						// D8: never rethrown (all handlers must run), but the
+						// ADR-0009: never rethrown (all handlers must run), but the
 						// handler's own defect must not vanish — log to stderr.
 						// Plugin cleanup() errors are reported separately.
 						console.error('runa: cleanup hook threw:', err);

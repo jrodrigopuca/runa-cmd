@@ -3,9 +3,9 @@
  *
  * Tests the full pipeline: defineCLI with helpPlugin, --help triggers
  * help rendering and short-circuits the lifecycle WITHOUT process.exit
- * (design D6): cli.run() resolves, cleanup hooks fire, embedders get
+ * (ADR-0006): cli.run() resolves, cleanup hooks fire, embedders get
  * control back. Tests both root and subcommand help, plus the
- * `deploy --help` regression lock (spec 2.3) and rest-args trap (spec 1.3).
+ * `deploy --help` regression lock and rest-args trap.
  */
 
 import { defineCLI, defineCommand, definePlugin } from '@runa-cmd/core';
@@ -167,7 +167,7 @@ describe('integration — defineCLI + helpPlugin', () => {
 	});
 });
 
-// ─── Help Lifecycle (design D6, spec 1.4) ───────────────────
+// ─── Help Lifecycle (ADR-0006) ──────────────────────────────
 
 describe('integration — help lifecycle without process.exit', () => {
 	it('shortCircuit-without-exit: run() resolves, statements after await execute, no exit', async () => {
@@ -262,7 +262,7 @@ describe('integration — help lifecycle without process.exit', () => {
 		expect(exitSpy).toHaveBeenCalledWith(0);
 	});
 
-	it('rest-args trap (spec 1.3): exec -- --help does NOT render help; exec runs with rest', async () => {
+	it('rest-args trap: exec -- --help does NOT render help; exec runs with rest', async () => {
 		let receivedRest: string[] | undefined;
 		const exec = defineCommand({
 			meta: { name: 'exec', description: 'Run a command' },
@@ -284,7 +284,7 @@ describe('integration — help lifecycle without process.exit', () => {
 	});
 });
 
-// ─── Regression Lock: Subcommand Help Targeting (spec 2.3) ──
+// ─── Regression Lock: Subcommand Help Targeting ─────────────
 
 describe('integration — deploy --help regression lock', () => {
 	function makeMultiCommandCLI() {

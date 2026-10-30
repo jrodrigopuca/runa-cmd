@@ -1,11 +1,8 @@
 /**
- * Integration tests for strict unknown-option rejection (task 2.5)
+ * Integration tests for strict unknown-option rejection (ADR-0011)
  *
  * Tests the wired lifecycle: cli.run() with injected argv → command parseArgs
  * → assertKnownOptions → ValidationError (exit 2) with did-you-mean.
- *
- * References: specs.md Requirement 1.2 (all scenarios) + "Strict Options
- * Escape Hatch" (both scenarios); design.md D3/D4.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -216,8 +213,7 @@ describe('strict options integration', () => {
 	});
 
 	it('tokens after -- are exempt from strict checking', async () => {
-		// Spec 1.2 exemption scenario: the rest split (task 2.6, design D5)
-		// removes post-`--` tokens from the pipeline BEFORE parseArgs, so the
+		// Exemption scenario: the rest split (ADR-0012) removes post-`--` tokens from the pipeline BEFORE parseArgs, so the
 		// strict check can never flag them — they arrive verbatim on ctx.rest,
 		// never as positionals. Full rest semantics: integration/rest-args.test.ts.
 		let receivedParts: unknown;

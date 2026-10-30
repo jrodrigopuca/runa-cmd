@@ -229,6 +229,10 @@ CLI args > Environment variables > Config file values > Zod defaults
 - **Zod v4** — Peer dependency, not bundled
 - **TypeScript 6** — Strict mode, full inference
 
+## Documentation
+
+Everything about the project lives in [`docs/`](./docs/README.md): [status](./docs/status.md), [known issues](./docs/known-issues.md), [backlog](./docs/backlog.md), [architecture](./docs/architecture.md), [components](./docs/components/), [flows](./docs/flows/) and [decisions](./docs/adr/README.md).
+
 ## Development
 
 ```bash

@@ -26,7 +26,7 @@
 | 1. Base confiable | T-001 | Tests de aceptación con procesos reales | Requerido | Pendiente |
 | | T-002 | Type tests en CI | Requerido | Pendiente |
 | | T-003 | Documentación fiel al estado real | Requerido | Pendiente |
-| | T-004 | Spec y decisiones visibles en el repo | Requerido | Decisión pendiente |
+| | T-004 | Spec y decisiones visibles en el repo | Requerido | En curso |
 | | T-101 | `cleanup` corre también ante errores | Requerido | Pendiente |
 | | T-102 | Booleanos desde env y config | Requerido | Pendiente |
 | | T-103 | Errores de uso consistentes | Requerido | Pendiente |
@@ -68,7 +68,7 @@
 - **Estado:** Pendiente
 - **Descripción:** como mantenedor, quiero probar la CLI como la usa una persona, para no depender de mocks de `process.exit`, que ya ocultaron un bug.
 - **Criterios de aceptación:**
-  - La tabla de aceptación de `runa-dx-feedback.md` existe como tests que lanzan un proceso real y verifican stdout, stderr y exit code.
+  - La [tabla de aceptación del feedback de qr-plus](./research/2026-10-qr-plus-migration.md#casos-para-tests-de-aceptación) existe como tests que lanzan un proceso real y verifican stdout, stderr y exit code.
   - Las filas aún sin resolver quedan marcadas como fallo esperado y pasan a tests normales al cerrar su tarea.
   - `runCLI` deja de figurar como no cubierto en el reporte de cobertura.
 
@@ -97,14 +97,13 @@
 ### T-004 Spec y decisiones visibles en el repo
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
-- **Descripción:** como colaborador, quiero leer el spec y las decisiones que cita el código, para entender por qué funciona así. Hoy `RUNA-SPEC.md` y `openspec/` están ignorados por git.
-- **Decisión:** publicar esos archivos, o reemplazarlos por ADRs públicos en `docs/adr/`.
+- **Estado:** En curso
+- **Descripción:** como colaborador, quiero leer el spec y las decisiones que cita el código, para entender por qué funciona así. `docs/` reemplaza a `RUNA-SPEC.md` y `openspec/` ([ADR-0026](./adr/0026-docs-como-fuente-de-verdad.md)).
 - **Criterios de aceptación:**
   - Nada en `CONTRIBUTING.md` ni en el código remite a un documento que un clon limpio no tenga.
   - Las decisiones de este backlog (`--`, modo raíz, `--help`, kebab-case y alcance de MCP) quedan registradas con su condición de revisión.
-  - `runa-dx-feedback.md` queda versionado o ignorado, de forma explícita.
-  - Los cambios en `openspec/` que siguen sin archivar quedan archivados, si se decide conservarlo.
+  - El feedback de qr-plus queda versionado en `docs/research/`.
+  - `RUNA-SPEC.md` y `openspec/` se eliminan, y salen de `.gitignore`.
 
 ### T-101 `cleanup` corre también ante errores
 

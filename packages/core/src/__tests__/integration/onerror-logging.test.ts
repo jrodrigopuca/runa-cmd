@@ -1,5 +1,5 @@
 /**
- * onError/cleanup hook failure logging — beta-readiness task 3.7 (design D8, spec 2.5).
+ * onError/cleanup hook failure logging (ADR-0009).
  *
  * The bare catches that protect cleanup from broken hook handlers now log the
  * handler's own defect to stderr. Cleanup semantics are unchanged: the ORIGINAL

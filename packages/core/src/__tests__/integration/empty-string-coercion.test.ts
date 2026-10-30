@@ -1,13 +1,12 @@
 /**
- * Integration tests for empty-string number coercion rejection (task 2.9)
+ * Integration tests for empty-string number coercion rejection (ADR-0013)
  *
  * Number('') === 0 used to silently fabricate 0 for empty/whitespace-only
- * strings at all three resolution sources. coerceNumberValue() (task 2.8,
- * design D7) now declines to coerce, so Zod rejects the string through the
- * existing humanizer as a ValidationError (exit 2).
+ * strings at all three resolution sources. coerceNumberValue() now declines
+ * to coerce, so Zod rejects the string through the existing humanizer as a
+ * ValidationError (exit 2).
  *
  * Parametrized across all THREE sources: CLI arg, env var, config value.
- * References: specs.md Requirement 1.5 (all 6 scenarios); design.md D7.
  */
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

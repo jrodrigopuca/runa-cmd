@@ -150,7 +150,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 	const mutableMiddleware: Middleware[] = [...(config.middleware ?? [])];
 	let sortedPlugins: PluginConfig[] = [];
 
-	// Registrant per global option name (Decision 9): statically-declared
+	// Registrant per global option name (ADR-0014): statically-declared
 	// globals are seeded here; plugin registrations append via addGlobalOption.
 	const globalOptionSources = new Map<string, string[]>();
 	for (const name of Object.keys(mutableGlobalOptions)) {
@@ -191,7 +191,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 			await runPluginSetup(sortedPlugins, pluginRefs);
 		}
 
-		// ─── Option collision validation (Decision 9) ─────
+		// ─── Option collision validation (ADR-0014) ─────
 		// Post-plugin-setup is the earliest point where the full option
 		// surface (plugin globals + plugin commands) exists. Runs before
 		// any parsing on every invocation; throws RunaError OPTION_COLLISION.
@@ -207,7 +207,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		// Handlers may have mutated hookCtx.rawArgs
 		const currentArgv = hookCtx.rawArgs;
 
-		// ─── Rest split (Decision 5) ──────────────────────
+		// ─── Rest split (ADR-0012) ────────────────────────
 		// Split at the FIRST `--`: `head` flows through the entire pipeline
 		// (global extraction → resolution → parseArgs → strict check), `rest`
 		// bypasses everything and lands verbatim on the run context. Because
@@ -438,9 +438,9 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		try {
 			await hookRegistry.emit('onError', hookCtx);
 		} catch (hookErr) {
-			// D8: log to stderr, never rethrow — a broken error handler must
-			// not prevent cleanup, but its own defect must not vanish either
-			// (spec 2.5). The ORIGINAL error still drives exit behavior below.
+			// ADR-0009: log to stderr, never rethrow — a broken error handler must
+			// not prevent cleanup, but its own defect must not vanish either.
+			// The ORIGINAL error still drives exit behavior below.
 			console.error('runa: onError handler threw:', hookErr);
 		}
 
@@ -455,7 +455,7 @@ async function runCLILifecycle(config: CLIConfig, argv: string[]): Promise<void>
 		try {
 			await hookRegistry.emit('cleanup', hookCtx);
 		} catch (hookErr) {
-			// D8: same treatment as onError — log the defect, keep cleaning up.
+			// ADR-0009: same treatment as onError — log the defect, keep cleaning up.
 			console.error('runa: cleanup hook threw:', hookErr);
 		}
 

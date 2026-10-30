@@ -178,7 +178,7 @@ describe('resolveValues — options merge priority', () => {
 	});
 });
 
-describe('coerceNumberValue (task 2.8, design D7)', () => {
+describe('coerceNumberValue (ADR-0013)', () => {
 	it('returns empty string unchanged (declines to coerce)', () => {
 		expect(coerceNumberValue('')).toBe('');
 	});

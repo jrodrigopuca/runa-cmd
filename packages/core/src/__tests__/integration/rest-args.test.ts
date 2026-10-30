@@ -1,12 +1,11 @@
 /**
- * Integration tests for rest-args forwarding — ctx.rest (task 2.7)
+ * Integration tests for rest-args forwarding — ctx.rest
  *
  * The raw argv is split at the FIRST `--` before any option processing:
  * `head` flows through the pipeline (global extraction → parseArgs →
  * strict check), everything after `--` lands verbatim on ctx.rest.
  *
- * References: specs.md Requirement 1.3 (all scenarios) + 1.2 exemption
- * scenario; design.md D5.
+ * References: ADR-0012, replaced by ADR-0022 (pending, see T-202).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';

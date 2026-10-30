@@ -2,7 +2,7 @@
  * Unit tests for strict unknown-option checking (parse/strict.ts)
  *
  * Tests: assertKnownOptions() — the single place unknown-flag rejection lives.
- * References: specs.md Requirement 1.2, design.md D3/D4.
+ * References: ADR-0011.
  */
 import { describe, expect, it } from 'vitest';
 import { ValidationError } from '../../errors.js';

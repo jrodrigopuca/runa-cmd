@@ -1,5 +1,5 @@
 /**
- * Option collision detection — beta-readiness tasks 3.5/3.6 (design D9, spec 2.4).
+ * Option collision detection (ADR-0014).
  *
  * Unit: direct validateOptionCollisions() calls with synthetic trees.
  * Integration: full cli.run() lifecycle — the check fires after plugin setup,

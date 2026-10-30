@@ -35,9 +35,10 @@ runa-cmd/
 │   └── completions/   # @runa-cmd/completions — Shell completions (bash/zsh/fish)
 ├── examples/
 │   └── demo/          # Full demo CLI showcasing all features
+├── docs/              # Source of truth: components, flows, ADRs, backlog, status
+├── scripts/           # Repo tooling (docs:check)
 ├── biome.json         # Linter & formatter config
 ├── pnpm-workspace.yaml
-├── RUNA-SPEC.md       # Framework specification (source of truth)
 └── tsconfig.json      # Root TypeScript config
 ```
 
@@ -57,6 +58,7 @@ This is a **pnpm workspace monorepo**. Each package under `packages/` is publish
 | `pnpm lint:fix` | Auto-fix lint and formatting issues |
 | `pnpm demo` | Run the demo CLI (`examples/demo`) |
 | `pnpm clean` | Remove all `dist/` directories |
+| `pnpm docs:check` | Verify links, paths, ADRs, backlog and known issues in `docs/` |
 
 ### Important: Build Before Testing the Demo
 
@@ -137,7 +139,7 @@ test(completions): add fish generator edge cases
 chore: update dependencies
 ```
 
-**Scopes** match package names: `core`, `help`, `mcp`, `completions`, `demo`.
+**Scopes** match package names: `core`, `help`, `mcp`, `completions`, `demo`, plus `docs`.
 
 ### Testing
 
@@ -168,11 +170,17 @@ The Zod schema defines everything: types, validation, help text, MCP tools, comp
 
 Plugins extend the CLI via hooks. See `packages/core/src/plugin.ts` and the existing plugins (help, mcp, completions) as reference implementations.
 
-### RUNA-SPEC.md
+### Documentation
 
-`RUNA-SPEC.md` at the repo root is the **specification document**. Major design decisions should align with it. If you want to propose changes to the spec, open an issue first.
+[`docs/`](./docs/README.md) is the **source of truth**: components, flows, architecture decisions (ADRs), backlog, status and known issues. Check the [ADR index](./docs/adr/README.md) before proposing a design change. Accepted ADRs are never edited: a new ADR replaces them.
 
 ## Making a Contribution
+
+Every change follows the cycle in [`docs/process.md`](./docs/process.md): document, write a failing test, code, test, verify, document. Enable the local check once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
 
 ### For Bug Fixes
 
@@ -182,16 +190,18 @@ Plugins extend the CLI via hooks. See `packages/core/src/plugin.ts` and the exis
 4. Fix the bug
 5. Ensure all tests pass: `pnpm test`
 6. Ensure lint is clean: `pnpm lint`
-7. Submit a PR
+7. Update `docs/`, including known issues
+8. Submit a PR
 
 ### For New Features
 
-1. **Open an issue first** to discuss the feature and its alignment with the spec
+1. **Open an issue first** to discuss the feature and its fit with the [backlog](./docs/backlog.md) and ADRs
 2. Fork the repo and create a branch: `feat/description`
-3. Implement with tests
-4. Ensure all tests pass and lint is clean
-5. Update relevant README if the feature is user-facing
-6. Submit a PR
+3. Document the intended behavior in `docs/`
+4. Implement with tests
+5. Ensure all tests pass and lint is clean
+6. Update the component docs and the README if the feature is user-facing
+7. Submit a PR
 
 ### PR Checklist
 
@@ -199,6 +209,7 @@ Plugins extend the CLI via hooks. See `packages/core/src/plugin.ts` and the exis
 - [ ] Types check (`pnpm typecheck`)
 - [ ] Lint is clean (`pnpm lint`)
 - [ ] Build succeeds (`pnpm build`)
+- [ ] Docs are consistent (`pnpm docs:check`)
 - [ ] New features include tests
 - [ ] Commit messages follow conventional commits
 

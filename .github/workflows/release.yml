@@ -1,10 +1,10 @@
-# Release — beta-readiness task 3.9 (design D12, amended 2026-07-18)
+# Release — see docs/adr/0016-release-con-changesets.md
 #
 # Version-PR-only mode: on push to main with pending changesets,
 # changesets/action@v1 opens/updates the "Version Packages" PR. Publishing is
-# NOT automated — no NPM_TOKEN lives in repo secrets (decision 2026-07-18: a
-# Bypass-2FA token in secrets is worse security than local publish with 2FA in
-# hand, and 90-day granular-token rotation isn't worth it at this cadence).
+# NOT automated — no NPM_TOKEN lives in repo secrets: a Bypass-2FA token in
+# secrets is worse security than local publish with 2FA in hand, and 90-day
+# granular-token rotation isn't worth it at this cadence.
 #
 # Publish flow after merging the Version Packages PR (see CONTRIBUTING.md):
 #   git pull origin main && pnpm release
@@ -39,6 +39,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: changesets/action@v1
         # No `publish` input and no NPM_TOKEN: this action only maintains the
-        # Version Packages PR. Publishing happens locally with 2FA (D12 amendment).
+        # Version Packages PR. Publishing happens locally with 2FA.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,7 +1,7 @@
 /**
  * @runa-cmd/core — SchemaAdapter seam
  *
- * Introspection-only abstraction over schema-library internals (design D1).
+ * Introspection-only abstraction over schema-library internals (ADR-0010).
  * The adapter answers structural questions (kind, optionality, default,
  * enum values, description) — it does NOT validate; `resolve.ts` keeps
  * calling Zod's `.parse()` directly.
@@ -9,7 +9,7 @@
  * The `SchemaAdapter`/`SchemaDescription` types are public (exported from
  * the package barrel) to enable external experimentation, but adapter
  * SELECTION stays internal: no `schemaAdapter` config option ships until
- * a second implementation exists (design D2).
+ * a second implementation exists.
  */
 import type { ZodType } from 'zod';
 import type { ParamType } from '../types.js';

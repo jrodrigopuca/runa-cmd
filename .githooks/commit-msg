@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks a commit that breaks the rules in docs/process.md.
+exec node scripts/check-docs.mjs --staged --message "$1"
