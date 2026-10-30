@@ -26,7 +26,7 @@
 | 1. Base confiable | T-001 | Tests de aceptación con procesos reales | Requerido | Pendiente |
 | | T-002 | Type tests en CI | Requerido | Pendiente |
 | | T-003 | Documentación fiel al estado real | Requerido | Pendiente |
-| | T-004 | Spec y decisiones visibles en el repo | Requerido | En curso |
+| | T-004 | Spec y decisiones visibles en el repo | Requerido | Hecho |
 | | T-101 | `cleanup` corre también ante errores | Requerido | Pendiente |
 | | T-102 | Booleanos desde env y config | Requerido | Pendiente |
 | | T-103 | Errores de uso consistentes | Requerido | Pendiente |
@@ -97,7 +97,7 @@
 ### T-004 Spec y decisiones visibles en el repo
 
 - **v1:** Requerido
-- **Estado:** En curso
+- **Estado:** Hecho
 - **Descripción:** como colaborador, quiero leer el spec y las decisiones que cita el código, para entender por qué funciona así. `docs/` reemplaza a `RUNA-SPEC.md` y `openspec/` ([ADR-0026](./adr/0026-docs-como-fuente-de-verdad.md)).
 - **Criterios de aceptación:**
   - Nada en `CONTRIBUTING.md` ni en el código remite a un documento que un clon limpio no tenga.

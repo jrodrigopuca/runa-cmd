@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-30, sobre el commit `1d15a71`, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. La fase 1 del [backlog](./backlog.md) está por empezar.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. La fase 1 del [backlog](./backlog.md) está en curso, con T-004 cerrada.
 
 ## Versiones
 

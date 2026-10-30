@@ -25,7 +25,3 @@ Thumbs.db
 
 # pnpm
 .pnpm-debug.log
-
-# Project-specific
-openspec/*
-RUNA-SPEC.md
