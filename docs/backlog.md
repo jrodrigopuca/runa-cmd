@@ -51,7 +51,7 @@
 | | T-205 | Ruteo único para la ayuda | Requerido | Hecho |
 | | T-206 | Kebab-case por defecto | Requerido | Hecho |
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Hecho |
-| 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Pendiente |
+| 5. Validación | T-401 | Publicar la siguiente beta | Requerido | En curso |
 | | T-402 | Revalidar qr-plus, CLI y MCP | Requerido | Pendiente |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
@@ -454,11 +454,11 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-401 Publicar la siguiente beta
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** fases 1 a 4
+- **Estado:** En curso
 - **Descripción:** como mantenedor, quiero publicar estos cambios bajo `beta`, para probarlos en un proyecto real. La publicación es manual.
 - **Criterios de aceptación:**
   - La versión llega al dist-tag `beta`, y `latest` no cambia.
+  - `help`, `mcp` y `completions` exigen la versión de `core` que usan, y npm rechaza una anterior.
   - El changelog incluye una guía de migración con cada cambio de comportamiento.
   - Una instalación limpia corre el ejemplo del README.
 

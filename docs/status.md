@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. De la fase 3 solo quedan T-307 y T-308, opcionales. Sigue la fase 5: publicar la beta (T-401) y revalidar qr-plus (T-402).
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. De la fase 3 solo quedan T-307 y T-308, opcionales. En la fase 5, la beta está lista para publicar (T-401): la instalación limpia del README pasó con paquetes empaquetados, y la publicación sigue siendo manual. Después se revalida qr-plus (T-402).
 
 ## Versiones
 

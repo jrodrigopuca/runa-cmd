@@ -267,11 +267,15 @@ git push --follow-tags
 ```
 
 > **Note:** the `@runa-cmd/core` peer dependency in `help`/`mcp`/`completions`
-> is an **explicit range** (`^0.2.0-beta.0`), not `workspace:*`. This is
+> is an **explicit range** (`^0.2.0-beta.1`), not `workspace:*`. This is
 > deliberate: it prevents changesets from escalating every release to a major
 > bump (see `.changeset/config.json`'s `onlyUpdatePeerDependentsWhenOutOfRange`).
 > When a new minor series starts (e.g., `0.3.0`), widen these ranges manually or
 > the escalation returns. `devDependencies` still use `workspace:*` (unpublished).
+>
+> **The range is also a floor.** Changesets doesn't raise it. If a plugin starts
+> using something new from `core`, raise the range before publishing: otherwise
+> npm installs the plugin with an older `core`, and it crashes at import.
 
 ### Post-Publish Verification
 
