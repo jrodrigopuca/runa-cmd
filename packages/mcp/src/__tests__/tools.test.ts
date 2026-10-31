@@ -104,6 +104,103 @@ describe('the result of a call', () => {
 	});
 });
 
+describe('what an error says about retrying', () => {
+	const meta = (result: { _meta?: Record<string, unknown> }) => result._meta?.['runa/error'];
+
+	it('invalid input: nothing ran, safe to fix and retry', async () => {
+		const client = await serve();
+		expect(meta((await client.call('deploy', {})) as never)).toEqual({
+			class: 'invalid_input',
+			effect: 'none',
+			safeToRetry: true,
+		});
+	});
+
+	it('rejected by a middleware: nothing ran', async () => {
+		const client = await serve({ MIDDLEWARE_REJECTS: '1' });
+		const result = await client.call('greet', { name: 'Ana' });
+		expect(meta(result as never)).toEqual({ class: 'rejected', effect: 'none', safeToRetry: true });
+		expect(text(result)).toContain('The command did not run');
+	});
+
+	it('skipped by a middleware: nothing ran, and it is not a success', async () => {
+		const client = await serve({ MIDDLEWARE_SKIPS: '1' });
+		const result = await client.call('greet', { name: 'Ana' });
+		expect(result.isError).toBe(true);
+		expect(meta(result as never)).toEqual({ class: 'not_run', effect: 'none', safeToRetry: true });
+	});
+
+	it('failed partway: the effects are unknown, never reported as nothing', async () => {
+		const client = await serve();
+		const result = await client.call('partial');
+		expect(meta(result as never)).toEqual({
+			class: 'command_failed',
+			effect: 'unknown',
+			safeToRetry: false,
+		});
+		expect(text(result)).toContain('then the network failed');
+		expect(text(result)).toContain('may have taken effect');
+	});
+
+	it('a crash: the effects are unknown', async () => {
+		const client = await serve();
+		expect(meta((await client.call('crash')) as never)).toEqual({
+			class: 'crashed',
+			effect: 'unknown',
+			safeToRetry: false,
+		});
+	});
+
+	it('exit 0 before finishing: the effects are unknown', async () => {
+		const client = await serve();
+		const result = await client.call('leave');
+		expect(result.isError).toBe(true);
+		expect(meta(result as never)).toMatchObject({ effect: 'unknown', safeToRetry: false });
+	});
+
+	it('invalid output: it already ran, and the text says so without raw Zod', async () => {
+		const client = await serve();
+		const result = await client.call('charged');
+		expect(meta(result as never)).toEqual({
+			class: 'invalid_output',
+			effect: 'completed',
+			safeToRetry: false,
+		});
+		expect(text(result)).toContain('already ran');
+		expect(text(result)).toContain('Do not retry');
+		expect(text(result)).toContain('receipt:');
+		expect(text(result)).not.toContain('"code"');
+	});
+
+	it('a failure after run(): it already ran', async () => {
+		const client = await serve({ AFTER_RUN_FAILS: '1' });
+		const result = await client.call('greet', { name: 'Ana' });
+		expect(result.isError).toBe(true);
+		expect(meta(result as never)).toEqual({
+			class: 'after_run_failed',
+			effect: 'completed',
+			safeToRetry: false,
+		});
+		expect(text(result)).toContain('telemetry is down');
+		expect(text(result)).toContain('already ran');
+	});
+
+	it.each([
+		['an unexpected error', 'partial', {}],
+		['a usage error', 'deploy', {}],
+	])('leaves hints for people out of %s', async (_case, tool, args) => {
+		const client = await serve();
+		const message = text(await client.call(tool, args));
+		expect(message).not.toContain('RUNA_DEBUG');
+		expect(message).not.toContain('--help');
+	});
+
+	it('adds no error metadata to a success', async () => {
+		const client = await serve();
+		expect(meta((await client.call('quiet')) as never)).toBeUndefined();
+	});
+});
+
 describe('failures', () => {
 	it('returns the error of the command', async () => {
 		const client = await serve();
@@ -189,7 +286,7 @@ describe('the lifecycle of the CLI', () => {
 		const client = await serve({ MIDDLEWARE_SKIPS: '1' });
 		const result = await client.call('greet', { name: 'Ana' });
 		expect(result.isError).toBe(true);
-		expect(text(result)).toContain("Command 'greet' did not finish");
+		expect(text(result)).toContain("Command 'greet' did not run");
 	});
 
 	it('forwards the globals the server started with', async () => {

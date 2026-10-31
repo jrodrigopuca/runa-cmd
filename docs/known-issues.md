@@ -1,6 +1,6 @@
 # Problemas conocidos
 
-> **Verificado:** 2026-10-30, sobre `0.2.0-beta.0` compilada desde `main`.
+> **Verificado:** 2026-10-31, sobre `0.2.0-beta.0` compilada desde `main`.
 
 Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se borra la fila y el historial queda en git.
 
@@ -16,7 +16,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
-| KI-033 | Si `output` falla, un comando con efectos vuelve como error, y el modelo puede repetirlo | Leído | El informe `ran` llega al servidor, pero `toToolResult` todavía no lo usa | [T-304](./backlog.md#t-304-contrato-de-resultado-y-errores) |
 | KI-005 | Toda opción `z.array()` falla, incluso `--tag a` | Observado | No se usa `multiple` en `parseArgs` | [T-207](./backlog.md#t-207-opciones-repetidas-con-zarray) |
 | KI-006 | En `defineCLI` con un comando, `completionsPlugin` rompe el modo implícito: `tool hola` da 127. Con `runCLI` no pasa | Observado | El modo depende de contar comandos | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
 | KI-007 | No se pueden excluir comandos de MCP ni marcarlos como destructivos | Leído | `McpPluginOptions` no lo ofrece | [T-302](./backlog.md#t-302-excluir-y-anotar-tools) |
@@ -36,6 +35,4 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 ## Severidad baja
 
-| ID | Problema | Evidencia | Causa | Tarea |
-|---|---|---|---|---|
-| KI-030 | En MCP, un `output` inválido llega al agente como JSON crudo de Zod | Leído | `outputSchema.parse` en `packages/mcp/src/server.ts:102` | [T-304](./backlog.md#t-304-contrato-de-resultado-y-errores) |
+Ninguno abierto.

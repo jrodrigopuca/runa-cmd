@@ -29,7 +29,10 @@ const lifecycle = definePlugin({
 		api.hook('beforeRun', (ctx) => {
 			trace(`beforeRun:${ctx.invocation.surface}:${ctx.invocation.tool}`);
 		});
-		api.hook('afterRun', () => trace('afterRun'));
+		api.hook('afterRun', () => {
+			trace('afterRun');
+			if (process.env.AFTER_RUN_FAILS) throw new Error('telemetry is down');
+		});
 		api.hook('cleanup', () => trace('cleanup'));
 	},
 });
@@ -110,6 +113,19 @@ await defineCLI({
 		fail: command('fail', {
 			run() {
 				throw new CommandError('Environment is locked', { exitCode: 3 });
+			},
+		}),
+		partial: command('partial', {
+			run() {
+				trace('charged the card');
+				throw new Error('then the network failed');
+			},
+		}),
+		charged: command('charged', {
+			output: z.object({ receipt: z.string() }),
+			run() {
+				trace('charged the card');
+				return { receipt: 42 };
 			},
 		}),
 		crash: command('crash', { run: () => process.exit(9) }),

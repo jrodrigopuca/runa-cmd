@@ -87,9 +87,13 @@ describe('toToolResult', () => {
 	});
 
 	it('reports a failed command with what it wrote', () => {
-		const result = toToolResult(reg, outcome({ status: 3, stderr: 'locked\n', reports: [] }));
+		const reports: ChildOutcome['reports'] = [
+			{ kind: 'running' },
+			{ kind: 'failed', reason: 'other' },
+		];
+		const result = toToolResult(reg, outcome({ status: 3, stderr: 'locked\n', reports }));
 		expect(result.isError).toBe(true);
-		expect(result.content[0]?.text).toBe('locked');
+		expect(result.content[0]?.text).toContain('locked');
 	});
 
 	it('falls back to the exit code when a failed command wrote nothing', () => {
@@ -97,8 +101,23 @@ describe('toToolResult', () => {
 	});
 
 	it('does not treat exit 0 as success without a result', () => {
-		const result = toToolResult(reg, outcome({ reports: [] }));
+		const result = toToolResult(reg, outcome({ reports: [{ kind: 'running' }] }));
 		expect(result.isError).toBe(true);
 		expect(result.content[0]?.text).toContain('did not finish');
+	});
+
+	it('says nothing ran when the child died before run()', () => {
+		const result = toToolResult(reg, outcome({ status: 9, reports: [] }));
+		expect(result._meta?.['runa/error']).toEqual({
+			class: 'crashed',
+			effect: 'none',
+			safeToRetry: true,
+		});
+	});
+
+	it('does not call it a success if the run exits with an error after its result', () => {
+		const result = toToolResult(reg, outcome({ status: 2 }));
+		expect(result.isError).toBe(true);
+		expect(result._meta?.['runa/error']).toMatchObject({ effect: 'completed' });
 	});
 });

@@ -42,7 +42,7 @@
 | | T-301 | Separar parseo y ejecución en `core` | Requerido | Hecho |
 | | T-303 | Ejecutar cada tool en un subproceso | Requerido | Hecho |
 | | T-306 | Valores de quien opera fuera del schema | Requerido | Hecho |
-| | T-304 | Contrato de resultado y errores | Requerido | Pendiente |
+| | T-304 | Contrato de resultado y errores | Requerido | Hecho |
 | | T-305 | Cancelación y límites | Requerido | Pendiente |
 | | T-302 | Excluir y anotar tools | Requerido | Pendiente |
 | | T-307 | Evento por llamada | Opcional | Pendiente |
@@ -321,16 +321,17 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-304 Contrato de resultado y errores
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** T-303
+- **Estado:** Hecho
 - **Descripción:** como agente, quiero saber si puedo reintentar, y que un error no me lleve a repetir un efecto que ya ocurrió.
 - **Criterios de aceptación:**
   - Lo accionable está en el texto: `_meta` es para el cliente, y que llegue al modelo depende de él.
   - `structuredContent` solo aparece si el comando declara `output`.
-  - Un error indica su clase, si es reintentable y su efecto: no empezó, completó o desconocido.
-  - Un comando que falla a mitad informa efecto desconocido, nunca `completed: false`.
+  - Un error indica en `_meta['runa/error']` su `class`, `effect` (`none`, `completed` o `unknown`) y `safeToRetry`.
+  - Un comando que falla a mitad informa efecto desconocido, nunca que no hizo nada.
   - Si `run()` terminó pero el `output` es inválido, informa que el comando ya corrió, sin JSON crudo de Zod.
+  - Si falla un paso posterior a `run()`, informa que el comando ya corrió.
   - Un exit 0 sin resultado de la ejecución es un error: nunca un falso "Done".
+  - El texto de una tool no incluye pistas para personas, como `RUNA_DEBUG` o `--help`.
 
 ### T-305 Cancelación y límites
 

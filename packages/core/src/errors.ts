@@ -113,6 +113,29 @@ function debugDetails(error: Error): string[] {
 	return details;
 }
 
+const isExpectedFailure = (error: Error): boolean =>
+	error instanceof RunaError && error.message.trim() !== '';
+
+/** Whether the failure comes from how the CLI was called, not from running it. */
+export function isUsageError(error: Error): boolean {
+	return error instanceof ValidationError || error instanceof CommandNotFoundError;
+}
+
+/**
+ * Why a run failed, never empty, with no advice attached. It is all an agent
+ * needs: it cannot act on a hint meant for the person at the terminal.
+ *
+ * @param subject - The running command, or the CLI when none was resolved yet
+ */
+export function failureReason(error: Error, subject: string): string {
+	if (isExpectedFailure(error)) return error.message;
+
+	const message = error.message.trim();
+	return message
+		? `Unexpected error in '${subject}': ${message}`
+		: `'${subject}' failed without an error message (${error.name}).`;
+}
+
 /**
  * The reason shown when a CLI exits on an error: never empty, so no failure
  * is silent. Typed errors were written for the person running the CLI and
@@ -128,20 +151,9 @@ export function describeFailure(
 	debug: boolean,
 	helpCommand?: string,
 ): string {
-	const message = error.message.trim();
-	const isExpected = error instanceof RunaError && message !== '';
-	const isUsageError = error instanceof ValidationError || error instanceof CommandNotFoundError;
-
-	let reason = error.message;
-	if (!isExpected) {
-		reason = message
-			? `Unexpected error in '${subject}': ${message}`
-			: `'${subject}' failed without an error message (${error.name}).`;
-	}
-
-	const lines = [reason];
-	if (isUsageError && helpCommand) lines.push(`Run '${helpCommand} --help' for usage.`);
+	const lines = [failureReason(error, subject)];
+	if (isUsageError(error) && helpCommand) lines.push(`Run '${helpCommand} --help' for usage.`);
 	if (debug) lines.push(...debugDetails(error));
-	else if (!isExpected) lines.push(DEBUG_HINT);
+	else if (!isExpectedFailure(error)) lines.push(DEBUG_HINT);
 	return lines.join('\n');
 }

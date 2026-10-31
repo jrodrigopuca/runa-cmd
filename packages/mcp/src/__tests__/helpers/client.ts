@@ -8,6 +8,7 @@ export interface ToolResult {
 	content: Array<{ type: string; text: string }>;
 	structuredContent?: Record<string, unknown>;
 	isError?: boolean;
+	_meta?: { 'runa/error'?: { class: string; effect: string; safeToRetry: boolean } };
 }
 
 interface Response {

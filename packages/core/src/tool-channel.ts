@@ -20,10 +20,16 @@ export type ToolRequest =
 
 export type ToolReport =
 	| { kind: 'pong' }
+	/** run() is about to start: from here on, side effects are possible */
+	| { kind: 'running' }
 	/** run() returned: its side effects happened, whatever comes next */
 	| { kind: 'ran' }
 	/** The whole command finished, output validated */
-	| { kind: 'result'; value: unknown };
+	| { kind: 'result'; value: unknown }
+	/** The run ended on an error; the reason is on stderr, for the same text a person reads */
+	| { kind: 'failed'; reason: ToolFailureReason };
+
+export type ToolFailureReason = 'input' | 'output' | 'other';
 
 /**
  * The request of this process, if it was started as a tool. The variable is

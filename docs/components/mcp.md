@@ -89,10 +89,19 @@ El servidor comprueba `selfCommand` al arrancar, y si no funciona falla con `MCP
 | Devuelve un string | Ese texto |
 | Devuelve otro valor | JSON en texto |
 | No devuelve nada | Lo que imprimió, o `Command '<name>' executed successfully.` |
-| Lanza un error | `isError: true` con lo que escribió en stderr |
-| No llegó a terminar | `isError: true` con `Command '<name>' did not finish.` |
+| Falla | `isError: true`, con el motivo y qué pasó con sus efectos en el texto, y `_meta['runa/error']` |
 
 El valor devuelto gana sobre stdout. Para detectar una tool dentro de un hook, usá `ctx.invocation.surface`.
+
+Un error nunca afirma que no pasó nada si el comando llegó a empezar:
+
+| `effect` | Significa | `safeToRetry` | Clases |
+|---|---|---|---|
+| `none` | `run()` no empezó | `true` | `unknown_tool`, `invalid_input`, `rejected`, `not_run`, `crashed` |
+| `unknown` | `run()` empezó y no volvió | `false` | `command_failed`, `crashed` |
+| `completed` | `run()` volvió | `false` | `invalid_output`, `after_run_failed` |
+
+`safeToRetry: true` habla del comando: un middleware o un hook pudo haber hecho algo antes de que `run()` empezara. La tabla completa está en el [flujo](../flows/mcp-tool-call.md#cómo-se-arma-el-resultado).
 
 ## Módulos
 
@@ -110,7 +119,6 @@ El valor devuelto gana sobre stdout. Para detectar una tool dentro de un hook, u
 - **Cancelar mata al hijo sin correr `cleanup`,** y un proceso que él haya iniciado queda vivo ([T-305](../backlog.md#t-305-cancelación-y-límites)).
 - **No hay tope de salida** ([T-305](../backlog.md#t-305-cancelación-y-límites)).
 - **No hay control de exposición.** Todos los comandos son tools (KI-007).
-- **Un error no indica si se puede reintentar** ([T-304](../backlog.md#t-304-contrato-de-resultado-y-errores)).
 - **No hay estado entre llamadas.** Cada una es un proceso nuevo: un pool de conexiones no se comparte.
 - **Solo hay transporte stdio.**
 

@@ -41,16 +41,24 @@ sequenceDiagram
 
 ## Cómo se arma el resultado
 
-`ran` indica que `run()` volvió, y `result` que todo el comando terminó y su `output` es válido. Stdout y stderr pasan por la redacción de valores fijos; el valor devuelto, no.
+El hijo informa hasta dónde llegó: `running` antes de `run()`, `ran` cuando vuelve, y `result` cuando todo el comando terminó y su `output` es válido. Si termina en error, `failed` indica si fue la entrada, el `output` u otra cosa. Stdout y stderr pasan por la redacción de valores fijos; el valor devuelto, no.
 
-| Hijo | Resultado |
-|---|---|
-| `result` con un valor | Ese valor como texto; además `structuredContent` si `output` es un objeto |
-| `result` sin valor | Stdout, o `Command '<name>' executed successfully.` |
-| Sin `result`, exit distinto de 0 | `isError`, con stderr o stdout |
-| Sin `result`, exit 0 | `isError`, `Command '<name>' did not finish.` |
+| Hijo | Clase | Efecto |
+|---|---|---|
+| `result`, exit 0, sin `failed` | Éxito: el valor como texto, o stdout, más `structuredContent` si `output` es un objeto | |
+| `result` con `failed` o exit distinto de 0 | `after_run_failed` | `completed` |
+| `ran` y `failed` por `output` | `invalid_output` | `completed` |
+| `ran`, otro caso | `after_run_failed` | `completed` |
+| `running` y `failed` | `command_failed` | `unknown` |
+| `running`, sin `failed` | `crashed` | `unknown` |
+| Sin `running`, `failed` por entrada | `invalid_input` | `none` |
+| Sin `running`, otro `failed` | `rejected` | `none` |
+| Sin informes, exit 0 | `not_run` | `none` |
+| Sin informes, exit distinto de 0 | `crashed` | `none` |
 
 Exit 0 no alcanza para considerar exitosa una llamada: un middleware puede saltear el comando, y un comando puede llamar a `process.exit(0)`.
+
+El texto lleva el motivo que escribió el comando y una frase sobre el efecto, porque `_meta` es para el cliente y puede no llegar al modelo. Las pistas para personas, como `RUNA_DEBUG` o `--help`, no aparecen salvo que quien opera active `RUNA_DEBUG`.
 
 ## CLI y tool
 
@@ -65,4 +73,4 @@ Exit 0 no alcanza para considerar exitosa una llamada: un middleware puede salte
 
 ## Límites actuales
 
-Se resuelven en [T-304](../backlog.md#t-304-contrato-de-resultado-y-errores) y [T-305](../backlog.md#t-305-cancelación-y-límites): un error no indica si se puede reintentar, cancelar no corre `cleanup` del hijo y no hay tope de salida.
+Se resuelven en [T-305](../backlog.md#t-305-cancelación-y-límites): cancelar no corre `cleanup` del hijo y no hay tope de salida.

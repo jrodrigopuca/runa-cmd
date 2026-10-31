@@ -92,10 +92,21 @@ Each key goes to its arg or option by name, so arrays, objects and numbers arriv
 | Command returns a string (no output schema) | `text` content |
 | Command returns an object (no output schema) | `text` content (JSON stringified) |
 | Command returns nothing | `text` with what it printed, or `Command '<name>' executed successfully.` |
-| Command throws | `isError: true` with error message |
-| Command never finished | `isError: true` with `Command '<name>' did not finish.` |
+| Command fails | `isError: true`, with the reason and what happened to its effects in the text, plus `_meta['runa/error']` |
 
 A returned value wins over what the command printed.
+
+### Errors and Retries
+
+A failed call says whether repeating it can repeat its effects. The text says it for the model, and `_meta['runa/error']` for the client, as `{ class, effect, safeToRetry }`:
+
+| `effect` | Meaning | `safeToRetry` |
+|---|---|---|
+| `none` | `run()` never started | `true` |
+| `unknown` | `run()` started and did not return | `false` |
+| `completed` | `run()` returned, and something failed after it, like an invalid `output` | `false` |
+
+`safeToRetry` is about the command: a middleware or hook may have acted before `run()` started.
 
 ## What the Operator Decides
 

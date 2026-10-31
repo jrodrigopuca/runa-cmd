@@ -13,7 +13,14 @@
 import { parseArgs } from 'node:util';
 import type { ZodType } from 'zod';
 import { loadAndMergeConfig } from './config/merge.js';
-import { CommandNotFoundError, describeFailure, isDebugEnabled, RunaError } from './errors.js';
+import {
+	CommandNotFoundError,
+	describeFailure,
+	failureReason,
+	isDebugEnabled,
+	isUsageError,
+	RunaError,
+} from './errors.js';
 import { getSchema } from './introspect.js';
 import { createHookRegistry } from './lifecycle.js';
 import { deprecationWarnings } from './parse/deprecated.js';
@@ -31,7 +38,12 @@ import {
 	validateOptionCollisions,
 } from './plugin.js';
 import { findSuggestion } from './suggest.js';
-import { sendToolReport, type ToolReport, takeToolRequest } from './tool-channel.js';
+import {
+	sendToolReport,
+	type ToolFailureReason,
+	type ToolReport,
+	takeToolRequest,
+} from './tool-channel.js';
 import type {
 	CLI,
 	CLIConfig,
@@ -107,6 +119,8 @@ function resolveCommand(commands: CommandTree, tokens: string[]): ResolvedComman
 // ─── Output Validation ──────────────────────────────────────
 
 /** A command returning the wrong shape is an author defect, reported by field. */
+const INVALID_OUTPUT = 'INVALID_OUTPUT';
+
 function assertValidOutput(command: Command, output: ZodType, result: unknown): void {
 	const parsed = output.safeParse(result);
 	if (parsed.success) return;
@@ -116,8 +130,13 @@ function assertValidOutput(command: Command, output: ZodType, result: unknown): 
 	);
 	throw new RunaError(
 		`Command '${command.meta.name}' returned invalid output:\n${issues.join('\n')}`,
-		{ code: 'INVALID_OUTPUT', exitCode: 1 },
+		{ code: INVALID_OUTPUT, exitCode: 1 },
 	);
+}
+
+function toolFailureReason(error: Error): ToolFailureReason {
+	if (isUsageError(error)) return 'input';
+	return error instanceof RunaError && error.code === INVALID_OUTPUT ? 'output' : 'other';
 }
 
 // ─── Middleware Composition ─────────────────────────────────
@@ -591,6 +610,7 @@ async function runCLILifecycle(
 		};
 
 		const innerFn = async () => {
+			report?.({ kind: 'running' });
 			commandResult = await command.run(runContext);
 			report?.({ kind: 'ran' });
 
@@ -628,9 +648,16 @@ async function runCLILifecycle(
 		// `handled` means the plugin owns the output, not that the run succeeded.
 		if (!hookCtx.handled) {
 			const subject = hookCtx.command?.name ?? config.meta.name;
-			const helpCommand = 'help' in mutableGlobalOptions ? config.meta.name : undefined;
-			console.error(describeFailure(lifecycleError, subject, isDebugEnabled(), helpCommand));
+			const debug = isDebugEnabled();
+			// An agent cannot use a hint for people, unless the operator asked for details.
+			const helpCommand = !report && 'help' in mutableGlobalOptions ? config.meta.name : undefined;
+			console.error(
+				report && !debug
+					? failureReason(lifecycleError, subject)
+					: describeFailure(lifecycleError, subject, debug, helpCommand),
+			);
 		}
+		report?.({ kind: 'failed', reason: toolFailureReason(lifecycleError) });
 	} finally {
 		// ─── cleanup (ALWAYS runs) ────────────────────────
 		try {
