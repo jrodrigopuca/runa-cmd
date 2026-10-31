@@ -24,7 +24,8 @@ beforeEach(() => {
 afterEach(() => {
 	for (const client of clients) client.close();
 	clients = [];
-	rmSync(dir, { recursive: true, force: true });
+	// A server or child still ending can write its trace while this removes it
+	rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
 });
 
 async function serve(env: Record<string, string> = {}) {

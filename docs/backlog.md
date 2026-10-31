@@ -43,7 +43,7 @@
 | | T-303 | Ejecutar cada tool en un subproceso | Requerido | Hecho |
 | | T-306 | Valores de quien opera fuera del schema | Requerido | Hecho |
 | | T-304 | Contrato de resultado y errores | Requerido | Hecho |
-| | T-305 | Cancelación y límites | Requerido | En curso |
+| | T-305 | Cancelación y límites | Requerido | Hecho |
 | | T-302 | Excluir y anotar tools | Requerido | Pendiente |
 | | T-307 | Evento por llamada | Opcional | Pendiente |
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Pendiente |
@@ -336,7 +336,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-305 Cancelación y límites
 
 - **v1:** Requerido
-- **Estado:** En curso
+- **Estado:** Hecho
 - **Descripción:** como persona o quien opera un servidor, quiero que parar libere recursos en todo el árbol de procesos, y que un comando no pueda tumbar el servidor con su salida. Sigue [ADR-0033](./adr/0033-parar-recorre-el-arbol-de-procesos.md).
 - **Criterios de aceptación:**
   - `SIGINT` y `SIGTERM` en la CLI disparan `ctx.signal` y corren `cleanup`, con exit 130 y 143.

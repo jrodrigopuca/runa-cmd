@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, las tools corren en un subproceso de la propia CLI (T-303), quien opera le gana al modelo (T-306), y un error dice si se puede reintentar (T-304). T-305 está implementada y espera su comprobación en Windows.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, las tools corren en un subproceso de la propia CLI (T-303), quien opera le gana al modelo (T-306), un error dice si se puede reintentar (T-304), parar alcanza a todo el árbol de procesos (T-305), y sigue T-302.
 
 ## Versiones
 
