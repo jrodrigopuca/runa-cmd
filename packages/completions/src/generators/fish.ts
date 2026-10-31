@@ -11,7 +11,9 @@ import { escapeFish } from './escape.js';
 /** Generate complete directives for a single option */
 function optionDirectives(binName: string, opt: OptionSchema, condition: string): string[] {
 	const lines: string[] = [];
-	const desc = opt.description ? ` -d '${escapeFish(opt.description)}'` : '';
+	const repeats = opt.type === 'array' ? 'Can be repeated' : '';
+	const text = [opt.description, repeats].filter(Boolean).join('. ');
+	const desc = text ? ` -d '${escapeFish(text)}'` : '';
 	const shortAlias = opt.alias?.find((a) => a.startsWith('-') && !a.startsWith('--'));
 	const shortFlag = shortAlias ? ` -s ${shortAlias.replace(/^-/, '')}` : '';
 	const condPart = condition ? ` -n '${condition}'` : '';
@@ -21,7 +23,7 @@ function optionDirectives(binName: string, opt: OptionSchema, condition: string)
 		lines.push(`complete -c ${binName}${condPart}` + ` -l ${opt.flag}${shortFlag}${desc}`);
 		// --no-* variant
 		lines.push(`complete -c ${binName}${condPart}` + ` -l no-${opt.flag}${desc}`);
-	} else if (opt.type === 'enum' && opt.enumValues?.length) {
+	} else if (opt.enumValues?.length) {
 		const vals = opt.enumValues.map((v) => escapeFish(v)).join(' ');
 		lines.push(
 			`complete -c ${binName}${condPart}` +

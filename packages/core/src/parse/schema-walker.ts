@@ -19,6 +19,7 @@ function toParamMetadata(name: string, schema: ZodType): ParamMetadata {
 		isOptional: desc.isOptional,
 		defaultValue: desc.defaultValue,
 		isArray: desc.kind === 'array',
+		itemType: desc.itemKind,
 		enumValues: desc.enumValues,
 		description: desc.description,
 	};

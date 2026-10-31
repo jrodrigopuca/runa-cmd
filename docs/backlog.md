@@ -50,7 +50,7 @@
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Hecho |
 | | T-205 | Ruteo único para la ayuda | Requerido | Hecho |
 | | T-206 | Kebab-case por defecto | Requerido | Hecho |
-| | T-207 | Opciones repetidas con `z.array()` | Requerido | Pendiente |
+| | T-207 | Opciones repetidas con `z.array()` | Requerido | Hecho |
 | 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Pendiente |
 | | T-402 | Revalidar qr-plus, CLI y MCP | Requerido | Pendiente |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
@@ -438,13 +438,16 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-207 Opciones repetidas con `z.array()`
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero aceptar `--tag a --tag b`. Hoy una opción `z.array()` falla siempre, incluso con un solo valor.
 - **Criterios de aceptación:**
   - `--tag a --tag b` entrega `['a', 'b']`, y `--tag a` entrega `['a']`.
+  - Cada elemento se convierte como su tipo: `z.array(z.number())` entrega números, y un enum inválido nombra la flag.
+  - Un alias largo y la flag se acumulan.
   - Las opciones que no son arrays conservan su comportamiento.
   - La ayuda y las completions indican que se puede repetir.
-  - Env y config tienen una regla definida para arrays.
+  - Env separa por comas, con trim, y un valor vacío es una lista vacía.
+  - Config usa un array de JSON, sin separar strings.
 
 ## Fase 5: validación
 

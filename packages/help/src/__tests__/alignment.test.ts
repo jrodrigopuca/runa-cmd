@@ -64,6 +64,23 @@ const titles = (text: string) =>
 
 const words = (text: string) => new Set(stripVTControlCharacters(text).match(/[\w-]{3,}/g));
 
+describe('an option that repeats', () => {
+	const repeats = (itemType: 'string' | 'enum', enumValues?: string[]): CommandSchema => ({
+		...command,
+		options: [{ ...option('tag'), type: 'array', itemType, enumValues }],
+	});
+
+	it('shows the plain renderer what it holds', () => {
+		expect(renderHelp(repeats('string'))).toContain('--tag <string>...');
+		expect(renderHelp(repeats('enum', ['a', 'b']))).toContain('--tag <a|b>...');
+	});
+
+	it('shows the plugin what it holds', () => {
+		expect(stripVTControlCharacters(plugin(repeats('string')))).toContain('string...');
+		expect(stripVTControlCharacters(plugin(repeats('enum', ['a', 'b'])))).toContain('a | b...');
+	});
+});
+
 describe.each([
 	['the whole CLI', cli, ['USAGE', 'COMMANDS', 'GLOBAL OPTIONS']],
 	['a command', command, ['USAGE', 'ARGUMENTS', 'OPTIONS', 'AUTH OPTIONS']],

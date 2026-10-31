@@ -9,10 +9,19 @@ import { spawn, spawnSync } from 'node:child_process';
 import { readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { it } from 'vitest';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const srcDir = join(here, '..', '..');
 const builtEntry = join(srcDir, '..', 'dist', 'index.js');
+
+/**
+ * Marks behavior a backlog task has not delivered yet. It passes while the
+ * behavior is missing and FAILS once it works: the task that fixes it must then
+ * replace `pending` with `it`. To see the real failure of every pending case,
+ * run with RUNA_SHOW_PENDING=1.
+ */
+export const pending = process.env.RUNA_SHOW_PENDING ? it : it.fails;
 
 export interface Result {
 	status: number | null;

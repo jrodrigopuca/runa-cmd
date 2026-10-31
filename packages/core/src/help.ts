@@ -110,8 +110,12 @@ function optionFlags(option: OptionSchema): string {
 		if (alias.startsWith('-')) return alias;
 		return alias.length === 1 ? `-${alias}` : `--${alias}`;
 	});
+	const isList = option.type === 'array';
+	const kind = isList ? (option.itemType ?? 'string') : option.type;
 	const value =
-		option.type === 'boolean' ? '' : ` <${option.enumValues?.join('|') ?? option.type}>`;
+		option.type === 'boolean'
+			? ''
+			: ` <${option.enumValues?.join('|') ?? kind}>${isList ? '...' : ''}`;
 	return `${[...aliases, `--${option.flag}`].join(', ')}${value}`;
 }
 

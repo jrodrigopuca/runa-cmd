@@ -3,16 +3,9 @@
  *
  * Nothing is mocked: process.exit, stdout, stderr and the exit code are the
  * real ones. Cases come from docs/research/2026-10-qr-plus-migration.md.
- *
- * `pending` marks behavior a backlog task has not delivered yet. It passes
- * while the behavior is missing and FAILS once it works: the task that fixes
- * it must then replace `pending` with `it`. To see the real failure of every
- * pending case, run with RUNA_SHOW_PENDING=1.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { assertFreshBuild, runFixture } from './harness.js';
-
-const pending = process.env.RUNA_SHOW_PENDING ? it : it.fails;
 
 const tool = (...argv: string[]) => runFixture('tool.js', argv);
 
@@ -73,7 +66,7 @@ describe('version', () => {
 });
 
 describe('repeated options (T-207)', () => {
-	pending('--tag a --tag b fills options.tag', () => {
+	it('--tag a --tag b fills options.tag', () => {
 		expect(received('hola', '--tag', 'a', '--tag', 'b').options.tag).toEqual(['a', 'b']);
 	});
 });

@@ -37,6 +37,11 @@ interface ZodEnumDef extends ZodDef {
 	entries: Record<string, string>;
 }
 
+/** Zod v4 def for array type */
+interface ZodArrayDef extends ZodDef {
+	element: ZodType;
+}
+
 interface ZodInternals {
 	def: ZodDef;
 }
@@ -124,7 +129,11 @@ function unwrapSchema(schema: ZodType): UnwrapResult {
 
 // ─── Detect base type ───────────────────────────────────────
 
-function detectParamType(def: ZodDef): { kind: ParamType; enumValues?: string[] } {
+function detectParamType(def: ZodDef): {
+	kind: ParamType;
+	enumValues?: string[];
+	itemKind?: ParamType;
+} {
 	switch (def.type) {
 		case 'string':
 			return { kind: 'string' };
@@ -140,8 +149,10 @@ function detectParamType(def: ZodDef): { kind: ParamType; enumValues?: string[] 
 			const values = entries ? Object.values(entries) : undefined;
 			return { kind: 'enum', enumValues: values };
 		}
-		case 'array':
-			return { kind: 'array' };
+		case 'array': {
+			const item = detectParamType(unwrapSchema((def as ZodArrayDef).element).baseDef);
+			return { kind: 'array', itemKind: item.kind, enumValues: item.enumValues };
+		}
 		default:
 			// Fallback: treat unknown types as string
 			return { kind: 'string' };
@@ -163,7 +174,7 @@ export const zodV4Adapter: SchemaAdapter = {
 
 	describe(schema: ZodType): SchemaDescription {
 		const { baseDef, isOptional, hasDefault, defaultValue, description } = unwrapSchema(schema);
-		const { kind, enumValues } = detectParamType(baseDef);
+		const { kind, enumValues, itemKind } = detectParamType(baseDef);
 
 		return {
 			kind,
@@ -171,6 +182,7 @@ export const zodV4Adapter: SchemaAdapter = {
 			hasDefault,
 			defaultValue,
 			enumValues,
+			itemKind,
 			description,
 		};
 	},

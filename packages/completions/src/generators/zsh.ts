@@ -19,7 +19,13 @@ function formatOptionSpec(opt: OptionSchema): string[] {
 	const desc = opt.description ? escapeZsh(opt.description) : '';
 	const shortAlias = opt.alias?.find((a) => a.startsWith('-') && !a.startsWith('--'));
 
-	if (opt.type === 'boolean') {
+	// `*` tells zsh the option can repeat, so it keeps offering it
+	if (opt.type === 'array') {
+		const vals = opt.enumValues?.map((v) => escapeZsh(v)).join(' ');
+		const value = `:${opt.flag}:${vals ? `(${vals})` : ''}`;
+		const flags = shortAlias ? `'*'{${shortAlias},--${opt.flag}}'` : `'*--${opt.flag}`;
+		specs.push(`${flags}[${desc}]${value}'`);
+	} else if (opt.type === 'boolean') {
 		// Boolean with alias
 		if (shortAlias) {
 			specs.push(

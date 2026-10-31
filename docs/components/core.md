@@ -116,6 +116,20 @@ La prioridad es **CLI, env, config y default de Zod**. El detalle está en [pars
 
 Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION` e `INVALID_OUTPUT`.
 
+### Opciones que se repiten
+
+Una opción `z.array()` se repite, y cada elemento se convierte según su tipo: `z.array(z.number())` entrega números.
+
+| Fuente | Forma | Resultado |
+|---|---|---|
+| Terminal | `--tag a --tag b` | `['a', 'b']` |
+| Terminal | `--tag a,b` | `['a,b']`: la coma es dato |
+| Env | `TAGS=a, b` | `['a', 'b']` |
+| Env | `TAGS=` | `[]` |
+| Config | `{ "tag": ["a", "b,c"] }` | `['a', 'b,c']` |
+
+Cada fuente reemplaza a la de menor prioridad, sin sumarse ([ADR-0035](../adr/0035-listas-desde-env-y-config.md)). Un valor con coma no se puede pasar por env.
+
 ### Nombres de flags
 
 En el código, `darkColor`; en la terminal, `--dark-color` ([ADR-0024](../adr/0024-kebab-case.md)). `flagName` en `packages/core/src/flag-name.ts` es el único lugar que hace esa conversión, y el schema expone el resultado en `OptionSchema.flag`, que usan la ayuda, los errores y las completions.

@@ -165,6 +165,20 @@ function coerceByType(value: unknown, type: ParamMetadata['zodType'] | undefined
 	return value;
 }
 
+function coerceField(value: unknown, field: ParamMetadata | undefined): unknown {
+	if (!field?.isArray) return coerceByType(value, field?.zodType);
+	if (!Array.isArray(value)) return value;
+	return value.map((item) => coerceByType(item, field.itemType));
+}
+
+/** An env var is one string, and a list needs a rule (ADR-0035). */
+function splitEnvList(value: string): string[] {
+	return value
+		.split(',')
+		.map((item) => item.trim())
+		.filter(Boolean);
+}
+
 function resolveOptionValues(
 	parseArgsValues: Record<string, unknown>,
 	longAliasMap: Record<string, string>,
@@ -176,34 +190,43 @@ function resolveOptionValues(
 ): Record<string, unknown> {
 	const resolved: Record<string, unknown> = {};
 
-	const fieldTypes = new Map(optionsMetadata.map((meta) => [meta.name, meta.zodType]));
+	const fields = new Map(optionsMetadata.map((meta) => [meta.name, meta]));
 
 	// First, apply long alias mappings to parseArgs values
 	const normalizedValues: Record<string, unknown> = { ...parseArgsValues };
 	for (const [alias, canonical] of Object.entries(longAliasMap)) {
-		if (alias in normalizedValues && !(canonical in normalizedValues)) {
-			normalizedValues[canonical] = normalizedValues[alias];
-			delete normalizedValues[alias];
+		if (!(alias in normalizedValues)) continue;
+
+		const own = normalizedValues[canonical];
+		const viaAlias = normalizedValues[alias];
+		if (own === undefined) normalizedValues[canonical] = viaAlias;
+		// Two names for one list: every value counts
+		else if (Array.isArray(own) && Array.isArray(viaAlias)) {
+			normalizedValues[canonical] = [...own, ...viaAlias];
 		}
+		delete normalizedValues[alias];
 	}
 
 	for (const key of Object.keys(optionsSchemas)) {
+		const field = fields.get(key);
+
 		// Priority 1: CLI arg
 		if (key in normalizedValues && normalizedValues[key] !== undefined) {
-			resolved[key] = coerceByType(normalizedValues[key], fieldTypes.get(key));
+			resolved[key] = coerceField(normalizedValues[key], field);
 			continue;
 		}
 
 		// Priority 2: Environment variable
 		const envName = optionsMeta?.[key]?.env;
-		if (envName && envName in env && env[envName] !== undefined) {
-			resolved[key] = coerceByType(env[envName], fieldTypes.get(key));
+		const envValue = envName ? env[envName] : undefined;
+		if (envValue !== undefined) {
+			resolved[key] = coerceField(field?.isArray ? splitEnvList(envValue) : envValue, field);
 			continue;
 		}
 
 		// Priority 3: Config file value
 		if (configValues && key in configValues && configValues[key] !== undefined) {
-			resolved[key] = coerceByType(configValues[key], fieldTypes.get(key));
+			resolved[key] = coerceField(configValues[key], field);
 		}
 
 		// Priority 4: Omit — let Zod .default() handle it

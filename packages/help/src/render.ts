@@ -217,10 +217,11 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 
 	// Type column
 	const typeParts: string[] = [];
-	if (opt.type === 'enum' && opt.enumValues) {
-		typeParts.push(opt.enumValues.join(' | '));
+	const repeats = opt.type === 'array' ? '...' : '';
+	if (opt.enumValues) {
+		typeParts.push(`${opt.enumValues.join(' | ')}${repeats}`);
 	} else if (opt.type !== 'boolean') {
-		typeParts.push(opt.type);
+		typeParts.push(`${repeats ? (opt.itemType ?? 'string') : opt.type}${repeats}`);
 	}
 	const typeStr = typeParts.length > 0 ? styled(typeParts.join(''), { dim: true }, ctx) : '';
 

@@ -38,7 +38,7 @@ function buildPrevCases(options: OptionSchema[], globalOptions: OptionSchema[]):
 	const lines: string[] = [];
 	const all = [...options, ...globalOptions];
 	for (const opt of all) {
-		if (opt.type === 'enum' && opt.enumValues?.length) {
+		if (opt.enumValues?.length) {
 			const triggers: string[] = [`--${opt.flag}`];
 			if (opt.alias) {
 				for (const a of opt.alias) {

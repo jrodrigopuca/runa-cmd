@@ -34,6 +34,40 @@ describe('option names', () => {
 	});
 });
 
+describe('options that repeat', () => {
+	const schema = getSchema({
+		meta: { name: 'mycli' },
+		commands: {
+			paint: defineCommand({
+				meta: { name: 'paint', description: 'Paint', options: { tag: { alias: ['-t'] } } },
+				options: {
+					tag: z.array(z.string()).optional().describe('A tag'),
+					level: z.array(z.enum(['low', 'high'])).optional(),
+				},
+				run() {},
+			}),
+		},
+	});
+
+	it('zsh keeps offering them', () => {
+		const script = generateZshCompletions(schema, 'mycli');
+		expect(script).toContain("'*'{-t,--tag}'[A tag]:tag:'");
+		expect(script).toContain("'*--level[]:level:(low high)'");
+	});
+
+	it('fish says so in the description', () => {
+		const script = generateFishCompletions(schema, 'mycli');
+		expect(script).toContain("-l tag -s t -d 'A tag. Can be repeated' -r");
+		expect(script).toContain("-l level -d 'Can be repeated' -r -a 'low high'");
+	});
+
+	it('bash offers the values of a list of choices', () => {
+		const script = generateBashCompletions(schema, 'mycli');
+		expect(script).toContain('--level');
+		expect(script).toContain('low high');
+	});
+});
+
 describe('built-in options', () => {
 	const schema = (version?: string) =>
 		getSchema({

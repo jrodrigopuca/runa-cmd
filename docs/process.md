@@ -29,7 +29,7 @@ flowchart LR
 
 `packages/core/src/__tests__/acceptance/` ejecuta una CLI real como proceso hijo, sin mocks, contra el `dist` compilado. Si `dist` falta o está desactualizado, la suite se detiene y pide `pnpm build`.
 
-Cada comportamiento que una tarea todavía no entregó se marca con `pending` y su ID:
+Cada comportamiento que una tarea todavía no entregó se marca con `pending`, de `harness.ts`, y su ID:
 
 - **Mientras falta:** el caso cuenta como fallo esperado.
 - **Al resolverlo:** el caso se pone rojo. La tarea tiene que cambiar `pending` por `it`.

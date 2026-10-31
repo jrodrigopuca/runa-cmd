@@ -36,7 +36,7 @@ export class RunaError extends Error {
 
 /** Prefixes the path, unless the message already names it as `<name>` or `--name`. */
 function formatIssue(issue: ZodIssue): string {
-	const name = String(issue.path.at(-1));
+	const name = String(issue.path[0]);
 	const isNamed = issue.message.includes(`<${name}>`) || issue.message.includes(longFlag(name));
 	if (issue.path.length === 0 || isNamed) return issue.message;
 	return `${issue.path.join('.')}: ${issue.message}`;

@@ -33,8 +33,10 @@ export interface SchemaDescription {
 	hasDefault: boolean;
 	/** The default value; undefined when hasDefault is false */
 	defaultValue: unknown;
-	/** Enum member values, present only when kind is 'enum' */
+	/** Enum member values, of the kind itself or of its items */
 	enumValues?: string[];
+	/** Kind of each element, present only when kind is 'array' */
+	itemKind?: ParamType;
 	/** Schema description, preferring the outermost layer that has one */
 	description?: string;
 }

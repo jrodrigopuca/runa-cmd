@@ -57,6 +57,7 @@ export function buildParseArgsConfig(
 			multiple?: boolean;
 		} = {
 			type: parseArgsType,
+			...(param.isArray ? { multiple: true } : {}),
 		};
 
 		// Extract aliases from meta
@@ -68,7 +69,7 @@ export function buildParseArgsConfig(
 					const longName = alias.slice(2);
 					longAliasMap[longName] = param.name;
 					// Register the long alias in parseArgs too
-					options[longName] = { type: parseArgsType };
+					options[longName] = { type: parseArgsType, ...(param.isArray ? { multiple: true } : {}) };
 					knownKeys.add(longName);
 				} else if (alias.startsWith('-') && alias.length === 2) {
 					// Short alias: single char after '-'

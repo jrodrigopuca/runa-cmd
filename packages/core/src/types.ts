@@ -295,7 +295,9 @@ export interface OptionSchema {
 	/** The long flag, without dashes: what a person types */
 	flag: string;
 	description?: string;
+	/** `array` means the option repeats, with `itemType` values */
 	type: ParamType;
+	itemType?: ParamType;
 	required: boolean;
 	defaultValue?: unknown;
 	alias?: string[];
@@ -326,9 +328,11 @@ export interface ParamMetadata {
 	isOptional: boolean;
 	/** Default value extracted from .default(), or undefined */
 	defaultValue: unknown;
-	/** Whether this is a z.array() (variadic arg) */
+	/** Whether this is a z.array(): a variadic arg or an option that repeats */
 	isArray: boolean;
-	/** Enum values extracted from z.enum() */
+	/** Type of each element of a z.array() */
+	itemType?: ParamType;
+	/** Enum values extracted from z.enum(), also as the element of a z.array() */
 	enumValues?: string[];
 	/** Description extracted from .describe() */
 	description?: string;

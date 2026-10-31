@@ -171,6 +171,19 @@ The command is the root of the CLI, so a value equal to its name is data: `tool 
 
 `defineCLI` with a single command also works, but it's deprecated: adding a plugin that registers a command silently changes how it routes.
 
+### Options that repeat
+
+A `z.array()` option repeats, and each element is converted to its type: `--port 80 --port 81` gives `[80, 81]` with `z.array(z.number())`.
+
+| Source | Form | Result |
+|---|---|---|
+| Terminal | `--tag a --tag b` | `['a', 'b']` |
+| Terminal | `--tag a,b` | `['a,b']` |
+| Env | `TAGS=a, b` | `['a', 'b']` |
+| Config | `{ "tag": ["a", "b"] }` | `['a', 'b']` |
+
+Each source replaces the ones below it, without adding up. A value with a comma can't go through env: use the config file.
+
 ### Option names
 
 Write `darkColor` in code and `--dark-color` at the terminal. `run()`, config files and MCP tools keep the key.
