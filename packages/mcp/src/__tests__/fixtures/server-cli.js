@@ -42,8 +42,11 @@ const lifecycle = definePlugin({
 const WAIT_MS = 30_000;
 
 /** A process the command starts: its pid goes to the trace, to look for it from outside. */
-function startGrandchild(stdio) {
-	const grandchild = spawn(process.execPath, ['-e', `setTimeout(() => {}, ${WAIT_MS})`], { stdio });
+function startGrandchild(stdio, detached = false) {
+	const grandchild = spawn(process.execPath, ['-e', `setTimeout(() => {}, ${WAIT_MS})`], {
+		stdio,
+		detached,
+	});
 	grandchild.unref();
 	trace(`grandchild:${grandchild.pid}`);
 }
@@ -168,7 +171,7 @@ await defineCLI({
 		}),
 		daemon: command('daemon', {
 			run() {
-				startGrandchild('inherit');
+				startGrandchild('inherit', true); // On Windows, it can only outlive this process detached
 				return 'started';
 			},
 		}),

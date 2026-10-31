@@ -77,6 +77,8 @@ El texto lleva el motivo que escribió el comando y una frase sobre el efecto, p
 
 Sigue [ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md). Cada hijo lidera su grupo de procesos y mantiene un canal IPC con el servidor.
 
+En Windows, el hijo también se lanza `detached`. Sin eso, libuv lo mete en un job con `KILL_ON_JOB_CLOSE`, y Windows lo mata junto con el servidor, sin correr `cleanup`. Lo mismo vale para un comando: en Windows, un proceso que deba sobrevivirlo tiene que lanzarse `detached`.
+
 | Qué pasa | Hijo | Servidor |
 |---|---|---|
 | El cliente cancela | Se corta el canal: `ctx.signal`, `cleanup`, y termina su grupo | Fuerza el árbol a los 5 s si sigue vivo |

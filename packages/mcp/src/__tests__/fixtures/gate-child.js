@@ -34,7 +34,7 @@ const modes = {
 	parent() {
 		const child = spawn(process.execPath, [process.argv[1], 'cancellable'], {
 			stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-			detached: process.platform !== 'win32',
+			detached: true, // On Windows, without it a job object kills the child with this process
 			windowsHide: true,
 		});
 		child.once('message', () => process.send?.('ready'));

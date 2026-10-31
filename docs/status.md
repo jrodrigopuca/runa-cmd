@@ -24,7 +24,7 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 933 pasan: core 519, help 211, completions 88, mcp 115 |
+| Tests | 934 pasan: core 519, help 211, completions 88, mcp 116 |
 | Aceptación con procesos reales | 115 de 120 casos pasan; los otros 5 son fallos esperados, cada uno con su tarea |
 | Cobertura de `core` | 91,99% de líneas, 80,79% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |

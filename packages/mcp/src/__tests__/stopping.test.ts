@@ -87,12 +87,18 @@ describe('cancelling a call', () => {
 });
 
 describe('stopping the server', () => {
-	it('cancels the calls in flight and answers them before closing', async () => {
+	const stoppedBy: Array<[string, (client: TestClient) => void, boolean]> = [
+		['the client leaving', (client) => client.closeInput(), false],
+		['SIGTERM', (client) => client.signal('SIGTERM'), process.platform === 'win32'],
+	];
+
+	it.each(stoppedBy)('cancels the calls in flight when stopped by %s', async (_how, stop, skip) => {
+		if (skip) return;
 		const client = await serve();
 		const call = client.start('waits');
 		await reached('waiting');
 
-		client.signal('SIGTERM');
+		stop(client);
 		const result = await call.result;
 
 		expect(result.isError).toBe(true);

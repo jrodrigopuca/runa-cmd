@@ -90,8 +90,14 @@ export class TestClient {
 		return { result, cancel };
 	}
 
+	/** On Windows, any signal ends the server abruptly: use closeInput() to stop it in order. */
 	signal(signal: NodeJS.Signals): void {
 		this.server.kill(signal);
+	}
+
+	/** Leave as a client does, and the only orderly way to stop a server on every platform. */
+	closeInput(): void {
+		this.server.stdin?.end();
 	}
 
 	/** Resolves with the exit code, for a server that must refuse to start. */

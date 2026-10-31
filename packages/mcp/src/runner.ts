@@ -125,7 +125,9 @@ export function runChild(request: ToolRequest, options: RunOptions): Promise<Chi
 	const child = spawn(executable, [...selfArgs, ...options.argv], {
 		stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe', IPC_CHANNEL],
 		env: { ...process.env, [TOOL_CALL_ENV]: '1' },
-		detached: process.platform !== 'win32',
+		// Also on Windows: otherwise a job object kills the child with this process,
+		// and it never gets to run its cleanup.
+		detached: true,
 		windowsHide: true,
 	});
 
