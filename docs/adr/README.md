@@ -44,3 +44,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0027](./0027-toda-salida-explica-el-motivo.md) | Toda salida por error explica el motivo | Aceptada |
 | [0028](./0028-coercion-booleana.md) | Los booleanos aceptan solo true, false, 1 y 0 | Aceptada |
 | [0029](./0029-cada-campo-tiene-efecto.md) | Cada campo de la API tiene efecto | Aceptada |
+| [0030](./0030-tools-mcp-en-subproceso.md) | Cada tool MCP corre en un subproceso de la propia CLI | Aceptada, pendiente de código |

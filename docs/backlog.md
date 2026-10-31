@@ -38,9 +38,14 @@
 | 2. Comando único | T-201 | `--version` integrado | Requerido | Hecho |
 | | T-202 | `--` llena posicionales | Requerido | Hecho |
 | | T-203 | `runCLI` con plugins y modo raíz explícito | Requerido | Hecho |
-| 3. MCP utilizable | T-301 | Capturar la salida de los comandos | Requerido | Pendiente |
+| 3. MCP utilizable | T-300 | Comprobar lo crítico en Windows | Requerido | En curso |
+| | T-301 | Separar parseo y ejecución en `core` | Requerido | Pendiente |
+| | T-303 | Ejecutar cada tool en un subproceso | Requerido | Pendiente |
+| | T-306 | Valores de quien opera fuera del schema | Requerido | Pendiente |
+| | T-304 | Contrato de resultado y errores | Requerido | Pendiente |
+| | T-305 | Cancelación y límites | Requerido | Pendiente |
 | | T-302 | Excluir y anotar tools | Requerido | Pendiente |
-| | T-303 | Definir qué corre en una llamada MCP | Requerido | Decisión pendiente |
+| | T-307 | Evento por llamada | Opcional | Pendiente |
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Pendiente |
 | | T-205 | Ruteo único para la ayuda | Requerido | Pendiente |
 | | T-206 | Kebab-case por defecto | Requerido | Pendiente |
@@ -255,18 +260,92 @@
 
 ## Fase 3: MCP utilizable
 
-### T-301 Capturar la salida de los comandos
+Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-mcp-en-subproceso.md)). La evidencia está en el [prototipo](./research/2026-10-mcp-subprocess-spike.md).
+
+### T-300 Comprobar lo crítico en Windows
+
+- **v1:** Requerido
+- **Estado:** En curso
+- **Descripción:** como mantenedor, quiero probar en Windows lo que sostiene el enfoque antes de construirlo, porque es la condición que más puede cambiar ADR-0030.
+- **Criterios de aceptación:**
+  - Un test con procesos reales corre en la matriz de CI: entrada JSON grande por un canal, resultado de 5 MB por otro, aviso de cancelación que deja correr `cleanup`, y cierre de un proceso con sus hijos.
+  - Pasa en Linux, macOS y Windows.
+  - Si falla en Windows sin solución razonable, se frena la fase y se revisa ADR-0030.
+
+### T-301 Separar parseo y ejecución en `core`
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Descripción:** como agente que usa una tool, quiero recibir lo que el comando imprime, para que un comando común funcione sin reescribirlo. Hoy la salida se pierde y ensucia el canal JSON-RPC.
+- **Bloqueada por:** T-300
+- **Descripción:** como mantenedor, quiero una sola ejecución que reciba valores ya resueltos, para que CLI y tools corran exactamente lo mismo.
 - **Criterios de aceptación:**
-  - Un `run()` con `console.log` devuelve ese texto como resultado de la tool.
-  - Stdout del servidor solo emite JSON-RPC válido, también con `process.stdout.write`.
-  - Si hay `output`, se conserva `structuredContent`.
-  - Un `output` inválido llega al agente como un mensaje legible, sin JSON crudo de Zod.
-  - Dos llamadas concurrentes no mezclan sus salidas.
-  - Stderr del comando no llega al resultado por defecto, o la regla queda documentada.
+  - La CLI usa esa ejecución, y su comportamiento no cambia: todos los tests pasan sin tocarlos.
+  - Se puede ejecutar un comando desde un objeto de entrada, sin argv.
+  - Esa entrada se valida con los schemas del comando, y un `.transform` corre una sola vez.
+  - Arrays, objetos y `z.number()` posicional funcionan sin pasar por flags.
+  - `HookContext` indica si la ejecución viene de la CLI o de una tool.
+
+### T-303 Ejecutar cada tool en un subproceso
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Bloqueada por:** T-301
+- **Descripción:** como autor de una CLI, quiero que una tool sea el mismo comando que corre una persona, con mi middleware, hooks, env y config.
+- **Criterios de aceptación:**
+  - Una llamada corre `beforeRun`, middleware, `run()`, `afterRun` y `cleanup`.
+  - Un middleware que rechaza impide la ejecución, y la tool devuelve error, sin falso éxito.
+  - `console.log` y `process.stdout.write` no llegan al protocolo.
+  - El valor devuelto gana, y stdout se usa solo si el comando no devuelve nada.
+  - Dos llamadas simultáneas no se mezclan.
+  - Un `process.exit` del comando no tumba al servidor.
+  - La entrada y el resultado viajan por canales internos, no documentados como API.
+  - Una CLI anidada no hereda esos canales ni sus variables.
+  - Un binario compilado declara cómo reinvocarse, y el servidor lo comprueba al arrancar.
+  - El servidor importa el SDK en diferido.
+
+### T-306 Valores de quien opera fuera del schema
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Bloqueada por:** T-303
+- **Descripción:** como quien opera un servidor, quiero que lo que configuré no lo pueda cambiar el modelo, y que el modelo no vea secretos.
+- **Criterios de aceptación:**
+  - Una opción con valor de env, config o globales de arranque sale del `inputSchema`.
+  - Enviar esa opción igualmente no cambia el valor.
+  - Una opción requerida que ya viene de env no le exige nada al modelo.
+  - Un `.default()` no pisa el valor de un archivo de config.
+  - `mcpPlugin` permite exponer una opción concreta, de forma explícita.
+  - Una opción marcada como de servidor y sin valor hace fallar el arranque.
+  - Los valores fijos nunca aparecen en un resultado o error devuelto al modelo.
+
+### T-304 Contrato de resultado y errores
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Bloqueada por:** T-303
+- **Descripción:** como agente, quiero saber si puedo reintentar, y que un error no me lleve a repetir un efecto que ya ocurrió.
+- **Criterios de aceptación:**
+  - Lo accionable está en el texto: `_meta` es para el cliente, y que llegue al modelo depende de él.
+  - `structuredContent` solo aparece si el comando declara `output`.
+  - Un error indica su clase, si es reintentable y su efecto: no empezó, completó o desconocido.
+  - Un comando que falla a mitad informa efecto desconocido, nunca `completed: false`.
+  - Si `run()` terminó pero el `output` es inválido, informa que el comando ya corrió, sin JSON crudo de Zod.
+  - Un exit 0 sin resultado de la ejecución es un error: nunca un falso "Done".
+
+### T-305 Cancelación y límites
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Bloqueada por:** T-303
+- **Descripción:** como quien opera un servidor, quiero que cancelar libere recursos, y que un comando no pueda tumbar el servidor con su salida.
+- **Criterios de aceptación:**
+  - Cancelar una llamada corre `cleanup`, y `ctx.signal` avisa al comando.
+  - Un hijo que ignora la cancelación muere pasado un plazo.
+  - Los procesos que inició el comando también terminan.
+  - Si el servidor muere, sus hijos no quedan corriendo.
+  - La llamada termina aunque un proceso nieto retenga stdio.
+  - Hay un tope de salida total y por tool, con inicio y final, y un aviso de truncado.
+  - 600 MB en stdout no tumban el servidor.
 
 ### T-302 Excluir y anotar tools
 
@@ -275,20 +354,22 @@
 - **Descripción:** como autor de una CLI, quiero elegir qué expongo a un agente y marcar lo peligroso, sin tocar `core`.
 - **Criterios de aceptación:**
   - `mcpPlugin({ exclude: ['deploy'] })` evita que la tool exista y que pueda llamarse.
-  - Se puede marcar un comando como de solo lectura o destructivo, y eso llega como anotación MCP.
+  - Se puede marcar un comando como de solo lectura, destructivo o idempotente, y eso llega como anotación MCP.
+  - Se puede dar una descripción propia por tool.
   - La documentación aclara que las anotaciones son pistas para el cliente, no control de acceso.
   - `exclude` con un nombre inexistente falla al arrancar.
+  - Un snapshot de `tools/list` detecta cambios en lo que ve el modelo.
 
-### T-303 Definir qué corre en una llamada MCP
+### T-307 Evento por llamada
 
-- **v1:** Requerido
-- **Estado:** Decisión pendiente
-- **Descripción:** como autor de una CLI, quiero saber si mi middleware, mis hooks, env y config corren en MCP. Hoy `server.ts` llama a `run()` directo.
-- **Decisión:** ejecutar el mismo pipeline que la CLI, o mantener la ejecución directa y documentarla.
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Bloqueada por:** T-303
+- **Descripción:** como quien opera un agente, quiero auditar cada llamada a una tool, sin depender del cliente.
 - **Criterios de aceptación:**
-  - Un middleware que rechaza una llamada se comporta según lo decidido, con un test.
-  - Los valores por defecto, env y config tienen una regla documentada.
-  - Si algo no corre, el README de MCP lo advierte de forma visible.
+  - Cada llamada emite un evento con tool, `requestId`, duración, resultado y bytes de salida.
+  - Los argumentos van redactados.
+  - El evento nunca va a stdout.
 
 ## Fase 4: primer uso
 

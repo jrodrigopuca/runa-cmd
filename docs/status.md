@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-30, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sigue la fase 3. Sus cambios están en `main`, pendientes de la siguiente beta.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. La fase 3 empezó con la comprobación en Windows (T-300), que condiciona el resto.
 
 ## Versiones
 
@@ -22,7 +22,7 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 821 pasan: core 487, help 211, completions 88, mcp 35 |
+| Tests | 824 pasan: core 487, help 211, completions 88, mcp 38 |
 | Aceptación con procesos reales | 107 de 112 casos pasan; los otros 5 son fallos esperados, cada uno con su tarea |
 | Cobertura de `core` | 93,92% de líneas, 83,47% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
@@ -42,7 +42,6 @@ La 1.0 depende de que la API no necesite cambios incompatibles durante una venta
 
 | Tarea | Pregunta |
 |---|---|
-| [T-303](./backlog.md#t-303-definir-qué-corre-en-una-llamada-mcp) | Si una llamada MCP corre el mismo pipeline que la CLI |
 | [T-504](./backlog.md#t-504-grupo-de-versiones-de-los-paquetes) | Si los paquetes siguen versionándose juntos |
 
 ## Cómo actualizar este archivo
