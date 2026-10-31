@@ -24,6 +24,10 @@
 		"./zod": {
 			"types": "./dist/zod.d.ts",
 			"import": "./dist/zod.js"
+		},
+		"./internal": {
+			"types": "./dist/internal.d.ts",
+			"import": "./dist/internal.js"
 		}
 	},
 	"scripts": {

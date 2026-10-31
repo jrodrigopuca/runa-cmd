@@ -10,7 +10,6 @@ import type {
 	OptionMeta,
 	PluginAPI,
 } from '@runa-cmd/core';
-import { defineCommand } from '@runa-cmd/core';
 import { describe, expect, it, vi } from 'vitest';
 import { mcpPlugin } from '../plugin.js';
 
@@ -128,47 +127,5 @@ describe('mcpPlugin', () => {
 
 		// Plugin should still be valid
 		expect(plugin.meta.name).toBe('@runa-cmd/mcp');
-	});
-});
-
-describe('mcpPlugin — MCP server start', () => {
-	// These tests verify that when --mcp is true, the plugin creates
-	// the server and calls shortCircuit. We mock the MCP SDK internals.
-
-	it('calls shortCircuit when --mcp is true', async () => {
-		const deploy = defineCommand({
-			meta: { name: 'deploy', description: 'Deploy' },
-			run() {},
-		});
-
-		const plugin = mcpPlugin();
-		const { api, hooks } = createMockPluginAPI({ deploy });
-
-		plugin.setup(api);
-
-		const handler = hooks.get('onGlobalFlags')?.[0];
-		expect(handler).toBeDefined();
-
-		const shortCircuit = vi.fn();
-		const ctx: HookContext = {
-			cli: { name: 'test-cli' },
-			rawArgs: ['--mcp'],
-			globalOptions: { mcp: true },
-			shortCircuit,
-		};
-
-		// The handler will try to start a real MCP server on stdio,
-		// which will fail in test environment. We catch the error.
-		try {
-			await handler!(ctx);
-		} catch {
-			// Expected: StdioServerTransport can't connect in test
-		}
-
-		// shortCircuit should have been called (it happens before startServer,
-		// but actually in our code it happens after... let's check)
-		// Actually shortCircuit is called AFTER startServer in the code.
-		// If startServer fails, shortCircuit won't be called.
-		// This is acceptable — in production, stdio transport will work.
 	});
 });

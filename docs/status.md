@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-30, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, la comprobación en Windows (T-300) pasó en CI y `core` ya separa la selección de la ejecución (T-301). Sigue T-303.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, las tools ya corren en un subproceso de la propia CLI (T-303), y sigue T-306.
 
 ## Versiones
 
@@ -24,9 +24,9 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 848 pasan: core 511, help 211, completions 88, mcp 38 |
+| Tests | 880 pasan: core 511, help 211, completions 88, mcp 70 |
 | Aceptación con procesos reales | 107 de 112 casos pasan; los otros 5 son fallos esperados, cada uno con su tarea |
-| Cobertura de `core` | 95,82% de líneas, 85,26% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
+| Cobertura de `core` | 94,89% de líneas, 84,65% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
 
 ## Dónde estamos

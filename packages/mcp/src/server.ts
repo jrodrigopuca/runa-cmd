@@ -1,159 +1,149 @@
 /**
- * @runa-cmd/mcp — MCP server creation and tool registration
+ * @runa-cmd/mcp — MCP server over a CLI run as subprocesses
  *
- * Creates an MCP server, registers tools from ToolRegistrations,
- * and manages the server lifecycle (stdio transport, signal handlers).
+ * Uses the SDK's low-level Server: schemas are only described here, because
+ * validating in the server would apply transforms and defaults that the child
+ * applies again. The child owns validation, as in any run of the CLI.
  */
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+	CallToolRequestSchema,
+	type CallToolResult,
+	ListToolsRequestSchema,
+	type Tool,
+} from '@modelcontextprotocol/sdk/types.js';
+import { RunaError } from '@runa-cmd/core';
+import { type ZodType, z } from 'zod';
+import type { ChildOutcome, RunOptions } from './runner.js';
+import { runChild } from './runner.js';
 import type { ToolRegistration } from './schema.js';
 
-// ─── Server Creation ────────────────────────────────────────
+const SELF_CHECK_TIMEOUT_MS = 10_000;
+
+// ─── Tool definitions ───────────────────────────────────────
+
+function toJsonSchema(schema: ZodType): Record<string, unknown> {
+	return z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' });
+}
+
+/** MCP only allows objects as structured output. */
+function structuredOutput(reg: ToolRegistration): ZodType | undefined {
+	if (!reg.outputSchema) return undefined;
+	return toJsonSchema(reg.outputSchema).type === 'object' ? reg.outputSchema : undefined;
+}
+
+export function toolDefinition(reg: ToolRegistration): Tool {
+	const output = structuredOutput(reg);
+	return {
+		name: reg.name,
+		description: reg.description,
+		inputSchema: toJsonSchema(z.object(reg.inputShape)) as Tool['inputSchema'],
+		...(output ? { outputSchema: toJsonSchema(output) as Tool['outputSchema'] } : {}),
+	};
+}
+
+// ─── Results ────────────────────────────────────────────────
+
+const failure = (text: string): CallToolResult => ({
+	isError: true,
+	content: [{ type: 'text', text }],
+});
+
+const success = (text: string): CallToolResult => ({ content: [{ type: 'text', text }] });
 
 /**
- * Create an MCP server with the given metadata.
+ * Exit code 0 is not enough: a middleware can skip the command and a command
+ * can exit on its own. Only the report says the command finished.
  */
-export function createMcpServer(opts: {
+export function toToolResult(reg: ToolRegistration, outcome: ChildOutcome): CallToolResult {
+	const finished = outcome.reports.find((report) => report.kind === 'result');
+
+	if (!finished) {
+		if (outcome.status === 0) return failure(`Command '${reg.name}' did not finish.`);
+		const reason = outcome.stderr.trim() || outcome.stdout.trim();
+		return failure(reason || `Command '${reg.name}' exited with code ${outcome.status}.`);
+	}
+
+	const { value } = finished;
+	if (value === undefined || value === null) {
+		return success(outcome.stdout.trim() || `Command '${reg.name}' executed successfully.`);
+	}
+
+	const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+	return structuredOutput(reg)
+		? { ...success(text), structuredContent: value as Record<string, unknown> }
+		: success(text);
+}
+
+// ─── Server ─────────────────────────────────────────────────
+
+export interface ServeOptions extends RunOptions {
 	name: string;
 	version: string;
 	instructions?: string;
-}): McpServer {
-	return new McpServer(
-		{ name: opts.name, version: opts.version },
-		{ instructions: opts.instructions },
+}
+
+/** Fails at startup, with a way out, instead of on the first tool call. */
+async function assertCanRunItself(options: RunOptions): Promise<void> {
+	const { reports } = await runChild(
+		{ kind: 'ping' },
+		{ ...options, signal: AbortSignal.timeout(SELF_CHECK_TIMEOUT_MS) },
+	);
+	if (reports.some((report) => report.kind === 'pong')) return;
+
+	throw new RunaError(
+		`Cannot run this CLI as a subprocess with: ${options.selfCommand.join(' ')}. ` +
+			'If it is a compiled binary, set mcpPlugin({ selfCommand }).',
+		{ code: 'MCP_SELF_CHECK_FAILED' },
 	);
 }
 
-// ─── Tool Registration ──────────────────────────────────────
+export function createMcpServer(registrations: ToolRegistration[], options: ServeOptions): Server {
+	const server = new Server(
+		{ name: options.name, version: options.version },
+		{ capabilities: { tools: {} }, instructions: options.instructions },
+	);
 
-/**
- * Register MCP tools on the server from ToolRegistration objects.
- *
- * Each tool's handler:
- * 1. Splits the input back into args/options using stored key sets
- * 2. Calls command.run() with a constructed RunContext
- * 3. Returns structured content if outputSchema exists, text otherwise
- * 4. Catches errors and returns isError: true
- */
-export function registerTools(server: McpServer, registrations: ToolRegistration[]): void {
-	for (const reg of registrations) {
-		const hasInput = Object.keys(reg.inputShape).length > 0;
+	server.setRequestHandler(ListToolsRequestSchema, () => ({
+		tools: registrations.map(toolDefinition),
+	}));
 
-		if (hasInput) {
-			server.registerTool(
-				reg.name,
-				{
-					description: reg.description,
-					inputSchema: reg.inputShape,
-					...(reg.outputSchema ? { outputSchema: reg.outputSchema } : {}),
-				},
-				async (input: Record<string, unknown>) => {
-					return executeToolHandler(reg, input);
-				},
-			);
-		} else {
-			server.registerTool(
-				reg.name,
-				{
-					description: reg.description,
-					...(reg.outputSchema ? { outputSchema: reg.outputSchema } : {}),
-				},
-				async () => {
-					return executeToolHandler(reg, {});
-				},
-			);
-		}
-	}
+	server.setRequestHandler(CallToolRequestSchema, async ({ params }, extra) => {
+		const reg = registrations.find((candidate) => candidate.name === params.name);
+		if (!reg) return failure(`Unknown tool: ${params.name}`);
+
+		const outcome = await runChild(
+			{ kind: 'call', path: reg.path, input: params.arguments ?? {} },
+			{ ...options, signal: extra.signal },
+		);
+		return toToolResult(reg, outcome);
+	});
+
+	return server;
 }
 
 /**
- * Execute a tool handler — splits input into args/options, runs the command,
- * and returns the appropriate MCP result.
+ * Serve until the client disconnects or the process is told to stop, so the
+ * lifecycle of the CLI, cleanup included, ends when the server does.
  */
-async function executeToolHandler(
-	reg: ToolRegistration,
-	input: Record<string, unknown>,
-): Promise<CallToolResult> {
-	// Split input back into args and options
-	const runArgs: Record<string, unknown> = {};
-	const runOptions: Record<string, unknown> = {};
+export async function serve(
+	registrations: ToolRegistration[],
+	options: ServeOptions,
+): Promise<void> {
+	await assertCanRunItself(options);
 
-	for (const [key, value] of Object.entries(input)) {
-		if (reg.argKeys.has(key)) {
-			runArgs[key] = value;
-		} else {
-			runOptions[key] = value;
-		}
-	}
+	const server = createMcpServer(registrations, options);
+	const closed = new Promise<void>((resolve) => {
+		server.onclose = resolve;
+	});
 
-	try {
-		const result = await reg.command.run({
-			args: runArgs,
-			options: runOptions,
-			globalOptions: {},
-			command: reg.command.meta,
-			rawArgs: [],
-			rest: [],
-		});
+	const close = () => void server.close();
+	process.once('SIGINT', close);
+	process.once('SIGTERM', close);
+	process.stdin.once('end', close);
 
-		// Command has output schema — return structured content
-		if (reg.outputSchema) {
-			reg.outputSchema.parse(result);
-			return {
-				content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
-				structuredContent: result as Record<string, unknown>,
-			};
-		}
-
-		// Command returned something (but no output schema)
-		if (result !== undefined && result !== null) {
-			const text = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-			return {
-				content: [{ type: 'text' as const, text }],
-			};
-		}
-
-		// Void command — success message
-		return {
-			content: [{ type: 'text' as const, text: `Command '${reg.name}' executed successfully.` }],
-		};
-	} catch (err) {
-		return {
-			isError: true,
-			content: [
-				{
-					type: 'text' as const,
-					text: err instanceof Error ? err.message : String(err),
-				},
-			],
-		};
-	}
-}
-
-// ─── Server Lifecycle ───────────────────────────────────────
-
-/**
- * Start the MCP server on stdio transport.
- * Registers signal handlers for graceful shutdown.
- *
- * Returns a close function for cleanup.
- */
-export async function startServer(server: McpServer): Promise<{ close: () => Promise<void> }> {
-	const transport = new StdioServerTransport();
-	await server.connect(transport);
-
-	const close = async () => {
-		await server.close();
-	};
-
-	const handleShutdown = async () => {
-		await close();
-		process.exit(0);
-	};
-
-	process.on('SIGINT', handleShutdown);
-	process.on('SIGTERM', handleShutdown);
-
-	return { close };
+	await server.connect(new StdioServerTransport());
+	await closed;
 }

@@ -16,14 +16,11 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
-| KI-003 | MCP pierde la salida de `console.log`, y esa salida ensucia el canal JSON-RPC | Observado | `packages/mcp/src/server.ts:91` ejecuta `run()` sin capturar stdout | [T-303](./backlog.md#t-303-ejecutar-cada-tool-en-un-subproceso) |
-| KI-031 | Con `--mcp`, el hook `cleanup` y `plugin.cleanup()` corren antes de la primera llamada: un recurso ya estaría cerrado | Observado | `shortCircuit` lleva al `finally` mientras el servidor sigue vivo | [T-303](./backlog.md#t-303-ejecutar-cada-tool-en-un-subproceso) |
-| KI-032 | Una opción requerida falla aunque su env exista, y un token aparece como parámetro de la tool | Observado | `inputShape` copia el schema crudo y el SDK valida antes | [T-306](./backlog.md#t-306-valores-de-quien-opera-fuera-del-schema) |
-| KI-033 | Si `output` falla, un comando con efectos vuelve como error, y el modelo puede repetirlo | Leído | `output.parse` corre después de `run()` | [T-304](./backlog.md#t-304-contrato-de-resultado-y-errores) |
+| KI-032 | Una opción con `env` figura como parámetro de la tool, aunque ya tenga valor: un token queda a la vista del modelo, y el modelo puede pisarla | Leído | `inputShape` copia el schema crudo | [T-306](./backlog.md#t-306-valores-de-quien-opera-fuera-del-schema) |
+| KI-033 | Si `output` falla, un comando con efectos vuelve como error, y el modelo puede repetirlo | Leído | El informe `ran` llega al servidor, pero `toToolResult` todavía no lo usa | [T-304](./backlog.md#t-304-contrato-de-resultado-y-errores) |
 | KI-005 | Toda opción `z.array()` falla, incluso `--tag a` | Observado | No se usa `multiple` en `parseArgs` | [T-207](./backlog.md#t-207-opciones-repetidas-con-zarray) |
 | KI-006 | En `defineCLI` con un comando, `completionsPlugin` rompe el modo implícito: `tool hola` da 127. Con `runCLI` no pasa | Observado | El modo depende de contar comandos | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
 | KI-007 | No se pueden excluir comandos de MCP ni marcarlos como destructivos | Leído | `McpPluginOptions` no lo ofrece | [T-302](./backlog.md#t-302-excluir-y-anotar-tools) |
-| KI-008 | MCP saltea middleware, hooks, env y config sin avisar | Leído | `packages/mcp/src/server.ts:91` llama a `run()` directo | [T-303](./backlog.md#t-303-ejecutar-cada-tool-en-un-subproceso) |
 
 ## Severidad media
 

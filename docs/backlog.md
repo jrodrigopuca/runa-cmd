@@ -40,7 +40,7 @@
 | | T-203 | `runCLI` con plugins y modo raíz explícito | Requerido | Hecho |
 | 3. MCP utilizable | T-300 | Comprobar lo crítico en Windows | Requerido | Hecho |
 | | T-301 | Separar parseo y ejecución en `core` | Requerido | Hecho |
-| | T-303 | Ejecutar cada tool en un subproceso | Requerido | Pendiente |
+| | T-303 | Ejecutar cada tool en un subproceso | Requerido | Hecho |
 | | T-306 | Valores de quien opera fuera del schema | Requerido | Pendiente |
 | | T-304 | Contrato de resultado y errores | Requerido | Pendiente |
 | | T-305 | Cancelación y límites | Requerido | Pendiente |
@@ -287,7 +287,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-303 Ejecutar cada tool en un subproceso
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero que una tool sea el mismo comando que corre una persona, con mi middleware, hooks, env y config.
 - **Criterios de aceptación:**
   - Una llamada corre `beforeRun`, middleware, `run()`, `afterRun` y `cleanup`.
@@ -299,7 +299,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - La entrada y el resultado viajan por canales internos, no documentados como API.
   - Un `.transform` no corre dos veces: el servidor reenvía la entrada sin transformar, y valida el hijo.
   - Una CLI anidada no hereda esos canales ni sus variables.
-  - Un binario compilado declara cómo reinvocarse, y el servidor lo comprueba al arrancar.
+  - El servidor comprueba al arrancar que puede ejecutarse a sí mismo, y `selfCommand` permite declararlo si no puede.
   - El servidor importa el SDK en diferido.
 
 ### T-306 Valores de quien opera fuera del schema

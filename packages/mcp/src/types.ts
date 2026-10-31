@@ -14,4 +14,11 @@ export interface McpPluginOptions {
 	version?: string;
 	/** Server instructions for cross-tool workflows */
 	instructions?: string;
+	/**
+	 * How to start this CLI again: executable and arguments. Each tool call runs
+	 * it as a child process. The default repeats how this process was started,
+	 * and the server checks it before accepting calls. Set it if that check fails,
+	 * e.g. `[process.execPath]` for a binary.
+	 */
+	selfCommand?: string[];
 }

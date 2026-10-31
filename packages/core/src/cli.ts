@@ -31,6 +31,7 @@ import {
 	validateOptionCollisions,
 } from './plugin.js';
 import { findSuggestion } from './suggest.js';
+import { sendToolReport, type ToolReport, takeToolRequest } from './tool-channel.js';
 import type {
 	CLI,
 	CLIConfig,
@@ -339,6 +340,8 @@ interface LifecycleOptions {
 	rootName?: string;
 	/** Run this call instead of reading the command from argv */
 	toolCall?: ToolCall;
+	/** Tells the process that started this one how the command went */
+	report?: (report: ToolReport) => void;
 }
 
 /**
@@ -348,7 +351,7 @@ interface LifecycleOptions {
 async function runCLILifecycle(
 	config: CLIConfig,
 	argv: string[],
-	{ rootName, toolCall }: LifecycleOptions = {},
+	{ rootName, toolCall, report }: LifecycleOptions = {},
 ): Promise<void> {
 	// ─── State ─────────────────────────────────────────
 	const hookRegistry = createHookRegistry();
@@ -588,11 +591,13 @@ async function runCLILifecycle(
 
 		const innerFn = async () => {
 			commandResult = await command.run(runContext);
+			report?.({ kind: 'ran' });
 
 			// Validate output schema if present
 			if (command.output) {
 				assertValidOutput(command, command.output, commandResult);
 			}
+			report?.({ kind: 'result', value: commandResult });
 		};
 
 		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, innerFn);
@@ -730,8 +735,7 @@ export function defineCLI(config: CLIConfig): CLI {
 		_type: 'runa:cli' as const,
 		config,
 		async run(argv?: string[]): Promise<void> {
-			const effectiveArgv = argv ?? process.argv.slice(2);
-			await runCLILifecycle(config, effectiveArgv);
+			await enter(config, argv ?? process.argv.slice(2));
 		},
 	};
 }
@@ -744,11 +748,27 @@ export async function runCLI(command: Command, options: RunCLIOptions = {}): Pro
 	const { argv = process.argv.slice(2), ...config } = options;
 	const { name, version, description } = command.meta;
 
-	await runCLILifecycle(
+	await enter(
 		{ ...config, meta: { name, version, description }, commands: { [name]: command } },
 		argv,
-		{ rootName: name },
+		name,
 	);
+}
+
+/** Every CLI starts here: as itself, or as a tool if an MCP server launched it. */
+async function enter(config: CLIConfig, argv: string[], rootName?: string): Promise<void> {
+	const request = takeToolRequest();
+
+	if (request?.kind === 'ping') {
+		sendToolReport({ kind: 'pong' });
+		return;
+	}
+
+	await runCLILifecycle(config, argv, {
+		rootName,
+		toolCall: request,
+		report: request ? sendToolReport : undefined,
+	});
 }
 
 /**

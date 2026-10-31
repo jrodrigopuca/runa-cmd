@@ -6,7 +6,7 @@ El motor de Runa: define comandos, parsea argv, resuelve valores, ejecuta el cic
 
 ## API pública
 
-Entradas: `@runa-cmd/core` y `@runa-cmd/core/zod`, que reexporta `z`.
+Entradas: `@runa-cmd/core` y `@runa-cmd/core/zod`, que reexporta `z`. `@runa-cmd/core/internal` se comparte con otros paquetes de Runa: no es API pública y puede cambiar en cualquier versión.
 
 | Export | Uso |
 |---|---|
@@ -81,6 +81,7 @@ interface CLIConfig {
 | `packages/core/src/plugin.ts` | Host de plugins, orden topológico, capacidades y colisiones |
 | `packages/core/src/introspect.ts` | `getSchema()` |
 | `packages/core/src/errors.ts` | Jerarquía de errores |
+| `packages/core/src/tool-channel.ts` | Canal con un servidor MCP cuando la CLI corre como tool |
 | `packages/core/src/suggest.ts` | Levenshtein y sugerencias |
 | `packages/core/src/parse/parseargs-bridge.ts` | Traduce schema a configuración de `parseArgs` |
 | `packages/core/src/parse/strict.ts` | Rechaza flags desconocidas y opciones sin valor |

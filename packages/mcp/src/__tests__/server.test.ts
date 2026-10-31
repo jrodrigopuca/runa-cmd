@@ -1,316 +1,104 @@
 /**
- * Tests for MCP server creation and tool execution
+ * Tests for tool definitions and for turning a child's outcome into a result.
+ * Running real tools end to end lives in tools.test.ts.
  */
-
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { CLISchema, CommandTree } from '@runa-cmd/core';
 import { defineCommand } from '@runa-cmd/core';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { buildToolRegistrations } from '../schema.js';
-import { createMcpServer, registerTools } from '../server.js';
+import type { ChildOutcome } from '../runner.js';
+import { buildToolRegistrations, type ToolRegistration } from '../schema.js';
+import { toolDefinition, toToolResult } from '../server.js';
 
-// ─── Helpers ────────────────────────────────────────────────
+function registration(config: Partial<Parameters<typeof defineCommand>[0]> = {}): ToolRegistration {
+	const deploy = defineCommand({
+		meta: { name: 'deploy', description: 'Deploy' },
+		run() {},
+		...config,
+	} as Parameters<typeof defineCommand>[0]);
 
-function makeCLISchema(commands: CLISchema['commands'] = []): CLISchema {
-	return {
-		meta: { name: 'test-cli', version: '1.0.0', description: 'Test CLI' },
-		commands,
-		globalOptions: [],
-	};
+	const schema = { meta: { name: 'cli' }, commands: [], globalOptions: [] };
+	return buildToolRegistrations({ deploy }, schema)[0] as ToolRegistration;
 }
 
-// ─── Tests ──────────────────────────────────────────────────
+const outcome = (overrides: Partial<ChildOutcome> = {}): ChildOutcome => ({
+	status: 0,
+	stdout: '',
+	stderr: '',
+	reports: [{ kind: 'ran' }, { kind: 'result', value: undefined }],
+	...overrides,
+});
 
-describe('createMcpServer', () => {
-	it('creates a server with name and version', () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		expect(server).toBeInstanceOf(McpServer);
+const text = (reg: ToolRegistration, out: ChildOutcome) => toToolResult(reg, out).content[0]?.text;
+
+describe('toolDefinition', () => {
+	it('describes a command without input as an empty object', () => {
+		const definition = toolDefinition(registration());
+		expect(definition.name).toBe('deploy');
+		expect(definition.description).toBe('Deploy');
+		expect(definition.inputSchema.type).toBe('object');
+		expect(definition.inputSchema.properties).toEqual({});
 	});
 
-	it('creates a server with instructions', () => {
-		const server = createMcpServer({
-			name: 'test',
-			version: '1.0.0',
-			instructions: 'Use deploy to deploy things',
-		});
-		expect(server).toBeInstanceOf(McpServer);
+	it('merges args and options', () => {
+		const definition = toolDefinition(
+			registration({ args: { service: z.string() }, options: { env: z.string().optional() } }),
+		);
+		expect(Object.keys(definition.inputSchema.properties ?? {})).toEqual(['service', 'env']);
+		expect(definition.inputSchema.required).toEqual(['service']);
+	});
+
+	it('declares an object output', () => {
+		const definition = toolDefinition(registration({ output: z.object({ url: z.string() }) }));
+		expect(definition.outputSchema?.type).toBe('object');
+	});
+
+	it('leaves out an output that is not an object: MCP does not allow it', () => {
+		expect(toolDefinition(registration({ output: z.string() })).outputSchema).toBeUndefined();
 	});
 });
 
-describe('registerTools', () => {
-	it('registers tools on the server', () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
+describe('toToolResult', () => {
+	const reg = registration();
+	const withOutput = registration({ output: z.object({ url: z.string() }) });
+	const finishedWith = (value: unknown) =>
+		outcome({ reports: [{ kind: 'ran' }, { kind: 'result', value }] });
 
-		const deploy = defineCommand({
-			meta: { name: 'deploy', description: 'Deploy' },
-			options: { env: z.string() },
-			run() {},
-		});
-
-		const commands: CommandTree = { deploy };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-
-		registerTools(server, regs);
-
-		expect(registerSpy).toHaveBeenCalledTimes(1);
-		expect(registerSpy).toHaveBeenCalledWith(
-			'deploy',
-			expect.objectContaining({ description: 'Deploy' }),
-			expect.any(Function),
-		);
+	it('uses a success message when there is nothing to show', () => {
+		expect(text(reg, outcome())).toBe("Command 'deploy' executed successfully.");
 	});
 
-	it('registers zero-input tools without inputSchema', () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const ping = defineCommand({
-			meta: { name: 'ping', description: 'Ping' },
-			run() {},
-		});
-
-		const commands: CommandTree = { ping };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-
-		registerTools(server, regs);
-
-		expect(registerSpy).toHaveBeenCalledTimes(1);
-		// Should NOT have inputSchema in config
-		const config = registerSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-		expect(config).not.toHaveProperty('inputSchema');
+	it('uses stdout when nothing was returned', () => {
+		expect(text(reg, outcome({ stdout: 'Hello\n' }))).toBe('Hello');
 	});
 
-	it('registers tools with outputSchema when defined', () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const status = defineCommand({
-			meta: { name: 'status', description: 'Status' },
-			output: z.object({ ok: z.boolean() }),
-			run() {
-				return { ok: true };
-			},
-		});
-
-		const commands: CommandTree = { status };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-
-		registerTools(server, regs);
-
-		const config = registerSpy.mock.calls[0]?.[1] as Record<string, unknown>;
-		expect(config).toHaveProperty('outputSchema');
+	it('prefers a returned value over stdout', () => {
+		expect(text(reg, { ...finishedWith('value'), stdout: 'noise' })).toBe('value');
 	});
 
-	it('registers multiple tools', () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const a = defineCommand({
-			meta: { name: 'a', description: 'A' },
-			run() {},
-		});
-		const b = defineCommand({
-			meta: { name: 'b', description: 'B' },
-			options: { x: z.string() },
-			run() {},
-		});
-
-		const commands: CommandTree = { a, b };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-
-		registerTools(server, regs);
-
-		expect(registerSpy).toHaveBeenCalledTimes(2);
-	});
-});
-
-describe('tool execution (via handler)', () => {
-	// We test the tool handler by extracting it from the registerTool spy
-
-	it('executes a void command and returns success message', async () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const runFn = vi.fn();
-		const ping = defineCommand({
-			meta: { name: 'ping', description: 'Ping' },
-			run: runFn,
-		});
-
-		const commands: CommandTree = { ping };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-		registerTools(server, regs);
-
-		// Extract the handler (third argument to registerTool)
-		const handler = registerSpy.mock.calls[0]?.[2] as (...args: unknown[]) => Promise<unknown>;
-		// For zero-input tools, the handler takes no args (or extra as first arg)
-		const result = (await handler()) as { content: { text: string }[] };
-
-		expect(runFn).toHaveBeenCalledOnce();
-		expect(result.content[0]?.text).toContain('executed successfully');
+	it('keeps a falsy returned value', () => {
+		expect(text(reg, finishedWith(0))).toBe('0');
+		expect(text(reg, finishedWith(false))).toBe('false');
 	});
 
-	it('splits args and options correctly in handler', async () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const runFn = vi.fn();
-		const greet = defineCommand({
-			meta: { name: 'greet', description: 'Greet' },
-			args: { name: z.string() },
-			options: { loud: z.boolean().optional().default(false) },
-			run: runFn,
-		});
-
-		const commands: CommandTree = { greet };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-		registerTools(server, regs);
-
-		const handler = registerSpy.mock.calls[0]?.[2] as (...args: unknown[]) => Promise<unknown>;
-		await handler({ name: 'Alice', loud: true });
-
-		expect(runFn).toHaveBeenCalledWith(
-			expect.objectContaining({
-				args: { name: 'Alice' },
-				options: { loud: true },
-				globalOptions: {},
-				rawArgs: [],
-			}),
-		);
+	it('adds structuredContent only with an object output schema', () => {
+		const value = { url: 'x' };
+		expect(toToolResult(withOutput, finishedWith(value)).structuredContent).toEqual(value);
+		expect(toToolResult(reg, finishedWith(value)).structuredContent).toBeUndefined();
 	});
 
-	it('returns structured content for commands with output schema', async () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const status = defineCommand({
-			meta: { name: 'status', description: 'Status' },
-			output: z.object({ ok: z.boolean(), msg: z.string() }),
-			run() {
-				return { ok: true, msg: 'All good' };
-			},
-		});
-
-		const commands: CommandTree = { status };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-		registerTools(server, regs);
-
-		const handler = registerSpy.mock.calls[0]?.[2] as (...args: unknown[]) => Promise<unknown>;
-		const result = (await handler()) as {
-			content: { text: string }[];
-			structuredContent: unknown;
-		};
-
-		expect(result.structuredContent).toEqual({ ok: true, msg: 'All good' });
-		expect(result.content[0]?.text).toContain('"ok": true');
-	});
-
-	it('returns text content for non-void commands without output schema', async () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		// Intentionally return a value from a command without output schema
-		// to test how executeToolHandler handles unexpected return values at runtime
-		const echo = defineCommand({
-			meta: { name: 'echo', description: 'Echo' },
-			args: { text: z.string() },
-			// @ts-expect-error -- testing runtime behavior when run() returns a value without output schema
-			run({ args }) {
-				return args.text;
-			},
-		});
-
-		const commands: CommandTree = { echo };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-		registerTools(server, regs);
-
-		const handler = registerSpy.mock.calls[0]?.[2] as (...args: unknown[]) => Promise<unknown>;
-		const result = (await handler({ text: 'hello' })) as { content: { text: string }[] };
-
-		expect(result.content[0]?.text).toBe('hello');
-	});
-
-	it('returns isError: true when handler throws', async () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const fail = defineCommand({
-			meta: { name: 'fail', description: 'Fail' },
-			run() {
-				throw new Error('Something went wrong');
-			},
-		});
-
-		const commands: CommandTree = { fail };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-		registerTools(server, regs);
-
-		const handler = registerSpy.mock.calls[0]?.[2] as (...args: unknown[]) => Promise<unknown>;
-		const result = (await handler()) as {
-			isError: boolean;
-			content: { text: string }[];
-		};
-
+	it('reports a failed command with what it wrote', () => {
+		const result = toToolResult(reg, outcome({ status: 3, stderr: 'locked\n', reports: [] }));
 		expect(result.isError).toBe(true);
-		expect(result.content[0]?.text).toBe('Something went wrong');
+		expect(result.content[0]?.text).toBe('locked');
 	});
 
-	it('handles async run functions', async () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		const slow = defineCommand({
-			meta: { name: 'slow', description: 'Slow' },
-			output: z.object({ done: z.boolean() }),
-			async run() {
-				return { done: true };
-			},
-		});
-
-		const commands: CommandTree = { slow };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-		registerTools(server, regs);
-
-		const handler = registerSpy.mock.calls[0]?.[2] as (...args: unknown[]) => Promise<unknown>;
-		const result = (await handler()) as { structuredContent: unknown };
-
-		expect(result.structuredContent).toEqual({ done: true });
+	it('falls back to the exit code when a failed command wrote nothing', () => {
+		expect(text(reg, outcome({ status: 9, reports: [] }))).toContain('exited with code 9');
 	});
 
-	it('returns JSON stringified for non-string results without output schema', async () => {
-		const server = createMcpServer({ name: 'test', version: '1.0.0' });
-		const registerSpy = vi.spyOn(server, 'registerTool');
-
-		// Intentionally return an object from a command without output schema
-		// to test how executeToolHandler JSON-stringifies non-string return values
-		const info = defineCommand({
-			meta: { name: 'info', description: 'Info' },
-			// @ts-expect-error -- testing runtime behavior when run() returns a value without output schema
-			run() {
-				return { version: '1.0.0' };
-			},
-		});
-
-		const commands: CommandTree = { info };
-		const schema = makeCLISchema([]);
-		const regs = buildToolRegistrations(commands, schema);
-		registerTools(server, regs);
-
-		const handler = registerSpy.mock.calls[0]?.[2] as (...args: unknown[]) => Promise<unknown>;
-		const result = (await handler()) as { content: { text: string }[] };
-
-		expect(JSON.parse(result.content[0]?.text ?? '')).toEqual({ version: '1.0.0' });
+	it('does not treat exit 0 as success without a result', () => {
+		const result = toToolResult(reg, outcome({ reports: [] }));
+		expect(result.isError).toBe(true);
+		expect(result.content[0]?.text).toContain('did not finish');
 	});
 });

@@ -144,7 +144,7 @@ $ my-tool --mcp           # Start as MCP server for AI agents
 $ my-tool completions bash  # Generate shell completions
 ```
 
-For MCP, commands should **return** their result: today, what a command prints with `console.log` doesn't reach the agent. See the [MCP package](./packages/mcp#current-limitations) for the details.
+With MCP, a tool is the same command a person runs: each call runs your CLI as a child process, with its env vars, config, hooks and middleware. See the [MCP package](./packages/mcp#current-limitations) for what's still missing.
 
 ## Core Concepts
 

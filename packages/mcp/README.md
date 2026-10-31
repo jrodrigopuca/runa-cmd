@@ -58,11 +58,12 @@ For a CLI made of one command, use `runCLI(deploy, { plugins: [mcpPlugin()] })`.
 
 1. The plugin adds a `--mcp` global boolean flag
 2. On `onGlobalFlags` hook, if `--mcp` is true:
-   - Introspects the CLI schema via `getSchema()`
-   - Gets the live command tree via `getCommands()`
    - Maps each leaf command to an MCP tool
-   - Starts an MCP server over stdio transport
-   - Short-circuits normal CLI execution
+   - Checks that it can run itself
+   - Serves over stdio until the client disconnects
+3. Each tool call runs your CLI again, as a child process
+
+A tool is the same command a person runs: env vars, config files, global options, hooks and middleware all apply, and a `process.exit` only ends that call. To tell tool calls apart in a hook, read `ctx.invocation.surface`. Each call is a new process, so nothing is shared between calls.
 
 ### Command → Tool Mapping
 
@@ -81,7 +82,7 @@ CLI: deploy <service> --env staging
 MCP: { "service": "api", "env": "staging" }
 ```
 
-The plugin tracks which keys are args vs options internally, so it can reconstruct the proper `RunContext` when executing the command.
+Each key goes to its arg or option by name, so arrays, objects and numbers arrive as they are, and a value can never select another command.
 
 ### Output Handling
 
@@ -90,16 +91,20 @@ The plugin tracks which keys are args vs options internally, so it can reconstru
 | Command has `output` schema | `structuredContent` with typed data |
 | Command returns a string (no output schema) | `text` content |
 | Command returns an object (no output schema) | `text` content (JSON stringified) |
-| Command returns void | `text`: `Command '<name>' executed successfully.` |
+| Command returns nothing | `text` with what it printed, or `Command '<name>' executed successfully.` |
 | Command throws | `isError: true` with error message |
+| Command never finished | `isError: true` with `Command '<name>' did not finish.` |
+
+A returned value wins over what the command printed.
 
 ## Current Limitations
 
 These matter when you expose a real CLI to an agent:
 
-- **Return your result, don't print it.** What a command writes with `console.log` doesn't reach the agent, and it mixes with the protocol on stdout.
 - **Every command becomes a tool.** There's no way yet to exclude one or mark it as destructive, so don't enable `--mcp` on a CLI whose commands an agent shouldn't run.
-- **Tools run `run()` directly.** Middleware, hooks, environment variables and config files don't apply, and `globalOptions` is empty. Don't rely on middleware for authorization.
+- **Options with an env var still show up in the tool.** An agent can see and override them. Don't declare secrets as options yet.
+- **Cancelling a call ends the process** without running `cleanup`, and a process the command started keeps running.
+- **Tool output has no size limit.**
 - **stdio is the only transport.**
 
 The [backlog](https://github.com/jrodrigopuca/runa-cmd/blob/main/docs/backlog.md) tracks the fixes.
@@ -117,6 +122,7 @@ mcpPlugin({
   name: 'my-server',          // MCP server name (defaults to CLI name)
   version: '2.0.0',           // MCP server version (defaults to CLI version)
   instructions: 'Use deploy before running tests', // Cross-tool workflow hints for AI
+  selfCommand: ['/usr/local/bin/my-tool'], // How to run the CLI again, if the startup check fails
 });
 ```
 
@@ -127,6 +133,7 @@ interface McpPluginOptions {
   name?: string;          // Server name override
   version?: string;       // Server version override
   instructions?: string;  // Workflow instructions for AI agents
+  selfCommand?: string[]; // Executable and arguments to run this CLI again
 }
 ```
 

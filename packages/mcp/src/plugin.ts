@@ -1,22 +1,26 @@
 /**
  * @runa-cmd/mcp — mcpPlugin()
  *
- * A Runa plugin that exposes CLI commands as MCP tools.
- * When `--mcp` is passed, the plugin short-circuits normal CLI execution,
- * starts an MCP server on stdio transport, and registers every CLI
- * command as an MCP tool.
+ * Exposes CLI commands as MCP tools. With `--mcp`, the CLI becomes a server
+ * over stdio, and each tool call runs the CLI again as a child process, so a
+ * tool is the same command a person runs (ADR-0030).
  */
 import type { HookContext, PluginConfig } from '@runa-cmd/core';
 import { definePlugin } from '@runa-cmd/core';
 import { z } from 'zod';
+import { defaultSelfCommand } from './runner.js';
 import { buildToolRegistrations } from './schema.js';
-import { createMcpServer, registerTools, startServer } from './server.js';
 import type { McpPluginOptions } from './types.js';
+
+/** What a child repeats from the server's own start: everything but `--mcp`. */
+function startupArgv(): string[] {
+	return process.argv.slice(2).filter((token) => token !== '--mcp' && !token.startsWith('--mcp='));
+}
 
 /**
  * Create an MCP plugin that exposes CLI commands as MCP tools.
  *
- * @param opts - Optional server name, version, or instructions override
+ * @param opts - Optional server name, version, instructions or selfCommand
  */
 export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 	return definePlugin({
@@ -37,21 +41,19 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 				if (!ctx.globalOptions?.mcp) return;
 
 				const schema = api.getSchema();
-				const commands = api.getCommands();
 
-				const registrations = buildToolRegistrations(commands, schema);
+				// Loaded here so a plain CLI run doesn't pay for the MCP SDK
+				const { serve } = await import('./server.js');
 
-				const server = createMcpServer({
+				await serve(buildToolRegistrations(api.getCommands(), schema), {
 					name: opts.name ?? schema.meta.name,
 					version: opts.version ?? schema.meta.version ?? '0.0.0',
 					instructions: opts.instructions,
+					selfCommand: opts.selfCommand ?? defaultSelfCommand(),
+					argv: startupArgv(),
 				});
 
-				registerTools(server, registrations);
-				await startServer(server);
-
-				// Short-circuit — MCP server now running, don't execute CLI command
-				// NOTE: Do NOT call process.exit() — server must stay alive for tool invocations
+				// The server closed: there is no command to run
 				ctx.shortCircuit?.();
 			});
 		},

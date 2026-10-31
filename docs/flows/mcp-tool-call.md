@@ -1,51 +1,68 @@
 # Llamada a una tool MCP
 
-> **Fuente:** `packages/mcp/src` · **Verificado:** 2026-10-30
+> **Fuente:** `packages/mcp/src`, `packages/core/src/tool-channel.ts` · **Verificado:** 2026-10-30
 
-Describe el flujo actual, incluidos sus límites conocidos.
+Cada tool es el mismo comando que corre una persona, ejecutado en un subproceso de la propia CLI ([ADR-0030](../adr/0030-tools-mcp-en-subproceso.md)).
 
 ```mermaid
 sequenceDiagram
     participant A as Agente
     participant S as Servidor MCP
-    participant C as Command.run()
+    participant H as Hijo (la misma CLI)
     Note over S: mycli --mcp
+    S->>H: ping
+    H-->>S: pong
     A->>S: initialize
-    S-->>A: capacidades
     A->>S: tools/call deploy
-    S->>S: Validar input con el schema
-    S->>S: Separar args y options
-    S->>C: run({ args, options, rest: [] })
-    C-->>S: valor de retorno
-    alt Tiene output
-        S->>S: output.parse(result)
-        S-->>A: texto y structuredContent
-    else Devuelve un valor
-        S-->>A: texto
-    else No devuelve nada
-        S-->>A: executed successfully
-    end
+    S->>H: Proceso nuevo, entrada JSON por fd 3
+    Note over H: Plugins, globales, validación,<br/>hooks, middleware, run()
+    H-->>S: ran, por fd 4
+    Note over H: Valida output
+    H-->>S: result, por fd 4
+    Note over H: afterRun y cleanup
+    H-->>S: Fin, con exit code
+    S-->>A: Resultado
 ```
 
 ## Arranque
 
 1. `mcpPlugin` registra `--mcp` como opción global.
-2. En `onGlobalFlags`, si la flag está activa, construye las tools desde `getCommands()` y `getSchema()`.
-3. Conecta el transporte stdio y llama a `shortCircuit()`.
-4. El ciclo pasa a `cleanup`, pero el proceso sigue vivo por el servidor.
-5. SIGINT o SIGTERM cierran el servidor y terminan el proceso.
+2. En `onGlobalFlags`, si la flag está activa, carga el SDK. Una ejecución normal de la CLI no paga ese costo.
+3. Se ejecuta a sí mismo con un `ping`. Si no recibe `pong`, falla con `MCP_SELF_CHECK_FAILED` y sugiere `selfCommand`.
+4. Atiende por stdio hasta que el cliente se desconecta o recibe SIGINT o SIGTERM. Recién ahí sigue el ciclo de vida, y corren los `cleanup` del servidor.
 
-## Comparación con una ejecución CLI
+## Cada llamada
 
-| Etapa | CLI | MCP hoy |
+- **Entrada:** viaja sin validar, como JSON por fd 3. La valida el hijo, así que un `.transform` corre una sola vez, y los errores son los de la CLI.
+- **Comando:** se elige por su ruta, no por tokens. Un dato nunca puede ejecutar otro comando.
+- **Globales:** el hijo recibe el argv con que arrancó el servidor, sin `--mcp`.
+- **Entorno:** el hijo hereda el del servidor. La variable del canal se borra al leerla, así que una CLI que lance el comando es una CLI normal.
+- **Procesos:** stdin queda cerrado, y stdout y stderr son del comando.
+
+## Cómo se arma el resultado
+
+`ran` indica que `run()` volvió, y `result` que todo el comando terminó y su `output` es válido.
+
+| Hijo | Resultado |
+|---|---|
+| `result` con un valor | Ese valor como texto; además `structuredContent` si `output` es un objeto |
+| `result` sin valor | Stdout, o `Command '<name>' executed successfully.` |
+| Sin `result`, exit distinto de 0 | `isError`, con stderr o stdout |
+| Sin `result`, exit 0 | `isError`, `Command '<name>' did not finish.` |
+
+Exit 0 no alcanza para considerar exitosa una llamada: un middleware puede saltear el comando, y un comando puede llamar a `process.exit(0)`.
+
+## CLI y tool
+
+| Etapa | CLI | Tool |
 |---|---|---|
-| Validación de input | `resolveValues` | Schema de la tool |
-| Env | Sí | No |
-| Config | Sí | No |
-| `afterParse`, `beforeRun`, `afterRun` | Sí | No |
-| Middleware | Sí | No |
-| `globalOptions` | Sí | Vacío |
-| Stdout de `run()` | Va al usuario | Ensucia el protocolo y no llega al agente |
-| Validación de `output` | Sí | Sí |
+| Elegir comando | Desde argv | Por ruta |
+| Valores | Tokens de `parseArgs` | Objeto JSON |
+| Env, config, globales | Sí | Sí |
+| Hooks y middleware | Sí | Sí |
+| `ctx.invocation` | `{ surface: 'cli' }` | `{ surface: 'tool', tool }` |
+| Latencia | Directa | Medida: 138 ms de mediana por llamada, en una CLI mínima |
 
-Las filas de env, config, hooks y middleware salen de leer `packages/mcp/src/server.ts`. La de stdout se observó ejecutando una llamada real (KI-003 y KI-008 en [known issues](../known-issues.md)). [ADR-0030](../adr/0030-tools-mcp-en-subproceso.md) define cómo debería ser: cada tool en un subproceso de la propia CLI.
+## Límites actuales
+
+Se resuelven en [T-304](../backlog.md#t-304-contrato-de-resultado-y-errores), [T-305](../backlog.md#t-305-cancelación-y-límites) y [T-306](../backlog.md#t-306-valores-de-quien-opera-fuera-del-schema): cancelar no corre `cleanup` del hijo, no hay tope de salida, y los valores de quien opera siguen en el schema.

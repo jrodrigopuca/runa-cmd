@@ -15,6 +15,8 @@ import type { ZodType } from 'zod';
 export interface ToolRegistration {
 	/** MCP tool name (e.g., 'config_set') */
 	name: string;
+	/** Command path in the tree (e.g., ['config', 'set']) */
+	path: string[];
 	/** Tool description from command metadata */
 	description: string;
 	/** Merged args + options as a Zod shape (Record<string, ZodType>) */
@@ -98,6 +100,7 @@ function walkTree(
 
 			registrations.push({
 				name: toolName,
+				path: fullPath,
 				description: cmdSchema?.description ?? entry.meta.description,
 				inputShape,
 				outputSchema: entry.output,

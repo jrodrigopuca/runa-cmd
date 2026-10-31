@@ -7,4 +7,3 @@
 - **Costo aceptado:** un argumento y una opción con el mismo nombre chocarían en el input.
 - **Revisar si:** se necesita otro transporte además de stdio.
 - **Código:** `packages/mcp/src/schema.ts`, `packages/mcp/src/server.ts`, `packages/mcp/src/plugin.ts`
-- **Nota:** hay problemas abiertos con la salida y el pipeline; ver KI-003 y KI-008 en [known issues](../known-issues.md).
