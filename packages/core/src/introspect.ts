@@ -5,6 +5,7 @@
  * (CLISchema) for use by plugins (help, MCP, completions).
  */
 import type { ZodType } from 'zod';
+import { builtInOptions } from './help.js';
 import { walkSchema } from './parse/schema-walker.js';
 import type {
 	ArgSchema,
@@ -154,6 +155,9 @@ export function getSchema(
 	return {
 		meta: config.meta,
 		commands,
-		globalOptions: globalOptionSchemas,
+		globalOptions: [
+			...globalOptionSchemas,
+			...builtInOptions(globalOptionSchemas, config.meta.version),
+		],
 	};
 }

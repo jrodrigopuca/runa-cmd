@@ -36,7 +36,7 @@ flowchart TD
 2. Dos globales que usan el mismo nombre o alias.
 3. Una global contra una opción de cualquier comando del árbol.
 
-El primer conflicto lanza `OPTION_COLLISION` y frena toda la CLI, aunque el comando afectado no se esté usando (KI-014 en [known issues](../known-issues.md)).
+El primer conflicto lanza `OPTION_COLLISION` y frena toda la CLI, aunque el comando afectado no se esté usando. `--help`, `-h` y `--version` no entran acá: son de `core`, y ceden ante quien los declare ([flujo de ayuda](./help-rendering.md)).
 
 ## Detalles
 

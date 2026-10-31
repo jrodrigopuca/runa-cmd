@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, las tools corren en un subproceso de la propia CLI (T-303), quien opera le gana al modelo (T-306), un error dice si se puede reintentar (T-304), parar alcanza a todo el árbol de procesos (T-305), y el autor elige qué expone (T-302). La fase 3 solo tiene pendiente T-307, opcional.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, las tools corren en un subproceso de la propia CLI (T-303), quien opera le gana al modelo (T-306), un error dice si se puede reintentar (T-304), parar alcanza a todo el árbol de procesos (T-305), y el autor elige qué expone (T-302). La fase 3 solo tiene pendientes T-307 y T-308, opcionales. En la fase 4, `--help` ya funciona sin plugins (T-204), y sigue T-205.
 
 ## Versiones
 
@@ -24,9 +24,9 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 943 pasan: core 519, help 211, completions 88, mcp 125 |
-| Aceptación con procesos reales | 115 de 120 casos pasan; los otros 5 son fallos esperados, cada uno con su tarea |
-| Cobertura de `core` | 91,99% de líneas, 80,79% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
+| Tests | 980 pasan: core 553, help 211, completions 91, mcp 125 |
+| Aceptación con procesos reales | 131 de 132 casos pasan; el otro es un fallo esperado de T-206 |
+| Cobertura de `core` | 92,33% de líneas, 82,52% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
 
 ## Dónde estamos

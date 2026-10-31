@@ -2,7 +2,7 @@
 
 > **Fuente:** `packages/help/src` · **Verificado:** 2026-10-30 · **Guía de uso:** `packages/help/README.md`
 
-Agrega `--help` y `-h`, renderiza la ayuda desde el schema y ofrece primitivas de layout para cualquier salida de terminal.
+Reemplaza la ayuda en texto plano de `core` por una con tema y layout, y ofrece primitivas para cualquier salida de terminal. `core` decide cuándo corre la ayuda y sobre qué: `--help` funciona sin este paquete.
 
 ## Uso
 
@@ -64,7 +64,7 @@ Tema por defecto: `primary`, `secondary`, `muted`, `error`, `warning` y `success
 
 | Módulo | Responsabilidad |
 |---|---|
-| `packages/help/src/plugin.ts` | Registra la flag, intercepta `onGlobalFlags` y elige el objetivo |
+| `packages/help/src/plugin.ts` | Reemplaza la ayuda de `core` con `api.replaceHelp` |
 | `packages/help/src/render.ts` | Renderer por defecto |
 | `packages/help/src/theme.ts` | Tema y resolución de colores |
 | `packages/help/src/ansi/` | Códigos, detección y degradado |
@@ -72,8 +72,6 @@ Tema por defecto: `primary`, `secondary`, `muted`, `error`, `warning` y `success
 
 ## Limitaciones
 
-- `resolveTarget` solo mira el primer nivel de comandos (KI-012).
-- La ayuda de comando no muestra opciones globales.
 - `visibleWidth` no contempla CJK ni emoji ([T-602](../backlog.md#t-602-ancho-correcto-para-cjk-y-emoji)).
 - `#RGB` no se acepta ([T-604](../backlog.md#t-604-rgb-en-temas)).
 

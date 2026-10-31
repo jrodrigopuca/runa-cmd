@@ -81,6 +81,7 @@ interface CLIConfig {
 | `packages/core/src/plugin.ts` | Host de plugins, orden topológico, capacidades y colisiones |
 | `packages/core/src/introspect.ts` | `getSchema()` |
 | `packages/core/src/errors.ts` | Jerarquía de errores |
+| `packages/core/src/help.ts` | Ayuda integrada: opciones, objetivo y renderer básico |
 | `packages/core/src/stop.ts` | Parada de una ejecución: señales, canal con el servidor y plazos |
 | `packages/core/src/tool-channel.ts` | Canal con un servidor MCP cuando la CLI corre como tool |
 | `packages/core/src/suggest.ts` | Levenshtein y sugerencias |
@@ -114,6 +115,10 @@ La prioridad es **CLI, env, config y default de Zod**. El detalle está en [pars
 
 Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION` e `INVALID_OUTPUT`.
 
+### Ayuda
+
+`--help` y `-h` funcionan sin plugins, con un renderer de texto plano ([ADR-0021](../adr/0021-help-y-version-en-core.md)). Un comando que declara alguno se lo queda, y el otro sigue mostrando la ayuda. `api.replaceHelp(show)` reemplaza cómo se muestra. El detalle está en el [flujo](../flows/help-rendering.md).
+
 ### Cómo se detiene una ejecución
 
 La parada de [ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md) entra por un solo camino: `SIGINT`, `SIGTERM` o el corte del canal con el servidor. Dispara `ctx.signal`, disponible en `run()` y en los hooks, y termina como un error más, con `onError` y `cleanup`.
@@ -143,7 +148,7 @@ Ninguna falla sale en silencio ([ADR-0027](../adr/0027-toda-salida-explica-el-mo
 
 | Caso | stderr | Exit |
 |---|---|---|
-| `RunaError` con mensaje | El mensaje, tal cual; en errores de uso, además `Run '<cli> --help' for usage.` si la CLI tiene ayuda | El del error |
+| `RunaError` con mensaje | El mensaje, tal cual; en errores de uso, además `Run '<cli> --help' for usage.` | El del error |
 | Otro error | `Unexpected error in '<comando>': <mensaje>` y una pista para ver el detalle | 1 |
 | Error sin mensaje | `'<comando>' failed without an error message (<tipo>).` y la misma pista | El del error, o 1 |
 | Falla previa a resolver el comando | Igual, con el nombre de la CLI | El del error, o 1 |

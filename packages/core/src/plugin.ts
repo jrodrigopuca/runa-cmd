@@ -11,6 +11,7 @@ import type {
 	CLISchema,
 	Command,
 	CommandTree,
+	HelpHandler,
 	HookHandler,
 	HookName,
 	Middleware,
@@ -156,6 +157,11 @@ export function topologicalSort(plugins: PluginConfig[]): PluginConfig[] {
 
 // ─── Plugin API factory ─────────────────────────────────────
 
+export interface HelpSlot {
+	owner?: string;
+	show?: HelpHandler;
+}
+
 export interface PluginHostRefs {
 	commands: CommandTree;
 	globalOptions: Record<string, ZodType>;
@@ -164,6 +170,8 @@ export interface PluginHostRefs {
 	hookRegister: (name: HookName, handler: HookHandler) => void;
 	getSchema: () => CLISchema;
 	getConfigValues?: () => Promise<Record<string, unknown> | undefined>;
+	/** Who replaced the built-in help, and how it's shown now */
+	help: HelpSlot;
 	/**
 	 * Registrant(s) per global option name, for collision attribution
 	 * (ADR-0014). Statically-declared `config.globalOptions` are
@@ -244,6 +252,23 @@ export function createPluginAPI(
 
 		async getConfigValues(): Promise<Record<string, unknown> | undefined> {
 			return refs.getConfigValues?.();
+		},
+
+		replaceHelp(show: HelpHandler): void {
+			if (!caps.replaceHelp) {
+				throw new RunaError(
+					`Plugin '${pluginName}' called replaceHelp() but did not declare replaceHelp capability.`,
+					{ code: 'PLUGIN_CAPABILITY_VIOLATION', exitCode: 1 },
+				);
+			}
+			if (refs.help.owner) {
+				throw new RunaError(
+					`Plugins '${refs.help.owner}' and '${pluginName}' both replace the help.`,
+					{ code: 'HELP_ALREADY_REPLACED', exitCode: 1 },
+				);
+			}
+			refs.help.owner = pluginName;
+			refs.help.show = show;
 		},
 	};
 }

@@ -2,7 +2,7 @@
 
 Themeable help output for Runa CLIs with composable layout primitives.
 
-Three layers of customization: zero-config defaults, theme colors, or build your own layout with primitives.
+`--help` works in `@runa-cmd/core` as plain text. This plugin replaces how it looks, with three layers of customization: zero-config defaults, theme colors, or your own layout with primitives.
 
 ## Install
 
@@ -10,7 +10,7 @@ Three layers of customization: zero-config defaults, theme colors, or build your
 pnpm add @runa-cmd/help@beta
 ```
 
-> Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.
+> Peer dependency: `@runa-cmd/core`.
 
 ## Quick Start
 

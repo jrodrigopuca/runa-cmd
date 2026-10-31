@@ -46,7 +46,8 @@
 | | T-305 | Cancelación y límites | Requerido | Hecho |
 | | T-302 | Excluir y anotar tools | Requerido | Hecho |
 | | T-307 | Evento por llamada | Opcional | Pendiente |
-| 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Pendiente |
+| | T-308 | Comandos de plugins fuera de las tools | Opcional | Pendiente |
+| 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Hecho |
 | | T-205 | Ruteo único para la ayuda | Requerido | Pendiente |
 | | T-206 | Kebab-case por defecto | Requerido | Pendiente |
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Pendiente |
@@ -379,13 +380,22 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Los argumentos van redactados.
   - El evento nunca va a stdout.
 
+### T-308 Comandos de plugins fuera de las tools
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor de una CLI, quiero que un agente no vea comandos que un plugin agregó para personas, sin tener que conocerlos para excluirlos.
+- **Criterios de aceptación:**
+  - `completions` no aparece como tool cuando la CLI usa `completionsPlugin`, sin configurar `exclude`.
+  - Un plugin puede marcar un comando como solo para la CLI, sin que `core` conozca MCP.
+  - Un comando del autor sigue siendo una tool por defecto.
+
 ## Fase 4: primer uso
 
 ### T-204 `--help` en `core`, reemplazable
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** T-203
+- **Estado:** Hecho
 - **Descripción:** como dev que prueba Runa, quiero ayuda desde el primer comando, sin instalar otro paquete. `helpPlugin` queda para temas y renderers propios.
 - **Criterios de aceptación:**
   - `tool --help`, `tool -h` y `tool hola --help` salen con 0 y muestran argumentos y opciones, sin plugins.

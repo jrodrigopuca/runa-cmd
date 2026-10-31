@@ -43,6 +43,8 @@ export type {
 	CommandTree,
 	// Config
 	ConfigLoader,
+	HelpHandler,
+	HelpTarget,
 	HookContext,
 	HookHandler,
 	// Lifecycle

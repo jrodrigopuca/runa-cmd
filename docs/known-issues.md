@@ -23,15 +23,14 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
-| KI-009 | `runCLI` no tiene `--help`: da `Unknown option: --help` y exit 2 | Observado | La ayuda solo existe en `@runa-cmd/help` | [T-204](./backlog.md#t-204---help-en-core-reemplazable) |
 | KI-011 | La ayuda raíz de un comando único muestra `<command>` y oculta argumentos y opciones | Observado | `renderCLI` trata todo como árbol | [T-205](./backlog.md#t-205-ruteo-único-para-la-ayuda) |
-| KI-012 | `tool db migrate --help` muestra la ayuda de `db` | Observado | `resolveTarget` solo busca en el primer nivel | [T-205](./backlog.md#t-205-ruteo-único-para-la-ayuda) |
 | KI-013 | Un CLI multi-comando sin argumentos da 127 en vez de mostrar la ayuda | Observado | `resolveCommand` lanza un error | [T-205](./backlog.md#t-205-ruteo-único-para-la-ayuda) |
-| KI-014 | Un `-h` en cualquier comando tira todo el CLI si hay `helpPlugin` | Observado | `validateOptionCollisions` no distingue flags integradas | [T-204](./backlog.md#t-204---help-en-core-reemplazable) |
 | KI-015 | En `defineCLI` con un comando, `tool tool` consume el dato como nombre. Con `runCLI` no pasa | Observado | `resolveCommandFromTree` | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
 | KI-016 | `--dark-color` no funciona para `darkColor` | Observado | La flag se arma directo desde la clave | [T-206](./backlog.md#t-206-kebab-case-por-defecto) |
 | KI-021 | Booleanos con clave `noX`: `--no-cache` se interpreta como negación de `cache` | Observado | Comportamiento de `allowNegative` en `parseArgs` | [T-206](./backlog.md#t-206-kebab-case-por-defecto) |
 
 ## Severidad baja
 
-Ninguno abierto.
+| ID | Problema | Evidencia | Causa | Tarea |
+|---|---|---|---|---|
+| KI-036 | Con `completionsPlugin`, `completions` aparece como tool MCP, aunque a un agente no le sirve | Observado | Los comandos de un plugin se exponen como los del autor | [T-308](./backlog.md#t-308-comandos-de-plugins-fuera-de-las-tools) |

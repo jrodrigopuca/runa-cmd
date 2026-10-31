@@ -190,7 +190,7 @@ describe('getSchema', () => {
 
 		const schema = getSchema(config);
 
-		expect(schema.globalOptions).toHaveLength(2);
+		expect(schema.globalOptions.map((o) => o.name)).toEqual(['verbose', 'logLevel', 'help']);
 
 		const verbose = schema.globalOptions.find((o) => o.name === 'verbose')!;
 		expect(verbose.type).toBe('boolean');
@@ -224,7 +224,7 @@ describe('getSchema', () => {
 
 		const schema = getSchema(config, extraOptions, extraMeta);
 
-		expect(schema.globalOptions).toHaveLength(2);
+		expect(schema.globalOptions.map((o) => o.name)).toEqual(['verbose', 'debug', 'help']);
 		const debug = schema.globalOptions.find((o) => o.name === 'debug')!;
 		expect(debug.alias).toEqual(['-d']);
 	});
@@ -255,18 +255,42 @@ describe('getSchema', () => {
 		expect(files.isVariadic).toBe(true);
 	});
 
-	it('handles CLI with no global options', () => {
+	describe('built-in options', () => {
 		const cmd = defineCommand({
 			meta: { name: 'test', description: 'Test' },
 			run: () => {},
 		});
+		const names = (config: Partial<CLIConfig>) =>
+			getSchema({ meta: { name: 'mycli' }, commands: { test: cmd }, ...config }).globalOptions.map(
+				(o) => [o.name, o.alias],
+			);
 
-		const config: CLIConfig = {
-			meta: { name: 'mycli' },
-			commands: { test: cmd },
-		};
+		it('lists --help, the only option a CLI has with no version', () => {
+			expect(names({})).toEqual([['help', ['-h']]]);
+		});
 
-		const schema = getSchema(config);
-		expect(schema.globalOptions).toEqual([]);
+		it('lists --version only if the CLI has a version', () => {
+			expect(names({ meta: { name: 'mycli', version: '1.0.0' } })).toEqual([
+				['help', ['-h']],
+				['version', undefined],
+			]);
+		});
+
+		it('leaves a name the CLI took to its global option', () => {
+			const help = z.boolean().default(false);
+			expect(names({ globalOptions: { help } })).toEqual([['help', undefined]]);
+		});
+
+		it('gives up -h if a global option took it', () => {
+			expect(
+				names({
+					globalOptions: { host: z.string().default('x') },
+					globalMeta: { options: { host: { alias: ['-h'] } } },
+				}),
+			).toEqual([
+				['host', ['-h']],
+				['help', undefined],
+			]);
+		});
 	});
 });

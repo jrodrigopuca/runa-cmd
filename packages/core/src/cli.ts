@@ -21,6 +21,7 @@ import {
 	isUsageError,
 	RunaError,
 } from './errors.js';
+import { commandClaims, findHelpTarget, HELP_TOKENS, renderHelp } from './help.js';
 import { getSchema } from './introspect.js';
 import { createHookRegistry } from './lifecycle.js';
 import { deprecationWarnings } from './parse/deprecated.js';
@@ -28,7 +29,7 @@ import { buildParseArgsConfig } from './parse/parseargs-bridge.js';
 import { distributeRest, resolveToolInput, resolveValues } from './parse/resolve.js';
 import { walkSchema } from './parse/schema-walker.js';
 import { assertKnownOptions, assertOptionValues } from './parse/strict.js';
-import type { PluginHostRefs } from './plugin.js';
+import type { HelpSlot, PluginHostRefs } from './plugin.js';
 import {
 	resolvePlugins,
 	runPluginCleanup,
@@ -48,6 +49,7 @@ import {
 import type {
 	CLI,
 	CLIConfig,
+	CLISchema,
 	Command,
 	CommandTree,
 	HookContext,
@@ -196,6 +198,8 @@ interface SelectionScope {
 	globalOptions: Record<string, ZodType>;
 	globalMeta: { options: Record<string, OptionMeta> };
 	hookCtx: HookContext;
+	help: HelpSlot;
+	schema: () => CLISchema;
 }
 
 function loadConfigValues(config: CLIConfig): Promise<Record<string, unknown> | undefined> {
@@ -214,17 +218,22 @@ async function selectFromArgv(
 	rest: string[],
 	rootName: string | undefined,
 ): Promise<Selection | undefined> {
-	const { config, commands, globalOptions, globalMeta, hookCtx } = scope;
+	const { config, commands, globalOptions, globalMeta, hookCtx, help } = scope;
 	const commandArgv = hookCtx.rawArgs;
+	const isBuiltIn = (token: string) =>
+		commandArgv.includes(token) && !routedCommandClaims(commands, commandArgv, rootName, token);
 
-	// ─── Built-in --version (ADR-0021) ────────────────
-	// Globals were extracted above, so a plugin's own --version never gets here.
-	if (
-		config.meta.version !== undefined &&
-		commandArgv.includes('--version') &&
-		!commandDeclaresVersion(commands, commandArgv, rootName)
-	) {
+	// ─── Built-in --version and --help (ADR-0021) ─────
+	// Globals were extracted above, so an option of the CLI never gets here.
+	if (config.meta.version !== undefined && isBuiltIn('--version')) {
 		console.log(config.meta.version);
+		return undefined;
+	}
+
+	if (HELP_TOKENS.some(isBuiltIn)) {
+		const target = findHelpTarget(scope.schema(), commandArgv);
+		if (help.show) await help.show(target);
+		else console.log(renderHelp(target));
 		return undefined;
 	}
 
@@ -390,6 +399,16 @@ async function runCLILifecycle(
 		globalOptionSources.set(name, [STATIC_GLOBAL_OPTION_SOURCE]);
 	}
 
+	const help: HelpSlot = {};
+	const currentSchema = (): CLISchema => ({
+		...getSchema(
+			{ ...config, commands: mutableCommands },
+			mutableGlobalOptions,
+			mutableGlobalMeta.options,
+		),
+		root: rootName,
+	});
+
 	const stop = watchForStop(report !== undefined);
 
 	// Hook context that grows as we progress through the lifecycle
@@ -417,15 +436,9 @@ async function runCLILifecycle(
 				globalMeta: mutableGlobalMeta,
 				middleware: mutableMiddleware,
 				hookRegister: (name, handler) => hookRegistry.register(name, handler),
-				getSchema: () => ({
-					...getSchema(
-						{ ...config, commands: mutableCommands },
-						mutableGlobalOptions,
-						mutableGlobalMeta.options,
-					),
-					root: rootName,
-				}),
+				getSchema: currentSchema,
 				getConfigValues: () => loadConfigValues(config),
+				help,
 				globalOptionSources,
 			};
 
@@ -586,6 +599,8 @@ async function runCLILifecycle(
 			globalOptions: mutableGlobalOptions,
 			globalMeta: mutableGlobalMeta,
 			hookCtx,
+			help,
+			schema: currentSchema,
 		};
 		const selection = toolCall
 			? await selectFromInput(scope, toolCall)
@@ -655,7 +670,7 @@ async function runCLILifecycle(
 			const subject = hookCtx.command?.name ?? config.meta.name;
 			const debug = isDebugEnabled();
 			// An agent cannot use a hint for people, unless the operator asked for details.
-			const helpCommand = !report && 'help' in mutableGlobalOptions ? config.meta.name : undefined;
+			const helpCommand = report ? undefined : config.meta.name;
 			console.error(
 				report && !debug
 					? failureReason(lifecycleError, subject)
@@ -744,21 +759,19 @@ function warnImplicitMode(): void {
 	});
 }
 
-/** Whether the command argv routes to declares its own --version, which then wins. */
-function commandDeclaresVersion(commands: CommandTree, argv: string[], rootName?: string): boolean {
-	let command: Command;
+/** Whether the command argv routes to declares this token as its own. */
+function routedCommandClaims(
+	commands: CommandTree,
+	argv: string[],
+	rootName: string | undefined,
+	token: string,
+): boolean {
 	try {
-		command = resolveCommandFromTree(commands, argv, rootName).command;
+		return commandClaims(resolveCommandFromTree(commands, argv, rootName).command, token);
 	} catch (err) {
 		if (err instanceof CommandNotFoundError) return false;
 		throw err;
 	}
-
-	const optionMeta = (command.meta.options ?? {}) as Record<string, OptionMeta>;
-	return (
-		Object.hasOwn(command.options ?? {}, 'version') ||
-		Object.values(optionMeta).some((meta) => meta.alias?.includes('--version'))
-	);
 }
 
 // ─── Public API ─────────────────────────────────────────────

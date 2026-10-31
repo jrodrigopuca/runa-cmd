@@ -1,22 +1,20 @@
 /**
  * @runa-cmd/help — helpPlugin()
  *
- * A Runa plugin that adds --help/-h as a global option and renders
- * help output when the flag is detected. Supports 3 layers:
+ * Replaces the plain help of @runa-cmd/core. Supports 3 layers:
  * - Layer 1: Zero-config (beautiful help out of the box)
  * - Layer 2: Theme customization (custom colors)
  * - Layer 3: Custom render function (full control)
  */
-import type { CLISchema, CommandSchema, HookContext, PluginConfig } from '@runa-cmd/core';
+import type { PluginConfig } from '@runa-cmd/core';
 import { definePlugin } from '@runa-cmd/core';
-import { z } from 'zod';
 import { getRenderContext } from './ansi/detect.js';
 import { defaultRenderer } from './render.js';
 import { resolveTheme } from './theme.js';
 import type { HelpPluginOptions } from './types.js';
 
 /**
- * Create a help plugin that intercepts --help/-h and renders help output.
+ * Create a help plugin that renders --help with themes and layout.
  *
  * @param opts - Optional theme or custom render function
  */
@@ -26,63 +24,26 @@ export function helpPlugin(opts: HelpPluginOptions = {}): PluginConfig {
 			name: '@runa-cmd/help',
 			description: 'Built-in help system with layout primitives and theming',
 		},
-		capabilities: { addGlobalOptions: true },
+		capabilities: { replaceHelp: true },
 		setup(api) {
-			// Add --help, -h as a global boolean option
-			api.addGlobalOption('help', z.boolean().optional().default(false).describe('Show help'), {
-				alias: ['-h'],
-			});
-
-			// Intercept via onGlobalFlags hook
-			api.hook('onGlobalFlags', (ctx: HookContext) => {
-				if (!ctx.globalOptions?.help) return;
-
-				const schema = api.getSchema();
+			// Core decides when help runs and what it's about, and yields if a
+			// command declares --help or -h: only the rendering is left here.
+			api.replaceHelp((target) => {
 				const renderCtx = getRenderContext();
-				const theme = resolveTheme(opts.theme, renderCtx);
-
-				// Detect active subcommand from rawArgs positionals
-				const target = resolveTarget(schema, ctx.rawArgs);
-
 				const renderer = opts.render ?? defaultRenderer;
 				const output = renderer({
 					schema: target,
-					theme,
+					theme: resolveTheme(opts.theme, renderCtx),
 					colorDepth: renderCtx.colorDepth,
 					termWidth: renderCtx.termWidth,
 				});
 
 				process.stdout.write(`${output}\n`);
 
-				// Stop further lifecycle execution. Do NOT call process.exit()
-				// by default — core owns the process lifecycle: cleanup hooks and
-				// plugin cleanup() run, cli.run() resolves, and the process exits
-				// naturally with code 0 (same pattern as @runa-cmd/mcp).
-				ctx.shortCircuit?.();
-
-				if (opts.exitOnHelp) {
-					// Opt-in v0.1.0 behavior. shortCircuit was called FIRST so the
-					// flag is set even if exit is intercepted (e.g. mocked in tests).
-					process.exit(0);
-				}
+				// Returning lets cleanup run, and the process exits naturally with
+				// code 0. Exiting here is the opt-in v0.1.0 behavior.
+				if (opts.exitOnHelp) process.exit(0);
 			});
 		},
 	});
-}
-
-// ─── Internal Helpers ───────────────────────────────────────
-
-/**
- * Find the target schema for help rendering.
- * Looks at rawArgs positionals to find a matching subcommand. Without one,
- * the target is the root command if the CLI has it, or else the whole CLI.
- */
-function resolveTarget(schema: CLISchema, rawArgs: string[]): CLISchema | CommandSchema {
-	// Find first positional arg (not a flag)
-	const subName = rawArgs.find((a) => !a.startsWith('-'));
-
-	// Search top-level commands
-	const match = schema.commands.find((cmd) => cmd.name === subName);
-	const root = schema.commands.find((cmd) => cmd.name === schema.root);
-	return match ?? root ?? schema;
 }

@@ -1,68 +1,58 @@
 /**
  * Unit tests for helpPlugin (plugin.ts)
  *
- * Tests: plugin creation, onGlobalFlags hook, --help renders + shortCircuits
- *        WITHOUT process.exit (default), exitOnHelp opt-in, subcommand
- *        detection via rawArgs, custom render fn
+ * Core decides when help runs and what it's about: that lives in core's
+ * acceptance tests. What's left here is how the plugin shows a target.
  */
 
-import type { CLISchema, HookContext, HookHandler, HookName, PluginConfig } from '@runa-cmd/core';
+import type { CLISchema, CommandSchema, HelpHandler, PluginConfig } from '@runa-cmd/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetRenderContext } from '../ansi/detect.js';
 import { helpPlugin } from '../plugin.js';
 
 // ─── Helpers ────────────────────────────────────────────────
 
-/**
- * Extract the onGlobalFlags handler from the plugin by calling setup
- * with a mock PluginAPI.
- */
-function extractHandler(plugin: PluginConfig) {
-	const hooks: Array<{ name: HookName; handler: HookHandler }> = [];
-	const globalOptions: Record<string, unknown> = {};
-	let schema: CLISchema = {
-		meta: { name: 'test-cli', version: '1.0.0' },
-		commands: [],
-		globalOptions: [],
-	};
+const cli: CLISchema = {
+	meta: { name: 'test-cli', version: '1.0.0' },
+	commands: [],
+	globalOptions: [],
+};
 
-	const mockApi = {
-		addGlobalOption: (name: string, zodSchema: unknown, meta?: unknown) => {
-			globalOptions[name] = { zodSchema, meta };
+const serve: CommandSchema = {
+	name: 'serve',
+	description: 'Start dev server',
+	fullPath: ['serve'],
+	args: [],
+	options: [
+		{
+			name: 'port',
+			description: 'Port number',
+			type: 'number',
+			required: false,
+			defaultValue: 3000,
 		},
-		hook: (name: HookName, handler: HookHandler) => {
-			hooks.push({ name, handler });
+	],
+	hasOutput: false,
+};
+
+/** The way the plugin shows help, as core would receive it. */
+function showOf(plugin: PluginConfig): HelpHandler {
+	let show: HelpHandler | undefined;
+	plugin.setup({
+		replaceHelp: (handler: HelpHandler) => {
+			show = handler;
 		},
-		addCommand: vi.fn(),
-		addMiddleware: vi.fn(),
-		getSchema: () => schema,
-	};
-
-	plugin.setup(mockApi as any);
-
-	const onGlobalFlags = hooks.find((h) => h.name === 'onGlobalFlags');
-	return {
-		handler: onGlobalFlags?.handler,
-		hooks,
-		globalOptions,
-		setSchema: (s: CLISchema) => {
-			schema = s;
-		},
-	};
-}
-
-function makeHookCtx(overrides: Partial<HookContext> = {}): HookContext {
-	return {
-		rawArgs: [],
-		globalOptions: {},
-		...overrides,
-	} as HookContext;
+	} as never);
+	if (!show) throw new Error('The plugin did not replace the help');
+	return show;
 }
 
 // ─── Setup / Teardown ───────────────────────────────────────
 
 let exitSpy: ReturnType<typeof vi.spyOn>;
 let writeSpy: ReturnType<typeof vi.spyOn>;
+
+const written = () => writeSpy.mock.calls[0]?.[0] as string;
 
 beforeEach(() => {
 	resetRenderContext();
@@ -78,69 +68,30 @@ afterEach(() => {
 // ─── Plugin Structure ───────────────────────────────────────
 
 describe('helpPlugin — structure', () => {
-	it('returns a valid PluginConfig', () => {
+	it('declares what it does', () => {
 		const plugin = helpPlugin();
 		expect(plugin.meta.name).toBe('@runa-cmd/help');
-		expect(plugin.capabilities?.addGlobalOptions).toBe(true);
-		expect(typeof plugin.setup).toBe('function');
-	});
-
-	it('registers --help global option via setup', () => {
-		const { globalOptions } = extractHandler(helpPlugin());
-		expect(globalOptions['help']).toBeDefined();
-	});
-
-	it('registers onGlobalFlags hook', () => {
-		const { hooks } = extractHandler(helpPlugin());
-		const flagHooks = hooks.filter((h) => h.name === 'onGlobalFlags');
-		expect(flagHooks).toHaveLength(1);
+		expect(plugin.capabilities).toEqual({ replaceHelp: true });
 	});
 });
 
-// ─── --help Flag Triggers Render + Exit ─────────────────────
+// ─── Showing a target ───────────────────────────────────────
 
-describe('helpPlugin — --help flag', () => {
-	it('does nothing when help is not set', () => {
-		const { handler } = extractHandler(helpPlugin());
-		const ctx = makeHookCtx({ globalOptions: { help: false } });
-		handler!(ctx);
-		expect(exitSpy).not.toHaveBeenCalled();
-		expect(writeSpy).not.toHaveBeenCalled();
-	});
-
-	it('renders help WITHOUT calling process.exit (default behavior)', () => {
-		const { handler } = extractHandler(helpPlugin());
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-		});
-		handler!(ctx);
+describe('helpPlugin — showing help', () => {
+	it('renders the whole CLI', () => {
+		showOf(helpPlugin())(cli);
 		expect(writeSpy).toHaveBeenCalledTimes(1);
-		const output = writeSpy.mock.calls[0]![0] as string;
-		expect(output).toContain('test-cli');
-		expect(exitSpy).not.toHaveBeenCalled();
+		expect(written()).toContain('test-cli');
 	});
 
-	it('calls shortCircuit when available', () => {
-		const { handler } = extractHandler(helpPlugin());
-		const shortCircuit = vi.fn();
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-			shortCircuit,
-		});
-		handler!(ctx);
-		expect(shortCircuit).toHaveBeenCalled();
+	it('renders a command', () => {
+		showOf(helpPlugin())(serve);
+		expect(written()).toContain('serve');
+		expect(written()).toContain('Start dev server');
 	});
 
-	it('helpPlugin() with no options pins the default: exitOnHelp is false', () => {
-		const { handler } = extractHandler(helpPlugin());
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-			shortCircuit: vi.fn(),
-		});
-		handler!(ctx);
+	it('leaves the process to core by default', () => {
+		showOf(helpPlugin())(cli);
 		expect(exitSpy).not.toHaveBeenCalled();
 	});
 });
@@ -148,157 +99,43 @@ describe('helpPlugin — --help flag', () => {
 // ─── exitOnHelp Opt-In ──────────────────────────────────────
 
 describe('helpPlugin — exitOnHelp', () => {
-	it('exitOnHelp: true calls process.exit(0) after rendering', () => {
-		const { handler } = extractHandler(helpPlugin({ exitOnHelp: true }));
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-		});
-		handler!(ctx);
+	it('exitOnHelp: true exits with 0 after rendering', () => {
+		showOf(helpPlugin({ exitOnHelp: true }))(cli);
 		expect(writeSpy).toHaveBeenCalledTimes(1);
 		expect(exitSpy).toHaveBeenCalledWith(0);
 	});
 
-	it('exitOnHelp: true sets the shortCircuit flag BEFORE exiting', () => {
-		let shortCircuitedAtExit: boolean | undefined;
-		let shortCircuited = false;
-		exitSpy.mockImplementation((() => {
-			shortCircuitedAtExit = shortCircuited;
-		}) as never);
-
-		const { handler } = extractHandler(helpPlugin({ exitOnHelp: true }));
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-			shortCircuit: () => {
-				shortCircuited = true;
-			},
-		});
-		handler!(ctx);
-
-		expect(exitSpy).toHaveBeenCalledWith(0);
-		expect(shortCircuitedAtExit).toBe(true);
-	});
-
-	it('exitOnHelp: false behaves like the default (no exit)', () => {
-		const { handler } = extractHandler(helpPlugin({ exitOnHelp: false }));
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-			shortCircuit: vi.fn(),
-		});
-		handler!(ctx);
+	it('exitOnHelp: false behaves like the default', () => {
+		showOf(helpPlugin({ exitOnHelp: false }))(cli);
 		expect(exitSpy).not.toHaveBeenCalled();
-	});
-});
-
-// ─── Subcommand Detection via rawArgs ───────────────────────
-
-describe('helpPlugin — subcommand detection', () => {
-	it('renders root help when no subcommand in rawArgs', () => {
-		const { handler } = extractHandler(helpPlugin());
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: ['--help'],
-		});
-		handler!(ctx);
-		const output = writeSpy.mock.calls[0]![0] as string;
-		expect(output).toContain('test-cli');
-	});
-
-	it('renders subcommand help when subcommand matches', () => {
-		const schema: CLISchema = {
-			meta: { name: 'test-cli', version: '1.0.0' },
-			commands: [
-				{
-					name: 'serve',
-					description: 'Start dev server',
-					fullPath: ['serve'],
-					args: [],
-					options: [
-						{
-							name: 'port',
-							description: 'Port number',
-							type: 'number',
-							required: false,
-							defaultValue: 3000,
-						},
-					],
-					hasOutput: false,
-				},
-			],
-			globalOptions: [],
-		};
-
-		const { handler, setSchema } = extractHandler(helpPlugin());
-		setSchema(schema);
-
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: ['serve', '--help'],
-		});
-		handler!(ctx);
-		const output = writeSpy.mock.calls[0]![0] as string;
-		expect(output).toContain('serve');
-		expect(output).toContain('Start dev server');
-	});
-
-	it('falls back to root when subcommand not found', () => {
-		const { handler } = extractHandler(helpPlugin());
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: ['nonexistent', '--help'],
-		});
-		handler!(ctx);
-		const output = writeSpy.mock.calls[0]![0] as string;
-		// Falls back to root CLI
-		expect(output).toContain('test-cli');
 	});
 });
 
 // ─── Custom Render Function ─────────────────────────────────
 
 describe('helpPlugin — custom render', () => {
-	it('uses custom render function when provided', () => {
-		const customRender = vi.fn().mockReturnValue('CUSTOM HELP OUTPUT');
-		const { handler } = extractHandler(helpPlugin({ render: customRender }));
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-		});
-		handler!(ctx);
-		expect(customRender).toHaveBeenCalledTimes(1);
-		expect(customRender).toHaveBeenCalledWith(
+	it('uses a custom render function, with the target and the theme', () => {
+		const render = vi.fn().mockReturnValue('CUSTOM HELP OUTPUT');
+		showOf(helpPlugin({ render }))(serve);
+
+		expect(render).toHaveBeenCalledWith(
 			expect.objectContaining({
-				schema: expect.any(Object),
+				schema: serve,
 				theme: expect.any(Object),
 				colorDepth: expect.any(String),
 				termWidth: expect.any(Number),
 			}),
 		);
-		const output = writeSpy.mock.calls[0]![0] as string;
-		expect(output).toContain('CUSTOM HELP OUTPUT');
+		expect(written()).toContain('CUSTOM HELP OUTPUT');
 	});
 });
 
 // ─── Custom Theme ───────────────────────────────────────────
 
 describe('helpPlugin — custom theme', () => {
-	it('passes custom theme through resolution', () => {
-		const customRender = vi.fn().mockReturnValue('themed');
-		const { handler } = extractHandler(
-			helpPlugin({
-				theme: { primary: '#00FF00' },
-				render: customRender,
-			}),
-		);
-		const ctx = makeHookCtx({
-			globalOptions: { help: true },
-			rawArgs: [],
-		});
-		handler!(ctx);
-		// The custom render receives a resolved theme
-		const renderCtx = customRender.mock.calls[0]![0];
-		expect(renderCtx.theme).toBeDefined();
+	it('resolves the theme before rendering', () => {
+		const render = vi.fn().mockReturnValue('themed');
+		showOf(helpPlugin({ theme: { primary: '#00FF00' }, render }))(cli);
+		expect(render.mock.calls[0]?.[0].theme).toBeDefined();
 	});
 });

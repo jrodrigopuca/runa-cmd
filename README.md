@@ -59,7 +59,7 @@ Requires Node 24+. This README describes the `beta` release: without `@beta`, np
 ```bash
 pnpm add @runa-cmd/core@beta zod
 # Optional:
-pnpm add @runa-cmd/help@beta  # --help is not built in yet
+pnpm add @runa-cmd/help@beta  # Themes and layout for --help
 pnpm add @runa-cmd/mcp@beta   # --mcp server mode
 pnpm add @runa-cmd/completions@beta  # Shell completions
 ```

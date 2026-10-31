@@ -90,6 +90,28 @@ describe('integration — defineCLI + helpPlugin', () => {
 		expect(output).toContain('serve');
 	});
 
+	it("starts when a command declares -h, which stays the command's", async () => {
+		let host: unknown;
+		const serve = defineCommand({
+			meta: { name: 'serve', description: 'Start server', options: { host: { alias: ['-h'] } } },
+			options: { host: z.string().default('localhost') },
+			run: ({ options }) => {
+				host = options.host;
+			},
+		});
+
+		const cli = defineCLI({
+			meta: { name: 'myapp' },
+			commands: { serve },
+			plugins: [helpPlugin()],
+		});
+
+		await cli.run(['serve', '-h', '0.0.0.0']);
+
+		expect(host).toBe('0.0.0.0');
+		expect(getCapturedOutput()).not.toContain('Start server');
+	});
+
 	it('--help on subcommand shows command help', async () => {
 		const deploy = defineCommand({
 			meta: { name: 'deploy', description: 'Deploy the app' },

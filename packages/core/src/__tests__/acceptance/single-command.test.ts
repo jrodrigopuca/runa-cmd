@@ -39,16 +39,22 @@ beforeAll(() => {
 });
 
 describe('help (T-204)', () => {
-	pending('tool --help shows arguments and options', () => {
+	it('tool --help shows arguments and options', () => {
 		expectFullHelp(tool('--help'));
 	});
 
-	pending('tool -h shows arguments and options', () => {
+	it('tool -h shows arguments and options', () => {
 		expectFullHelp(tool('-h'));
 	});
 
-	pending('tool hola --help shows the same help', () => {
+	it('tool hola --help shows the same help', () => {
 		expectFullHelp(tool('hola', '--help'));
+	});
+
+	it('lists --help and --version, which work on this command too', () => {
+		const { stdout } = tool('--help');
+		expect(stdout).toContain('-h, --help');
+		expect(stdout).toContain('--version');
 	});
 });
 
@@ -118,7 +124,7 @@ describe('usage errors', () => {
 		expect(result.stderr).not.toContain('Did you mean');
 	});
 
-	pending('a usage error points to --help (T-204)', () => {
+	it('a usage error points to --help', () => {
 		expect(tool('hola', '--nope').stderr).toContain("Run 'tool --help' for usage.");
 	});
 });

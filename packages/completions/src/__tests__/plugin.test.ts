@@ -2,8 +2,32 @@
  * Tests for completionsPlugin() — plugin unit tests with mock API
  */
 import type { CLISchema, Command, PluginAPI } from '@runa-cmd/core';
+import { defineCommand, getSchema } from '@runa-cmd/core';
 import { describe, expect, it, vi } from 'vitest';
+import { generateBashCompletions } from '../generators/bash.js';
+import { generateFishCompletions } from '../generators/fish.js';
+import { generateZshCompletions } from '../generators/zsh.js';
 import { completionsPlugin } from '../plugin.js';
+
+describe('built-in options', () => {
+	const schema = (version?: string) =>
+		getSchema({
+			meta: { name: 'mycli', version },
+			commands: {
+				deploy: defineCommand({ meta: { name: 'deploy', description: 'Deploy' }, run() {} }),
+			},
+		});
+
+	it.each([
+		['bash', generateBashCompletions],
+		['zsh', generateZshCompletions],
+		['fish', generateFishCompletions],
+	])('%s offers --help, and --version if the CLI has one', (_shell, generate) => {
+		expect(generate(schema('1.0.0'), 'mycli')).toMatch(/version/);
+		expect(generate(schema('1.0.0'), 'mycli')).toMatch(/help/);
+		expect(generate(schema(), 'mycli')).not.toMatch(/version/);
+	});
+});
 
 // ─── Helpers ────────────────────────────────────────────────
 

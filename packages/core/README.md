@@ -171,6 +171,24 @@ The command is the root of the CLI, so a value equal to its name is data: `tool 
 
 `defineCLI` with a single command also works, but it's deprecated: adding a plugin that registers a command silently changes how it routes.
 
+### `--help`
+
+Every CLI has `--help` and `-h`, with no plugin: `tool --help` shows the CLI or the root command, and `tool db migrate --help` shows that command, with the global options that work on it.
+
+Each flag yields separately. If a command declares `-h`, for `--host` say, it keeps it and `--help` still shows help. For themes and layout, add `@runa-cmd/help`. To show help your own way from a plugin, declare the `replaceHelp` capability:
+
+```ts
+definePlugin({
+  meta: { name: 'my-help' },
+  capabilities: { replaceHelp: true },
+  setup(api) {
+    api.replaceHelp((target) => console.log(render(target)));
+  },
+});
+```
+
+`target` is a `CLISchema` or a `CommandSchema`. Only one plugin can replace the help.
+
 ### `--version`
 
 Printed when `meta.version` is set, from `defineCLI` or from the command in `runCLI`. It has no short alias. If the command declares its own `--version` option, that option wins.
@@ -287,7 +305,7 @@ No failure exits silently. The reason goes to stderr, `cleanup` runs, and then t
 | Error without a message | `'<command>' failed without an error message (<type>).` and a hint | The error's, or 1 |
 | `onError` sets `ctx.handled` | Nothing from Runa | The error's, or 1 |
 
-- Usage errors end with `Run '<cli> --help' for usage.` when the CLI has a `--help` option.
+- Usage errors end with `Run '<cli> --help' for usage.`
 - Throw `CommandError` for messages meant for people using your CLI.
 - Set `RUNA_DEBUG=1` to add the stack trace, error code and cause.
 - `ctx.handled` only stops the default output. If a plugin truly recovered, it sets `process.exitCode = 0` in `onError`.

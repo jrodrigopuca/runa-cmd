@@ -36,19 +36,6 @@ if (process.env.PLUGIN_HANDLES || process.env.PLUGIN_RECOVERS) {
 	);
 }
 
-// Stands in for any plugin that gives the CLI a --help option.
-if (process.env.HAS_HELP) {
-	plugins.push(
-		definePlugin({
-			meta: { name: 'help-option' },
-			capabilities: { addGlobalOptions: true },
-			setup(api) {
-				api.addGlobalOption('help', z.boolean().default(false));
-			},
-		}),
-	);
-}
-
 if (process.env.PLUGIN_CRASHES) {
 	plugins.push(
 		definePlugin({

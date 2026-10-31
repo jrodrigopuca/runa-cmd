@@ -146,13 +146,15 @@ describe('usage errors', () => {
 	});
 
 	it('names a missing argument once, without the description', () => {
-		expect(app(['required', '--token', 'x']).stderr.trim()).toBe(
+		expect(app(['required', '--token', 'x']).stderr.trim().split('\n')[0]).toBe(
 			'Missing required argument: <target>',
 		);
 	});
 
 	it('names a missing option once, without the description', () => {
-		expect(app(['required', 'home']).stderr.trim()).toBe('Missing required option: --token');
+		expect(app(['required', 'home']).stderr.trim().split('\n')[0]).toBe(
+			'Missing required option: --token',
+		);
 	});
 });
 
@@ -163,16 +165,12 @@ describe('the next step after a usage error', () => {
 		['an unknown option', ['strict', '--nope']],
 		['an unknown command', ['missing']],
 		['a missing argument', ['required', '--token', 'x']],
-	])('points to --help after %s when the CLI has help', (_case, argv) => {
-		expect(app(argv, { HAS_HELP: '1' }).stderr.trim().endsWith(HELP_HINT)).toBe(true);
-	});
-
-	it('does not point to a --help the CLI does not have', () => {
-		expect(app(['strict', '--nope']).stderr).not.toContain('--help');
+	])('points to --help after %s', (_case, argv) => {
+		expect(app(argv).stderr.trim().endsWith(HELP_HINT)).toBe(true);
 	});
 
 	it('does not point to --help when the command itself failed', () => {
-		expect(app(['expected'], { HAS_HELP: '1' }).stderr).not.toContain('--help');
+		expect(app(['expected']).stderr).not.toContain('--help');
 	});
 });
 

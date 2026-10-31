@@ -164,6 +164,7 @@ export interface PluginCapabilities {
 	addCommands?: boolean;
 	addGlobalOptions?: boolean;
 	addMiddleware?: boolean;
+	replaceHelp?: boolean;
 }
 
 export interface PluginConfig {
@@ -182,7 +183,15 @@ export interface PluginAPI {
 	getCommands(): CommandTree;
 	/** Values from the config file of the CLI, if it has one */
 	getConfigValues(): Promise<Record<string, unknown> | undefined>;
+	/** Show help your way, instead of the built-in plain text. Only one plugin can */
+	replaceHelp(show: HelpHandler): void;
 }
+
+/** What help is about. A command also lists the global options that work on it. */
+export type HelpTarget = CLISchema | CommandSchema;
+
+/** Shows the help of a target: where and how it's written is up to the plugin. */
+export type HelpHandler = (target: HelpTarget) => void | Promise<void>;
 
 // ─── Lifecycle Hooks ────────────────────────────────────────
 
