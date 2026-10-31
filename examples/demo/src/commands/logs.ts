@@ -50,6 +50,7 @@ export const logs = defineCommand({
 		tail: z.number().default(50).describe('Number of lines to show'),
 		since: z.string().optional().describe('Show logs since duration'),
 	},
+	rest: true,
 	run({ args, options, rest }) {
 		console.log();
 		console.log(

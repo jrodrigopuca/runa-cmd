@@ -317,6 +317,7 @@ describe('integration — help lifecycle without process.exit', () => {
 		let receivedRest: string[] | undefined;
 		const exec = defineCommand({
 			meta: { name: 'exec', description: 'Run a command' },
+			rest: true,
 			run: (ctx) => {
 				receivedRest = ctx.rest;
 			},

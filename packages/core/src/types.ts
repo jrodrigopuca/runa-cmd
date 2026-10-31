@@ -17,6 +17,8 @@ export interface OptionMeta {
 	group?: string;
 	/** Deprecation message, shown in help and when the option is used, e.g. 'Use --confirm instead' */
 	deprecated?: string;
+	/** What help calls the value, e.g. 'hex' for `--color <hex>`. Default: its type */
+	valueName?: string;
 }
 
 // ─── Command Metadata ───────────────────────────────────────
@@ -61,7 +63,7 @@ export interface RunContext<
 	globalOptions: Record<string, unknown>;
 	command: CommandMeta<TOptions>;
 	rawArgs: string[];
-	/** Tokens after the first `--` separator, verbatim and unvalidated. `[]` when absent. */
+	/** What's left after `--`, verbatim and unvalidated, if the command declares `rest: true`. Else `[]` */
 	rest: string[];
 	/** Aborted when the run must stop. Pass it on to whatever the command starts. */
 	signal: AbortSignal;
@@ -88,6 +90,8 @@ export interface CommandConfig<
 	args?: TArgs;
 	options?: TOptions;
 	output?: TOutput;
+	/** Take what's left after `--` in `ctx.rest`. Without it, that's a usage error */
+	rest?: boolean;
 	run: (ctx: RunContext<TArgs, TOptions>) => RunReturn<TOutput>;
 }
 
@@ -99,6 +103,7 @@ export interface Command {
 	readonly args?: Record<string, ZodType>;
 	readonly options?: Record<string, ZodType>;
 	readonly output?: ZodType;
+	readonly rest?: boolean;
 	readonly run: (ctx: RunContext) => unknown;
 }
 
@@ -298,6 +303,8 @@ export interface OptionSchema {
 	/** `array` means the option repeats, with `itemType` values */
 	type: ParamType;
 	itemType?: ParamType;
+	/** What help calls the value, if the author named it */
+	valueName?: string;
 	required: boolean;
 	defaultValue?: unknown;
 	alias?: string[];

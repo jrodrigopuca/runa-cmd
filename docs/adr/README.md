@@ -36,7 +36,7 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0019](./0019-completions-como-comando.md) | Completions como comando, con generadores puros | Aceptada |
 | [0020](./0020-un-comando-para-personas-y-agentes.md) | Un comando, para personas y agentes | Aceptada |
 | [0021](./0021-help-y-version-en-core.md) | `--help` y `--version` en `core`, cediendo ante el usuario | Aceptada, pendiente de código |
-| [0022](./0022-separador-llena-posicionales.md) | `--` llena posicionales; lo que sobra va a `ctx.rest` | Aceptada |
+| [0022](./0022-separador-llena-posicionales.md) | `--` llena posicionales; lo que sobra va a `ctx.rest` | Reemplazada por ADR-0036 |
 | [0023](./0023-runcli-y-modo-raiz.md) | `runCLI` con plugins y modo raíz explícito | Aceptada; falta retirar el modo implícito |
 | [0024](./0024-kebab-case.md) | Kebab-case en la terminal, camelCase en el código | Aceptada, pendiente de código |
 | [0025](./0025-control-de-mcp-en-el-plugin.md) | El control de tools MCP vive en el plugin | Aceptada, pendiente de código |
@@ -50,3 +50,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0033](./0033-parar-recorre-el-arbol-de-procesos.md) | Parar recorre el árbol de procesos | Aceptada |
 | [0034](./0034-sin-nada-que-correr-es-un-error-de-uso.md) | Sin nada que correr, la ayuda sale por stderr con exit 2 | Aceptada |
 | [0035](./0035-listas-desde-env-y-config.md) | Una lista en env se separa por comas, y en config es un array | Aceptada |
+| [0036](./0036-rest-se-declara.md) | `--` llena posicionales, y lo que sobra es un error si el comando no pidió `rest` | Aceptada |

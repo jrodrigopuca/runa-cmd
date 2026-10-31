@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. La revalidación de qr-plus (T-402) borró casi todos sus workarounds y sumó T-209, T-210 y T-404.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. La revalidación de qr-plus (T-402) borró casi todos sus workarounds. Sus pedidos, T-209 y T-210, están en `main`, pendientes de `0.2.0-beta.2`, y sigue pendiente T-404.
 
 ## Versiones
 
@@ -24,9 +24,9 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 1067 pasan: core 624, help 217, completions 97, mcp 129 |
-| Aceptación con procesos reales | Pasan los 190 casos, sin fallos esperados |
-| Cobertura de `core` | 91,93% de líneas, 79,79% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
+| Tests | 1084 pasan: core 640, help 218, completions 97, mcp 129 |
+| Aceptación con procesos reales | Pasan los 206 casos, sin fallos esperados |
+| Cobertura de `core` | 91,82% de líneas, 79,82% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
 
 ## Dónde estamos

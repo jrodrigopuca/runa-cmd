@@ -95,6 +95,7 @@ Operational metadata lives in `meta.options`, separate from the Zod schema:
 | `alias` | `string[]` | Short flags, e.g. `['-e']` (must include dash prefix) |
 | `env` | `string` | Environment variable name, e.g. `'DEPLOY_ENV'` |
 | `group` | `string` | Group name for help display, e.g. `'Scaling'` |
+| `valueName` | `string` | What help calls the value, e.g. `'hex'` for `--color <hex>`. Defaults to its type |
 | `deprecated` | `string` | Deprecation notice, shown in help and as a stderr warning when the option is used |
 
 #### Run Context
@@ -108,7 +109,7 @@ interface RunContext {
   globalOptions: Record<string, unknown>;
   command: CommandMeta;            // Current command metadata
   rawArgs: string[];               // Original argv
-  rest: string[];                  // After `--`, what didn't fill a positional. Unvalidated
+  rest: string[];                  // With `rest: true`, what's left after `--`. Unvalidated
   signal: AbortSignal;             // Aborted when the run must stop
 }
 ```
@@ -226,15 +227,26 @@ Printed when `meta.version` is set, from `defineCLI` or from the command in `run
 
 ### The `--` separator
 
-Everything after the first `--` is never read as a flag. Those tokens fill the positionals still empty, where a variadic counts as one, and what's left arrives in `ctx.rest`.
+Everything after the first `--` is never read as a flag. Those tokens fill the positionals still empty, where a variadic counts as one.
 
-| Input | Result |
-|---|---|
-| `tool -- -text` | `args.content` is `-text` |
-| `copy a b -- -c` | `ctx.rest` is `['-c']` |
-| `lint -- -a -b` | `args.files` is `['-a', '-b']` |
-| `lint a.ts -- --fix` | `args.files` is `['a.ts']`, `ctx.rest` is `['--fix']` |
-| `run -- npm test` (no positionals) | `ctx.rest` is `['npm', 'test']` |
+What's left is a usage error, so nothing gets lost in silence. A command that wraps another one declares `rest: true` to receive it in `ctx.rest`:
+
+```ts
+const run = defineCommand({
+  meta: { name: 'run', description: 'Run a program' },
+  rest: true,
+  run({ rest }) {
+    spawn(rest[0], rest.slice(1));
+  },
+});
+```
+
+| Input | Without `rest: true` | With `rest: true` |
+|---|---|---|
+| `tool -- -text` | `args.content` is `-text` | Same |
+| `lint -- -a -b` | `args.files` is `['-a', '-b']` | Same |
+| `copy a b -- -c` | Exit 2 | `ctx.rest` is `['-c']` |
+| `run -- npm test` (no positionals) | Exit 2 | `ctx.rest` is `['npm', 'test']` |
 
 ### `defineMiddleware(handler)`
 

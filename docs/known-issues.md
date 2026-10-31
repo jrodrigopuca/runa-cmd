@@ -22,7 +22,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
-| KI-037 | Lo que sobra después de `--` se pierde si el comando no lee `ctx.rest`, con exit 0 | Observado | Sobre `rest` decide cada comando, y nada avisa si lo ignora | [T-209](./backlog.md#t-209-lo-que-sobra-después-de----no-se-pierde) |
 | KI-015 | En `defineCLI` con un comando, `tool tool` consume el dato como nombre. Con `runCLI` no pasa | Observado | `resolveCommandFromTree` | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
 
 ## Severidad baja

@@ -55,8 +55,8 @@
 | | T-402 | Revalidar qr-plus | Requerido | En curso |
 | | T-404 | Usar MCP desde un agente real | Requerido | Pendiente |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
-| | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Pendiente |
-| | T-210 | Nombre del valor en la ayuda | Requerido | Pendiente |
+| | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Hecho |
+| | T-210 | Nombre del valor en la ayuda | Requerido | Hecho |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Pendiente |
 | | T-502 | Política de semver y deprecación | Requerido | Pendiente |
@@ -498,17 +498,17 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-209 Lo que sobra después de `--` no se pierde
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que usa una CLI, quiero un error si paso algo de más, y no que se ignore. qr-plus necesita 5 líneas propias para que `qr-plus a -- b` no genere el QR de `a` y descarte `b`.
 - **Criterios de aceptación:**
-  - Un comando que no pidió `rest` rechaza lo que sobra después de `--`, con exit 2.
-  - Un comando que envuelve a otro sigue recibiendo esos tokens, declarándolo.
-  - qr-plus borra su validación propia.
+  - Un comando que no pidió `rest` rechaza lo que sobra después de `--`, con exit 2 y el `Run '<cli> --help' for usage.` de los demás errores.
+  - Un comando que envuelve a otro sigue recibiendo esos tokens, con `rest: true`.
+  - qr-plus puede borrar su validación propia.
 
 ### T-210 Nombre del valor en la ayuda
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero mostrar `--dark-color <hex>` en vez de `--dark-color <string>`. qr-plus lo hacía con `hint`, que se eliminó.
 - **Criterios de aceptación:**
   - `meta.options` acepta el nombre del valor, y la ayuda de `core` y del plugin lo muestran.

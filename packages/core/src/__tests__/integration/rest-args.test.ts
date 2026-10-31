@@ -38,6 +38,7 @@ describe('rest args integration (ctx.rest)', () => {
 		const capture: { ctx?: RunContext } = {};
 		const exec = defineCommand({
 			meta: { name: 'exec', description: 'Run a command' },
+			rest: true,
 			...(execOverrides.options ? { options: execOverrides.options } : {}),
 			run: (ctx) => {
 				capture.ctx = ctx as RunContext;
@@ -103,6 +104,7 @@ describe('rest args integration (ctx.rest)', () => {
 
 		const exec = defineCommand({
 			meta: { name: 'exec', description: 'Run a command' },
+			rest: true,
 			run: (ctx) => {
 				capture.ctx = ctx as RunContext;
 			},
@@ -143,6 +145,7 @@ describe('rest args integration (ctx.rest)', () => {
 		const capture: { ctx?: RunContext } = {};
 		const lint = defineCommand({
 			meta: { name: 'lint', description: 'Lint files' },
+			rest: true,
 			args: { files: z.array(z.string()) },
 			run: (ctx) => {
 				capture.ctx = ctx as RunContext;

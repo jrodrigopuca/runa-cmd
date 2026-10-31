@@ -48,7 +48,9 @@ runCLI(deploy);
 - **`args`:** posicionales, por orden de claves. Solo el último puede ser `z.array()`.
 - **`options`:** Zod puro. Alias, env, grupo y deprecación van en `meta.options`. `deprecated` se muestra en la ayuda y avisa por stderr al usar la opción.
 - **`output`:** si existe, `run()` debe cumplirlo; se comprueba en compilación y en ejecución.
-- **`run(ctx)`:** recibe `args`, `options`, `globalOptions`, `command`, `rawArgs` y `rest`.
+- **`run(ctx)`:** recibe `args`, `options`, `globalOptions`, `command`, `rawArgs`, `rest` y `signal`.
+- **`rest: true`:** el comando recibe en `ctx.rest` lo que sobra después de `--`. Sin esto, sobrar es un error de uso ([ADR-0036](../adr/0036-rest-se-declara.md)).
+- **`meta.options.<clave>.valueName`:** cómo llama la ayuda al valor, como `--color <hex>`. Por defecto, su tipo o sus opciones.
 
 ## `--version`
 

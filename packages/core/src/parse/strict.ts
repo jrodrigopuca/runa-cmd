@@ -28,6 +28,8 @@ export interface AssertKnownOptionsInput {
 	booleanKeys: Set<string>;
 	/** Candidate names for did-you-mean: command + global canonical names and long aliases */
 	suggestionCandidates: string[];
+	/** What was typed: parseArgs reports `--no-x` under the key `x` */
+	tokens?: OptionToken[];
 }
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -37,12 +39,25 @@ function renderFlag(key: string): string {
 	return key.length === 1 ? `-${key}` : `--${key}`;
 }
 
+function suggestFlag(key: string, candidates: string[]): string | undefined {
+	// `--darkColor` isn't a typo: it's the right name in the wrong form.
+	if (candidates.includes(flagName(key))) return flagName(key);
+
+	// One letter says too little for a distance, but `-V` has an obvious owner.
+	if (key.length === 1) {
+		const owners = candidates.filter((name) => name.startsWith(key.toLowerCase()));
+		return owners.length === 1 ? owners[0] : undefined;
+	}
+	return findSuggestion(key, candidates);
+}
+
 // ─── Public API ─────────────────────────────────────────────
 
 /** The option tokens of a `parseArgs({ tokens: true })` result. */
 export interface OptionToken {
 	kind: string;
 	name?: string;
+	rawName?: string;
 	value?: string;
 	inlineValue?: boolean;
 }
@@ -76,11 +91,17 @@ export function assertOptionValues(input: AssertOptionValuesInput): void {
 	const { tokens = [], options, longAliasMap, optionMeta } = input;
 	const flags = registeredFlags(options);
 
-	for (const { kind, name: key = '', value, inlineValue } of tokens) {
+	for (const { kind, name: key = '', rawName, value, inlineValue } of tokens) {
 		if (kind !== 'option' || options[key]?.type !== 'string') continue;
-		if (value !== undefined && (inlineValue || !flags.has(value))) continue;
 
 		const name = longAliasMap[key] ?? key;
+		if (rawName === `--no-${key}`) {
+			const message = `Option ${longFlag(name)} can't be negated: it takes a value`;
+			throw new ValidationError([{ code: 'custom', message, path: [] }]);
+		}
+
+		if (value !== undefined && (inlineValue || !flags.has(value))) continue;
+
 		const names = [...(optionMeta?.[name]?.alias ?? []), longFlag(name)].join(', ');
 		throw new ValidationError([
 			{ code: 'custom', message: `Option ${names} requires a value`, path: [] },
@@ -93,7 +114,7 @@ export function assertOptionValues(input: AssertOptionValuesInput): void {
  * is not registered, with a did-you-mean suggestion when a candidate is close.
  */
 export function assertKnownOptions(input: AssertKnownOptionsInput): void {
-	const { producedKeys, knownKeys, booleanKeys, suggestionCandidates } = input;
+	const { producedKeys, knownKeys, booleanKeys, suggestionCandidates, tokens = [] } = input;
 
 	for (const key of producedKeys) {
 		if (knownKeys.has(key)) continue;
@@ -104,11 +125,8 @@ export function assertKnownOptions(input: AssertKnownOptionsInput): void {
 		// surfacing the negation token un-folded.
 		if (key.startsWith('no-') && booleanKeys.has(key.slice(3))) continue;
 
-		const flag = renderFlag(key);
-		// `--darkColor` isn't a typo: it's the right name in the wrong form.
-		const suggestion = suggestionCandidates.includes(flagName(key))
-			? flagName(key)
-			: findSuggestion(key, suggestionCandidates);
+		const flag = tokens.find(({ name }) => name === key)?.rawName ?? renderFlag(key);
+		const suggestion = suggestFlag(key, suggestionCandidates);
 		const message = suggestion
 			? `Unknown option: ${flag}. Did you mean '${renderFlag(suggestion)}'?`
 			: `Unknown option: ${flag}`;

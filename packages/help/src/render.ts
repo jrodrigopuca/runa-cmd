@@ -218,7 +218,9 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 	// Type column
 	const typeParts: string[] = [];
 	const repeats = opt.type === 'array' ? '...' : '';
-	if (opt.enumValues) {
+	if (opt.valueName) {
+		typeParts.push(`${opt.valueName}${repeats}`);
+	} else if (opt.enumValues) {
 		typeParts.push(`${opt.enumValues.join(' | ')}${repeats}`);
 	} else if (opt.type !== 'boolean') {
 		typeParts.push(`${repeats ? (opt.itemType ?? 'string') : opt.type}${repeats}`);

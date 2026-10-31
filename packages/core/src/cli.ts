@@ -310,6 +310,10 @@ async function selectFromArgv(
 		// Command canonical names + long aliases (= keys of the parseArgs config)
 		const suggestionCandidates = Object.keys(parseArgsConfig.options ?? {});
 
+		// Built-ins were handled above: if they got here, this is a mistyped one.
+		suggestionCandidates.push('help');
+		if (config.meta.version !== undefined) suggestionCandidates.push('version');
+
 		// Globals are extracted before command parsing, but their names must
 		// still be known here: parseArgs maps a stray global short flag to its
 		// bare character, and typo'd globals should suggest the global name.
@@ -331,6 +335,7 @@ async function selectFromArgv(
 			knownKeys,
 			booleanKeys,
 			suggestionCandidates,
+			tokens: cmdParseResult.tokens,
 		});
 	}
 
@@ -344,10 +349,14 @@ async function selectFromArgv(
 	const configValues = await loadConfigValues(config);
 	const operands = distributeRest(cmdParseResult.positionals, rest, command.args ?? {});
 
+	// Nothing reads what's left unless the command asked for it, so it can't stay
+	// silent: as positionals, it gets the same error as any other extra (ADR-0036).
 	const { parsedArgs, parsedOptions } = resolveValues({
 		parseArgsResult: {
 			values: commandValues,
-			positionals: operands.positionals,
+			positionals: command.rest
+				? operands.positionals
+				: [...operands.positionals, ...operands.rest],
 		},
 		longAliasMap,
 		schemas: {

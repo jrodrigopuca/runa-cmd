@@ -66,6 +66,7 @@ export function defineCommand<
 		args: config.args as Record<string, ZodType> | undefined,
 		options: config.options as Record<string, ZodType> | undefined,
 		output: config.output as ZodType | undefined,
+		rest: config.rest,
 		run: config.run as (ctx: RunContext) => unknown,
 	};
 }

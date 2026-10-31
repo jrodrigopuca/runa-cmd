@@ -7,7 +7,11 @@ const print = ({ args, options, rest }) => console.log(JSON.stringify({ args, op
 await defineCLI({
 	meta: { name: 'routing', version: process.env.CLI_VERSION },
 	commands: {
-		status: defineCommand({ meta: { name: 'status', description: 'status' }, run: print }),
+		status: defineCommand({
+			meta: { name: 'status', description: 'status' },
+			rest: true,
+			run: print,
+		}),
 		// Declares its own --version, which must win over the built-in one.
 		deploy: defineCommand({
 			meta: { name: 'deploy', description: 'deploy' },
@@ -26,17 +30,20 @@ await defineCLI({
 		exec: defineCommand({
 			meta: { name: 'exec', description: 'exec' },
 			args: { target: z.string().optional() },
+			rest: true,
 			run: print,
 		}),
-		run: defineCommand({ meta: { name: 'run', description: 'run' }, run: print }),
+		run: defineCommand({ meta: { name: 'run', description: 'run' }, rest: true, run: print }),
 		copy: defineCommand({
 			meta: { name: 'copy', description: 'copy' },
 			args: { from: z.string(), to: z.string() },
+			rest: true,
 			run: print,
 		}),
 		add: defineCommand({
 			meta: { name: 'add', description: 'add' },
 			args: { files: z.array(z.string()) },
+			rest: true,
 			run: print,
 		}),
 	},

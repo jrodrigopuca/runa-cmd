@@ -34,7 +34,9 @@ describe('help of the whole CLI', () => {
 
 	it('does not take --help after --', () => {
 		const result = app(['serve', '--', '--help']);
-		expect(result.stdout).toContain('serving on');
+		expect(result.status).toBe(2);
+		expect(result.stdout).not.toContain('USAGE');
+		expect(result.stderr).toContain("Unexpected positional argument: '--help'");
 	});
 });
 

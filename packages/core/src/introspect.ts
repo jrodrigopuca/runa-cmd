@@ -67,6 +67,7 @@ function walkCommand(name: string, command: Command, parentPath: string[]): Comm
 				env: om?.env,
 				group: om?.group,
 				deprecated: om?.deprecated,
+				valueName: om?.valueName,
 				enumValues: meta.enumValues,
 			});
 		}
@@ -152,6 +153,7 @@ export function getSchema(
 				env: om?.env,
 				group: om?.group,
 				deprecated: om?.deprecated,
+				valueName: om?.valueName,
 				enumValues: meta.enumValues,
 			});
 		}

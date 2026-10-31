@@ -75,6 +75,16 @@ describe('an option that repeats', () => {
 		expect(renderHelp(repeats('enum', ['a', 'b']))).toContain('--tag <a|b>...');
 	});
 
+	it('both use the name of the value, if it has one', () => {
+		const named: CommandSchema = {
+			...command,
+			options: [{ ...option('tint'), type: 'array', itemType: 'string', valueName: 'hex' }],
+		};
+
+		expect(renderHelp(named)).toContain('--tint <hex>...');
+		expect(stripVTControlCharacters(plugin(named))).toContain('hex...');
+	});
+
 	it('shows the plugin what it holds', () => {
 		expect(stripVTControlCharacters(plugin(repeats('string')))).toContain('string...');
 		expect(stripVTControlCharacters(plugin(repeats('enum', ['a', 'b'])))).toContain('a | b...');

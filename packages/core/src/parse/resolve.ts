@@ -103,7 +103,7 @@ function mapPositionals(
 
 /**
  * Decide which tokens after `--` are operands and which stay in ctx.rest
- * (ADR-0022): they fill the positionals still empty, where a variadic counts
+ * (ADR-0036): they fill the positionals still empty, where a variadic counts
  * as one. So `lint -- -a -b` fills `files`, while `lint a.ts -- --fix` keeps
  * `--fix` for ctx.rest.
  */

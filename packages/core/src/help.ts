@@ -115,7 +115,7 @@ function optionFlags(option: OptionSchema): string {
 	const value =
 		option.type === 'boolean'
 			? ''
-			: ` <${option.enumValues?.join('|') ?? kind}>${isList ? '...' : ''}`;
+			: ` <${option.valueName ?? option.enumValues?.join('|') ?? kind}>${isList ? '...' : ''}`;
 	return `${[...aliases, `--${option.flag}`].join(', ')}${value}`;
 }
 
