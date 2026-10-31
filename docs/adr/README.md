@@ -47,3 +47,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0030](./0030-tools-mcp-en-subproceso.md) | Cada tool MCP corre en un subproceso de la propia CLI | Aceptada; faltan cancelación y límites |
 | [0031](./0031-quien-opera-gana-al-modelo.md) | Quien opera el servidor le gana al modelo | Aceptada |
 | [0032](./0032-postura-sobre-secretos.md) | Postura sobre secretos | Aceptada |
+| [0033](./0033-parar-recorre-el-arbol-de-procesos.md) | Parar recorre el árbol de procesos | Aceptada; falta implementarla en T-305 |

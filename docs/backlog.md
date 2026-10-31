@@ -338,12 +338,17 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Bloqueada por:** T-303
-- **Descripción:** como quien opera un servidor, quiero que cancelar libere recursos, y que un comando no pueda tumbar el servidor con su salida.
+- **Descripción:** como persona o quien opera un servidor, quiero que parar libere recursos en todo el árbol de procesos, y que un comando no pueda tumbar el servidor con su salida. Sigue [ADR-0033](./adr/0033-parar-recorre-el-arbol-de-procesos.md).
 - **Criterios de aceptación:**
+  - `SIGINT` y `SIGTERM` en la CLI disparan `ctx.signal` y corren `cleanup`, con exit 130 y 143.
+  - Una segunda señal sale al instante.
+  - Un comando que ignora la parada no retiene el proceso más que el plazo.
   - Cancelar una llamada corre `cleanup`, y `ctx.signal` avisa al comando.
+  - Una llamada cancelada informa `class: 'cancelled'` y efecto desconocido.
   - Un hijo que ignora la cancelación muere pasado un plazo.
-  - Los procesos que inició el comando también terminan.
-  - Si el servidor muere, sus hijos no quedan corriendo.
+  - Los procesos que inició el comando también terminan, salvo los que crearon su propio grupo o sesión.
+  - Si el servidor muere, aun con `SIGKILL`, sus hijos no quedan corriendo.
+  - Cerrar el servidor cancela las llamadas en curso antes de correr su `cleanup`.
   - La llamada termina aunque un proceso nieto retenga stdio.
   - Hay un tope de salida total y por tool, con inicio y final, y un aviso de truncado.
   - 600 MB en stdout no tumban el servidor.

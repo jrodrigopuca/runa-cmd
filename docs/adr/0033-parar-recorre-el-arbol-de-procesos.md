@@ -1,0 +1,23 @@
+# ADR-0033: Parar recorre el árbol de procesos
+
+- **Estado:** aceptada
+- **Amplía:** [ADR-0030](./0030-tools-mcp-en-subproceso.md)
+- **Drivers:** medido en un CLI de Runa, ni `SIGINT` ni `SIGTERM` corren `cleanup`, aunque la documentación promete que siempre corre. Un `SIGTERM` al CLI deja vivo al proceso que lanzó el comando. En MCP, cancelar mata al hijo sin `cleanup`, y nada le avisa si el servidor muere. commander reenvía señales solo al hijo directo, sin plazo, y un hijo muerto por señal termina en exit 1.
+- **Decisión:** la ejecución es un árbol: servidor o CLI, hijo de la tool y procesos del comando. La orden de parar baja, el resultado sube, y cada padre decide qué hacer con él.
+  - **Una sola parada en `core`:** `SIGINT`, `SIGTERM` y el corte del canal con el servidor entran por el mismo camino.
+  - **Aviso:** `ctx.signal` existe en CLI y en tool, y se dispara con la parada. Quien lanza procesos se lo pasa, y así el aviso sigue bajando.
+  - **Plazos:** `run()` tiene 2 s para terminar y `cleanup` corre aunque no lo haga. A los 5 s del aviso, el proceso termina a la fuerza. Son valores iniciales, iguales en CLI y tool.
+  - **Segunda señal:** en la CLI, sale al instante.
+  - **Exit code:** 130 con `SIGINT` y 143 con `SIGTERM`, por la convención 128 + señal.
+  - **Canal de vida:** cada hijo de tool vigila un canal IPC, el mismo de la prueba en Windows. Si se corta, porque el servidor canceló o murió, el hijo se detiene solo.
+  - **Fuerza:** el servidor o el propio hijo terminan el grupo de procesos (`kill(-pid)`). En Windows, `taskkill /T /F`, con el hijo todavía vivo.
+  - **Un hijo que falla no arrastra al padre:** cada tool es un pedido independiente, y su fallo se vuelve el resultado de esa llamada ([T-304](../backlog.md#t-304-contrato-de-resultado-y-errores)).
+  - **Salir de todo:** el servidor cancela las llamadas en curso, espera sus plazos y recién ahí corre su propio `cleanup`.
+  - **Llamada cancelada:** `class: 'cancelled'`, `effect: 'unknown'`, porque `run()` ya pudo haber empezado.
+- **Qué no garantiza:** que termine un proceso que creó su propio grupo o sesión. Que termine un hijo con el event loop bloqueado si el servidor murió, porque no queda quién lo fuerce. En una CLI, Runa no crea un grupo propio: un `SIGTERM` solo llega a los procesos del comando si el autor les pasa `ctx.signal`.
+- **Alternativas descartadas:** reenviar señales al hijo directo, como commander, deja nietos y no cubre la muerte del servidor. Limitar T-305 a MCP dejaría `cleanup` sin correr con Ctrl+C y haría dos paradas distintas. Un grupo de procesos propio en la CLI rompería Ctrl+C, que llega al grupo de la terminal, y `process.on('exit')` no permite `cleanup` asíncrono.
+- **Costo aceptado:** Ctrl+C deja de cortar al instante: un comando que ignora `ctx.signal` tarda hasta 2 s, salvo con una segunda señal. Instalar handlers cambia a todas las CLIs. Un comando que ya maneja `SIGINT` por su cuenta convive con la parada de `core`.
+- **Revisar si:** los autores piden cambiar los plazos, 2 s resulta molesto en uso real, un comando real necesita que Ctrl+C no lo detenga, o la prueba en Windows muestra que el canal no avisa la muerte del servidor.
+- **Código:** `packages/core/src/cli.ts`, `packages/core/src/tool-channel.ts`, `packages/mcp/src/runner.ts`, `packages/mcp/src/server.ts`
+- **Evidencia:** [parar un árbol de procesos](../research/2026-10-process-trees.md)
+- **Implementación:** [T-305](../backlog.md#t-305-cancelación-y-límites)
