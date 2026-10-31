@@ -122,6 +122,29 @@ async run({ signal }) {
 
 A tool answers with up to 100 KiB, or what `maxOutput` says. Longer output keeps its start and its end, with a notice in between. A returned value isn't cut: a broken JSON helps nobody, so the call fails with `output_too_large` and reports that the command already ran.
 
+## What You Expose
+
+Every command is a tool by default. Choose what an agent gets, and how it reads about it:
+
+```ts
+mcpPlugin({
+  exclude: ['internal', 'config_reset'],
+  tools: {
+    status: { annotations: { readOnlyHint: true } },
+    deploy: {
+      description: 'Deploy to production. Ask before running it.',
+      annotations: { destructiveHint: true },
+    },
+  },
+});
+```
+
+- **`exclude`** removes the tool: it isn't listed and can't be called. This is the only real boundary.
+- **`annotations`** go to the client as the [MCP specification](https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations) defines them. **They are hints, not access control:** a client decides what to do with them, and may ignore them. Without them, clients assume a tool can be destructive.
+- **`description`** replaces what the model reads, without changing your CLI's help.
+
+An unknown name in `exclude`, an excluded tool with settings, or a tool both read-only and destructive stop the server at startup.
+
 ## What the Operator Decides
 
 Whoever starts the server beats the model. An option that declares `env`, or has a value in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call, so a model can't ask anyone for it.
@@ -145,7 +168,7 @@ Fixed values of 8 characters or more, and the global options the server started 
 
 These matter when you expose a real CLI to an agent:
 
-- **Every command becomes a tool.** There's no way yet to exclude one or mark it as destructive, so don't enable `--mcp` on a CLI whose commands an agent shouldn't run.
+- **A new command becomes a tool unless you exclude it.** Review `exclude` when you add one.
 - **Ending processes is best-effort.** One that created its own process group or session escapes.
 - **Only a direct Node `selfCommand` gets the stop notice.** A compiled binary or a wrapper like `npx` is ended by the deadline, and not at all if the server is killed with `SIGKILL`.
 - **stdio is the only transport.**
@@ -177,11 +200,14 @@ interface McpPluginOptions {
   version?: string;       // Server version override
   instructions?: string;  // Workflow instructions for AI agents
   selfCommand?: string[]; // Executable and arguments to run this CLI again
+  exclude?: string[];     // Tools that won't exist for an agent
   maxOutput?: number;     // Most bytes a tool can answer with. Default: 100 KiB
   tools?: Record<string, ToolOptions>; // Per-tool settings, by tool name
 }
 
 interface ToolOptions {
+  description?: string;  // What the model reads, instead of the command's description
+  annotations?: ToolAnnotations; // Hints for the client, as MCP defines them
   expose?: string[];     // Options the model can set, even if they declare env
   serverOnly?: string[]; // Options that must come from env or config
   maxOutput?: number;    // This tool's limit, instead of the plugin's

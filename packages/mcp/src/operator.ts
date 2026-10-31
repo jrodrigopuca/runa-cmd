@@ -21,9 +21,9 @@ export interface OperatorValues {
 	env: Record<string, string | undefined>;
 	/** Global options the server started with */
 	globals: Record<string, unknown>;
-	/** The output limit of every tool without its own */
-	maxOutput?: number;
 }
+
+type ExposureOptions = Pick<McpPluginOptions, 'exclude' | 'tools' | 'maxOutput'>;
 
 function invalidTools(message: string): RunaError {
 	return new RunaError(`mcpPlugin: ${message}`, { code: 'MCP_INVALID_TOOLS' });
@@ -34,6 +34,18 @@ function assertValidLimit(limit: number | undefined, owner: string): void {
 	throw invalidTools(`maxOutput of ${owner} must be a positive number of bytes.`);
 }
 
+function assertValidExclude(
+	{ exclude = [], tools = {} }: ExposureOptions,
+	registrations: ToolRegistration[],
+): void {
+	for (const name of exclude) {
+		if (!registrations.some((reg) => reg.name === name)) {
+			throw invalidTools(`no tool named '${name}' to exclude.`);
+		}
+		if (name in tools) throw invalidTools(`tool '${name}' is excluded, so it can't have settings.`);
+	}
+}
+
 function assertValidTools(
 	tools: NonNullable<McpPluginOptions['tools']>,
 	registrations: ToolRegistration[],
@@ -42,6 +54,10 @@ function assertValidTools(
 		const reg = registrations.find((candidate) => candidate.name === name);
 		if (!reg) throw invalidTools(`no tool named '${name}'.`);
 		assertValidLimit(options.maxOutput, `tool '${name}'`);
+
+		if (options.annotations?.readOnlyHint && options.annotations.destructiveHint) {
+			throw invalidTools(`tool '${name}' can't be read-only and destructive.`);
+		}
 
 		for (const key of [...(options.expose ?? []), ...(options.serverOnly ?? [])]) {
 			if (!reg.optionKeys.has(key)) {
@@ -76,6 +92,7 @@ function redactable(values: unknown[]): string[] {
 function applyToTool(
 	reg: ToolRegistration,
 	options: ToolOptions,
+	maxOutput: number | undefined,
 	values: OperatorValues,
 ): ToolRegistration {
 	const inputShape = { ...reg.inputShape };
@@ -105,22 +122,30 @@ function applyToTool(
 
 	return {
 		...reg,
+		description: options.description ?? reg.description,
+		annotations: options.annotations,
 		inputShape,
 		fixed,
 		redactions: redactable([...fixedValues, ...Object.values(values.globals)]),
-		maxOutput: options.maxOutput ?? values.maxOutput ?? reg.maxOutput,
+		maxOutput: options.maxOutput ?? maxOutput ?? reg.maxOutput,
 	};
 }
 
 /** The tools as the model will see them. Fails at startup on an invalid setup. */
 export function applyOperatorValues(
 	registrations: ToolRegistration[],
-	tools: McpPluginOptions['tools'],
+	options: ExposureOptions,
 	values: OperatorValues,
 ): ToolRegistration[] {
-	assertValidLimit(values.maxOutput, 'mcpPlugin');
-	assertValidTools(tools ?? {}, registrations);
-	return registrations.map((reg) => applyToTool(reg, tools?.[reg.name] ?? {}, values));
+	const { exclude = [], tools = {}, maxOutput } = options;
+
+	assertValidLimit(maxOutput, 'mcpPlugin');
+	assertValidExclude(options, registrations);
+	assertValidTools(tools, registrations);
+
+	return registrations
+		.filter((reg) => !exclude.includes(reg.name))
+		.map((reg) => applyToTool(reg, tools[reg.name] ?? {}, maxOutput, values));
 }
 
 /** Hide fixed values from text a command wrote without meaning to expose them. */

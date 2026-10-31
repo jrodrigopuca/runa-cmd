@@ -4,6 +4,7 @@
  * Walks the CommandTree and builds ToolRegistration objects
  * that map each command to an MCP tool with merged input schema.
  */
+import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 import type { CLISchema, Command, CommandSchema, CommandTree } from '@runa-cmd/core';
 import type { ZodType } from 'zod';
 import { DEFAULT_MAX_OUTPUT } from './runner.js';
@@ -36,6 +37,8 @@ export interface ToolRegistration {
 	redactions: string[];
 	/** Most bytes of output this tool can answer with */
 	maxOutput: number;
+	/** Hints for the client, only if the author declared them */
+	annotations?: ToolAnnotations;
 }
 
 // ─── Helpers ────────────────────────────────────────────────

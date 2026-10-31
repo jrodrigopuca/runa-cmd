@@ -36,7 +36,34 @@ Las opciones globales que recibe el servidor al arrancar llegan a cada llamada.
 | `version` | Versión del servidor | `meta.version`, o `0.0.0` |
 | `instructions` | Instrucciones para el agente | Ninguna |
 | `selfCommand` | Cómo ejecutar la CLI de nuevo: ejecutable y argumentos | Repite cómo arrancó el proceso |
+| `exclude` | Tools que no existen para un agente, por nombre | Ninguna: todos los comandos son tools |
+| `maxOutput` | Tope de bytes por tool | 100 KiB |
 | `tools` | Ajustes por tool, por nombre | Ninguno |
+
+## Qué se expone
+
+El autor decide desde el plugin, y `core` no conoce MCP ([ADR-0025](../adr/0025-control-de-mcp-en-el-plugin.md)):
+
+```ts
+mcpPlugin({
+  exclude: ['internal', 'config_reset'],
+  tools: {
+    status: { annotations: { readOnlyHint: true } },
+    deploy: {
+      description: 'Deploy to production. Ask before running it.',
+      annotations: { destructiveHint: true },
+    },
+  },
+});
+```
+
+- **`exclude`:** la tool no aparece en `tools/list` y llamarla da `Unknown tool`. Es la única frontera real: ningún proceso se lanza por ese nombre.
+- **`annotations`:** se pasan tal como las define la [especificación](https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations). Son pistas para el cliente, no control de acceso. Sin ellas no se envía nada, y por defecto de la especificación un cliente asume que la tool puede destruir datos.
+- **`description`:** reemplaza lo que el modelo lee, sin cambiar la ayuda de la CLI.
+
+Un nombre inexistente en `exclude`, una tool excluida con ajustes, o `readOnlyHint` y `destructiveHint` juntos en `true` fallan al arrancar, con `MCP_INVALID_TOOLS`. `idempotentHint` junto a `readOnlyHint` se acepta: la especificación solo lo vuelve irrelevante.
+
+Lo que ve el modelo tiene un snapshot en `packages/mcp/src/__tests__/exposure.test.ts`. Si cambia, cambió lo que lee cada modelo.
 
 ## Lo que decide quien opera
 
@@ -118,7 +145,7 @@ Un error nunca afirma que no pasó nada si el comando llegó a empezar:
 
 - **Terminar procesos es best-effort.** Uno que creó su propio grupo o sesión se escapa ([ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md)).
 - **Un `selfCommand` que no sea Node directo pierde el canal de vida.** Un binario o un envoltorio como `npx` no recibe el aviso: lo termina el plazo, y si el servidor muere con `SIGKILL`, nadie.
-- **No hay control de exposición.** Todos los comandos son tools (KI-007).
+- **Un comando nuevo se expone si nadie lo excluye** ([ADR-0025](../adr/0025-control-de-mcp-en-el-plugin.md)).
 - **No hay estado entre llamadas.** Cada una es un proceso nuevo: un pool de conexiones no se comparte.
 - **Solo hay transporte stdio.**
 

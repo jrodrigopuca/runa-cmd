@@ -3,9 +3,17 @@
  *
  * Plugin options for mcpPlugin().
  */
+import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 
-/** What one tool leaves to the model. */
+/** What the model can do with one tool, and how it is told about it. */
 export interface ToolOptions {
+	/** What the model reads about this tool, instead of the command's description */
+	description?: string;
+	/**
+	 * Hints for the client, as MCP defines them, e.g. `{ destructiveHint: true }`.
+	 * They are not access control: to keep a command from an agent, use `exclude`.
+	 */
+	annotations?: ToolAnnotations;
 	/** Options the model can set, even if they declare env or have a config value */
 	expose?: string[];
 	/** Options that must come from env or config: without a value, the server won't start */
@@ -31,6 +39,8 @@ export interface McpPluginOptions {
 	 * e.g. `[process.execPath]` for a binary.
 	 */
 	selfCommand?: string[];
+	/** Tools that won't exist for an agent, e.g. `['deploy', 'config_reset']` */
+	exclude?: string[];
 	/**
 	 * Most bytes a tool can answer with. Longer output keeps its start and end,
 	 * with a notice. A returned value isn't cut: over this limit, the call fails.

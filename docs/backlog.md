@@ -44,7 +44,7 @@
 | | T-306 | Valores de quien opera fuera del schema | Requerido | Hecho |
 | | T-304 | Contrato de resultado y errores | Requerido | Hecho |
 | | T-305 | Cancelación y límites | Requerido | Hecho |
-| | T-302 | Excluir y anotar tools | Requerido | Pendiente |
+| | T-302 | Excluir y anotar tools | Requerido | Hecho |
 | | T-307 | Evento por llamada | Opcional | Pendiente |
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Pendiente |
 | | T-205 | Ruteo único para la ayuda | Requerido | Pendiente |
@@ -356,11 +356,13 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-302 Excluir y anotar tools
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero elegir qué expongo a un agente y marcar lo peligroso, sin tocar `core`.
 - **Criterios de aceptación:**
   - `mcpPlugin({ exclude: ['deploy'] })` evita que la tool exista y que pueda llamarse.
-  - Se puede marcar un comando como de solo lectura, destructivo o idempotente, y eso llega como anotación MCP.
+  - `tools: { deploy: { annotations } }` acepta las anotaciones de MCP tal como las define la especificación, y llegan a `tools/list`.
+  - `readOnlyHint` y `destructiveHint` juntos en `true` fallan al arrancar, porque se contradicen.
+  - Una tool excluida con ajustes en `tools` falla al arrancar.
   - Se puede dar una descripción propia por tool.
   - La documentación aclara que las anotaciones son pistas para el cliente, no control de acceso.
   - `exclude` con un nombre inexistente falla al arrancar.

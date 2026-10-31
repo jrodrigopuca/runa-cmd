@@ -43,6 +43,7 @@ export function toolDefinition(reg: ToolRegistration): Tool {
 		description: reg.description,
 		inputSchema: toJsonSchema(z.object(reg.inputShape)) as Tool['inputSchema'],
 		...(output ? { outputSchema: toJsonSchema(output) as Tool['outputSchema'] } : {}),
+		...(reg.annotations ? { annotations: reg.annotations } : {}),
 	};
 }
 

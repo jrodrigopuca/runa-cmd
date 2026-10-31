@@ -54,6 +54,7 @@ function startGrandchild(stdio, detached = false) {
 const selfCommand = process.env.SELF_COMMAND ? JSON.parse(process.env.SELF_COMMAND) : undefined;
 const tools = process.env.TOOLS ? JSON.parse(process.env.TOOLS) : undefined;
 const maxOutput = process.env.MAX_OUTPUT ? Number(process.env.MAX_OUTPUT) : undefined;
+const exclude = process.env.EXCLUDE ? JSON.parse(process.env.EXCLUDE) : undefined;
 const command = (name, config) =>
 	defineCommand({ meta: { name, description: `The ${name} tool` }, ...config });
 
@@ -64,7 +65,7 @@ await defineCLI({
 		? { name: 'server', searchPaths: [process.env.CONFIG_DIR] }
 		: undefined,
 	middleware: [gate],
-	plugins: [lifecycle, mcpPlugin({ selfCommand, tools, maxOutput })],
+	plugins: [lifecycle, mcpPlugin({ selfCommand, tools, maxOutput, exclude })],
 	commands: {
 		operated: command('operated', {
 			meta: {

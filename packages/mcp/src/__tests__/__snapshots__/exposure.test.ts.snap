@@ -1,0 +1,71 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`what a model sees > stays the same unless it changes on purpose 1`] = `
+[
+  {
+    "annotations": {
+      "readOnlyHint": true,
+    },
+    "description": "Show the status",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {},
+      "type": "object",
+    },
+    "name": "status",
+    "outputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "healthy": {
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "healthy",
+      ],
+      "type": "object",
+    },
+  },
+  {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": false,
+    },
+    "description": "Deploy to production. Ask before running it.",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "replicas": {
+          "description": "How many",
+          "type": "number",
+        },
+        "service": {
+          "description": "Service to deploy",
+          "type": "string",
+        },
+      },
+      "required": [
+        "service",
+      ],
+      "type": "object",
+    },
+    "name": "deploy",
+  },
+  {
+    "description": "Read a value",
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "key": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "key",
+      ],
+      "type": "object",
+    },
+    "name": "config_get",
+  },
+]
+`;

@@ -69,8 +69,8 @@ const cli = defineCLI({
 		// --env declares DEPLOY_ENV, so it belongs to the operator unless exposed
 		mcpPlugin({
 			tools: {
-				deploy: { expose: ['env'] },
-				logs: { expose: ['env'] },
+				deploy: { expose: ['env'], annotations: { destructiveHint: true } },
+				logs: { expose: ['env'], annotations: { readOnlyHint: true } },
 			},
 		}),
 		completionsPlugin(),

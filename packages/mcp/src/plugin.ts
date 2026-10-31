@@ -44,12 +44,11 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 				const schema = api.getSchema();
 				const registrations = applyOperatorValues(
 					buildToolRegistrations(api.getCommands(), schema),
-					opts.tools,
+					opts,
 					{
 						configValues: await api.getConfigValues(),
 						env: process.env,
 						globals: ctx.globalOptions,
-						maxOutput: opts.maxOutput,
 					},
 				);
 
