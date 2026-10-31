@@ -49,7 +49,7 @@
 | | T-308 | Comandos de plugins fuera de las tools | Opcional | Pendiente |
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Hecho |
 | | T-205 | Ruteo único para la ayuda | Requerido | Hecho |
-| | T-206 | Kebab-case por defecto | Requerido | Pendiente |
+| | T-206 | Kebab-case por defecto | Requerido | Hecho |
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Pendiente |
 | 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Pendiente |
 | | T-402 | Revalidar qr-plus, CLI y MCP | Requerido | Pendiente |
@@ -423,7 +423,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-206 Kebab-case por defecto
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero escribir `darkColor` en TypeScript y exponer `--dark-color` en la terminal.
 - **Criterios de aceptación:**
   - `--dark-color` entrega `options.darkColor`, y `outputURL` se expone como `--output-url`.
@@ -433,6 +433,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Ayuda, errores y las tres shells de completions muestran kebab-case desde un único campo del schema.
   - Las tools MCP y los archivos de config siguen usando la clave en camelCase.
   - Un booleano `noCache` falla al arrancar con un mensaje que propone `cache`.
+  - Dos claves que dan la misma flag fallan al arrancar.
 
 ### T-207 Opciones repetidas con `z.array()`
 

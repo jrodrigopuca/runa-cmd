@@ -8,6 +8,7 @@
  * turn into a parameter the model can ask a person for.
  */
 import { type OptionMeta, RunaError } from '@runa-cmd/core';
+import { longFlag } from '@runa-cmd/core/internal';
 import type { ToolRegistration } from './schema.js';
 import type { McpPluginOptions, ToolOptions } from './types.js';
 
@@ -107,7 +108,7 @@ function applyToTool(
 
 		if (value === undefined && isServerOnly) {
 			throw invalidTools(
-				`option --${key} of tool '${reg.name}' is server-only and has no value. ` +
+				`option ${longFlag(key)} of tool '${reg.name}' is server-only and has no value. ` +
 					'Set it through its env var or the config file.',
 			);
 		}

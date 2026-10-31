@@ -16,6 +16,7 @@ const tool = defineCommand({
 		output: z.string().optional().describe('Output file'),
 		size: z.number().default(10).describe('Module size'),
 		darkColor: z.string().default('#000000').describe('Dark module color'),
+		tag: z.array(z.string()).optional().describe('Tags to add'),
 	},
 	run({ args, options, rest }) {
 		console.log(JSON.stringify({ args, options, rest }));

@@ -22,6 +22,7 @@ import {
 	RunaError,
 	ValidationError,
 } from './errors.js';
+import { flagName } from './flag-name.js';
 import { commandClaims, findHelpTarget, HELP_TOKENS, renderHelp } from './help.js';
 import { getSchema } from './introspect.js';
 import { createHookRegistry } from './lifecycle.js';
@@ -38,6 +39,7 @@ import {
 	STATIC_GLOBAL_OPTION_SOURCE,
 	topologicalSort,
 	validateOptionCollisions,
+	validateOptionNames,
 } from './plugin.js';
 import { watchForStop } from './stop.js';
 import { findSuggestion } from './suggest.js';
@@ -312,8 +314,8 @@ async function selectFromArgv(
 		// still be known here: parseArgs maps a stray global short flag to its
 		// bare character, and typo'd globals should suggest the global name.
 		for (const name of Object.keys(globalOptions)) {
-			knownKeys.add(name);
-			suggestionCandidates.push(name);
+			knownKeys.add(flagName(name));
+			suggestionCandidates.push(flagName(name));
 			for (const alias of globalMeta.options[name]?.alias ?? []) {
 				if (alias.startsWith('--')) {
 					knownKeys.add(alias.slice(2));
@@ -492,6 +494,7 @@ async function runCLILifecycle(
 		// Post-plugin-setup is the earliest point where the full option
 		// surface (plugin globals + plugin commands) exists. Runs before
 		// any parsing on every invocation; throws RunaError OPTION_COLLISION.
+		validateOptionNames(mutableCommands, mutableGlobalOptions);
 		validateOptionCollisions(
 			mutableCommands,
 			mutableGlobalOptions,

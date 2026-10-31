@@ -212,7 +212,7 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 			}
 		}
 	}
-	flags.push(`--${opt.name}`);
+	flags.push(`--${opt.flag}`);
 	const flagStr = styled(flags.join(', '), { color: 'yellow' }, ctx);
 
 	// Type column

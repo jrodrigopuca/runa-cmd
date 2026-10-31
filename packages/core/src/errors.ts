@@ -5,6 +5,7 @@
  * POSIX-aligned exit codes: 2 (usage), 127 (not found), 1 (general).
  */
 import type { z } from 'zod';
+import { longFlag } from './flag-name.js';
 
 type ZodIssue = z.core.$ZodIssue;
 
@@ -36,7 +37,7 @@ export class RunaError extends Error {
 /** Prefixes the path, unless the message already names it as `<name>` or `--name`. */
 function formatIssue(issue: ZodIssue): string {
 	const name = String(issue.path.at(-1));
-	const isNamed = issue.message.includes(`<${name}>`) || issue.message.includes(`--${name}`);
+	const isNamed = issue.message.includes(`<${name}>`) || issue.message.includes(longFlag(name));
 	if (issue.path.length === 0 || isNamed) return issue.message;
 	return `${issue.path.join('.')}: ${issue.message}`;
 }

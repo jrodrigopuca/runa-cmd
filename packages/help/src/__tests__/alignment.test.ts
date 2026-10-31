@@ -13,6 +13,7 @@ import { resolveTheme } from '../theme.js';
 
 const option = (name: string, group?: string) => ({
 	name,
+	flag: name,
 	description: `The ${name}`,
 	type: 'string' as const,
 	required: false,

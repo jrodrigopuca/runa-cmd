@@ -4,6 +4,7 @@
  * `meta.options[name].deprecated` declares the notice once. It is shown in help
  * and, through this module, whenever the option is actually used.
  */
+import { longFlag } from '../flag-name.js';
 import type { OptionMeta } from '../types.js';
 
 export interface DeprecationInput {
@@ -28,6 +29,6 @@ export function deprecationWarnings(input: DeprecationInput): string[] {
 			(meta.env !== undefined && env[meta.env] !== undefined) ||
 			configValues?.[name] !== undefined;
 
-		return isUsed ? [`Warning: --${name} is deprecated. ${meta.deprecated}`] : [];
+		return isUsed ? [`Warning: ${longFlag(name)} is deprecated. ${meta.deprecated}`] : [];
 	});
 }

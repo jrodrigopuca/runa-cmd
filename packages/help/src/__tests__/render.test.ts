@@ -60,6 +60,7 @@ const fullCLI: CLISchema = {
 	globalOptions: [
 		{
 			name: 'verbose',
+			flag: 'verbose',
 			description: 'Enable verbose output',
 			type: 'boolean',
 			required: false,
@@ -67,6 +68,7 @@ const fullCLI: CLISchema = {
 		},
 		{
 			name: 'config',
+			flag: 'config',
 			description: 'Config file path',
 			type: 'string',
 			required: false,
@@ -101,6 +103,7 @@ const commandWithArgs: CommandSchema = {
 	options: [
 		{
 			name: 'force',
+			flag: 'force',
 			description: 'Force deploy',
 			type: 'boolean',
 			required: false,
@@ -108,6 +111,7 @@ const commandWithArgs: CommandSchema = {
 		},
 		{
 			name: 'port',
+			flag: 'port',
 			description: 'Server port',
 			type: 'number',
 			required: true,
@@ -115,6 +119,7 @@ const commandWithArgs: CommandSchema = {
 		},
 		{
 			name: 'format',
+			flag: 'format',
 			description: 'Output format',
 			type: 'enum',
 			required: false,
@@ -122,6 +127,7 @@ const commandWithArgs: CommandSchema = {
 		},
 		{
 			name: 'timeout',
+			flag: 'timeout',
 			description: 'Old timeout option',
 			type: 'number',
 			required: false,
@@ -129,6 +135,7 @@ const commandWithArgs: CommandSchema = {
 		},
 		{
 			name: 'region',
+			flag: 'region',
 			description: 'AWS region',
 			type: 'string',
 			required: false,
@@ -146,12 +153,14 @@ const commandWithGroups: CommandSchema = {
 	options: [
 		{
 			name: 'verbose',
+			flag: 'verbose',
 			description: 'Verbose output',
 			type: 'boolean',
 			required: false,
 		},
 		{
 			name: 'host',
+			flag: 'host',
 			description: 'Server host',
 			type: 'string',
 			required: false,
@@ -159,6 +168,7 @@ const commandWithGroups: CommandSchema = {
 		},
 		{
 			name: 'port',
+			flag: 'port',
 			description: 'Server port',
 			type: 'number',
 			required: false,
@@ -303,8 +313,8 @@ describe('defaultRenderer — command', () => {
 			fullPath: ['serve'],
 			args: [],
 			options: [
-				{ name: 'watch', type: 'boolean', required: false, defaultValue: false },
-				{ name: 'cache', type: 'boolean', required: false, defaultValue: true },
+				{ name: 'watch', flag: 'watch', type: 'boolean', required: false, defaultValue: false },
+				{ name: 'cache', flag: 'cache', type: 'boolean', required: false, defaultValue: true },
 			],
 			hasOutput: false,
 		};

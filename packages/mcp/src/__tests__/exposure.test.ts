@@ -46,6 +46,22 @@ describe('what a model sees', () => {
 	});
 });
 
+describe('option names', () => {
+	it('keeps the key of the code: kebab-case is for people at a terminal', async () => {
+		const client = await serve(serverCli);
+		const tool = (await client.tools()).find(({ name }) => name === 'paint');
+
+		expect(Object.keys(tool?.inputSchema.properties)).toEqual(['darkColor']);
+		expect(text(await client.call('paint', { darkColor: '#111' }))).toBe('#111');
+	});
+
+	it('refuses the flag form', async () => {
+		const client = await serve(serverCli);
+		const result = await client.call('paint', { 'dark-color': '#111' });
+		expect(result.isError).toBe(true);
+	});
+});
+
 describe('exclude', () => {
 	const env = { EXCLUDE: json(['deploy', 'config_set']) };
 

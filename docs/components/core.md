@@ -81,6 +81,7 @@ interface CLIConfig {
 | `packages/core/src/plugin.ts` | Host de plugins, orden topológico, capacidades y colisiones |
 | `packages/core/src/introspect.ts` | `getSchema()` |
 | `packages/core/src/errors.ts` | Jerarquía de errores |
+| `packages/core/src/flag-name.ts` | De la clave a la flag |
 | `packages/core/src/help.ts` | Ayuda integrada: opciones, objetivo y renderer básico |
 | `packages/core/src/stop.ts` | Parada de una ejecución: señales, canal con el servidor y plazos |
 | `packages/core/src/tool-channel.ts` | Canal con un servidor MCP cuando la CLI corre como tool |
@@ -114,6 +115,24 @@ La prioridad es **CLI, env, config y default de Zod**. El detalle está en [pars
 | Otro error | No aplica | 1 |
 
 Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION` e `INVALID_OUTPUT`.
+
+### Nombres de flags
+
+En el código, `darkColor`; en la terminal, `--dark-color` ([ADR-0024](../adr/0024-kebab-case.md)). `flagName` en `packages/core/src/flag-name.ts` es el único lugar que hace esa conversión, y el schema expone el resultado en `OptionSchema.flag`, que usan la ayuda, los errores y las completions.
+
+| Clave | Flag |
+|---|---|
+| `darkColor` | `--dark-color` |
+| `outputURL` | `--output-url` |
+| `oauth2Token` | `--oauth2-token` |
+| `dark-color` | `--dark-color`: una clave con guiones se respeta |
+
+- **Solo vale la forma kebab.** `--darkColor` da exit 2 y sugiere `--dark-color`.
+- **Negación:** `--no-dark-mode` niega `darkMode`.
+- **Lo que no es una terminal conserva la clave:** las tools MCP y los archivos de config usan `darkColor`.
+- **Un plural de siglas no se separa bien:** `baseURLs` da `--base-ur-ls`. Para esos casos, escribí la clave con guiones: `'base-urls'`.
+
+Fallan al arrancar, con `OPTION_NAME`, un booleano `noCache`, porque `--no-cache` ya niega `cache`, y dos claves que dan la misma flag.
 
 ### Ayuda
 

@@ -290,7 +290,10 @@ export interface ArgSchema {
 }
 
 export interface OptionSchema {
+	/** The key in code, in config files and in MCP tools */
 	name: string;
+	/** The long flag, without dashes: what a person types */
+	flag: string;
 	description?: string;
 	type: ParamType;
 	required: boolean;

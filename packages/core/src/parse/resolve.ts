@@ -7,6 +7,7 @@
  */
 import { ZodError, type ZodType, z } from 'zod';
 import { ValidationError } from '../errors.js';
+import { longFlag } from '../flag-name.js';
 import type { OptionMeta, ParamMetadata } from '../types.js';
 import { walkSchema } from './schema-walker.js';
 import { isVariadic } from './variadic.js';
@@ -266,7 +267,7 @@ function humanizeOptionIssues(
 		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
 			return {
 				code: 'custom' as const,
-				message: `Missing required option: --${name}`,
+				message: `Missing required option: ${longFlag(name)}`,
 				path: issue.path,
 			};
 		}
@@ -275,7 +276,7 @@ function humanizeOptionIssues(
 		if (issue.code === 'invalid_value' && param?.enumValues) {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for --${name}. Expected one of: ${param.enumValues.join(', ')}`,
+				message: `Invalid value for ${longFlag(name)}. Expected one of: ${param.enumValues.join(', ')}`,
 				path: issue.path,
 			};
 		}
@@ -285,7 +286,7 @@ function humanizeOptionIssues(
 			const expected = (issue as unknown as Record<string, unknown>).expected;
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for --${name}: expected ${String(expected)}`,
+				message: `Invalid value for ${longFlag(name)}: expected ${String(expected)}`,
 				path: issue.path,
 			};
 		}

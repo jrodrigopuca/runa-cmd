@@ -5,6 +5,7 @@
  * (CLISchema) for use by plugins (help, MCP, completions).
  */
 import type { ZodType } from 'zod';
+import { flagName } from './flag-name.js';
 import { builtInOptions } from './help.js';
 import { walkSchema } from './parse/schema-walker.js';
 import type {
@@ -56,6 +57,7 @@ function walkCommand(name: string, command: Command, parentPath: string[]): Comm
 			const om = optMeta[meta.name];
 			optionSchemas.push({
 				name: meta.name,
+				flag: flagName(meta.name),
 				description: meta.description,
 				type: meta.zodType,
 				required: !meta.isOptional,
@@ -139,6 +141,7 @@ export function getSchema(
 			const om = allGlobalMeta[meta.name];
 			globalOptionSchemas.push({
 				name: meta.name,
+				flag: flagName(meta.name),
 				description: meta.description,
 				type: meta.zodType,
 				required: !meta.isOptional,

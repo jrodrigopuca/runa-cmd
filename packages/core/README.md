@@ -171,6 +171,20 @@ The command is the root of the CLI, so a value equal to its name is data: `tool 
 
 `defineCLI` with a single command also works, but it's deprecated: adding a plugin that registers a command silently changes how it routes.
 
+### Option names
+
+Write `darkColor` in code and `--dark-color` at the terminal. `run()`, config files and MCP tools keep the key.
+
+| Key | Flag |
+|---|---|
+| `darkColor` | `--dark-color` |
+| `outputURL` | `--output-url` |
+| `dark-color` | `--dark-color`, a key with hyphens stays as written |
+
+`--darkColor` is a usage error that points to `--dark-color`. `--no-dark-mode` negates `darkMode`.
+
+A boolean named `noCache` stops the CLI at startup, because `--no-cache` already negates `cache`. Declare `cache` with `.default(true)` instead.
+
 ### `--help`
 
 Every CLI has `--help` and `-h`, with no plugin: `tool --help` shows the CLI or the root command, and `tool db migrate --help` shows that command, with the global options that work on it.

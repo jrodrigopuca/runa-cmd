@@ -9,6 +9,7 @@
  */
 import type { ParseArgsConfig } from 'node:util';
 import { ValidationError } from '../errors.js';
+import { flagName, longFlag } from '../flag-name.js';
 import { findSuggestion } from '../suggest.js';
 import type { OptionMeta } from '../types.js';
 
@@ -80,7 +81,7 @@ export function assertOptionValues(input: AssertOptionValuesInput): void {
 		if (value !== undefined && (inlineValue || !flags.has(value))) continue;
 
 		const name = longAliasMap[key] ?? key;
-		const names = [...(optionMeta?.[name]?.alias ?? []), `--${name}`].join(', ');
+		const names = [...(optionMeta?.[name]?.alias ?? []), longFlag(name)].join(', ');
 		throw new ValidationError([
 			{ code: 'custom', message: `Option ${names} requires a value`, path: [] },
 		]);
@@ -104,7 +105,10 @@ export function assertKnownOptions(input: AssertKnownOptionsInput): void {
 		if (key.startsWith('no-') && booleanKeys.has(key.slice(3))) continue;
 
 		const flag = renderFlag(key);
-		const suggestion = findSuggestion(key, suggestionCandidates);
+		// `--darkColor` isn't a typo: it's the right name in the wrong form.
+		const suggestion = suggestionCandidates.includes(flagName(key))
+			? flagName(key)
+			: findSuggestion(key, suggestionCandidates);
 		const message = suggestion
 			? `Unknown option: ${flag}. Did you mean '${renderFlag(suggestion)}'?`
 			: `Unknown option: ${flag}`;

@@ -4,10 +4,35 @@
 import type { CLISchema, Command, PluginAPI } from '@runa-cmd/core';
 import { defineCommand, getSchema } from '@runa-cmd/core';
 import { describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 import { generateBashCompletions } from '../generators/bash.js';
 import { generateFishCompletions } from '../generators/fish.js';
 import { generateZshCompletions } from '../generators/zsh.js';
 import { completionsPlugin } from '../plugin.js';
+
+describe('option names', () => {
+	const schema = getSchema({
+		meta: { name: 'mycli' },
+		commands: {
+			paint: defineCommand({
+				meta: { name: 'paint', description: 'Paint' },
+				options: { darkColor: z.string(), darkMode: z.boolean().default(true) },
+				run() {},
+			}),
+		},
+	});
+
+	it.each([
+		['bash', generateBashCompletions, ['--dark-color', '--dark-mode', '--no-dark-mode']],
+		['zsh', generateZshCompletions, ['--dark-color', '--dark-mode', '--no-dark-mode']],
+		['fish', generateFishCompletions, ['-l dark-color', '-l dark-mode', '-l no-dark-mode']],
+	])('%s offers the flag, not the key', (_shell, generate, expected) => {
+		const script = generate(schema, 'mycli');
+
+		for (const flag of expected) expect(script).toContain(flag);
+		expect(script).not.toContain('darkColor');
+	});
+});
 
 describe('built-in options', () => {
 	const schema = (version?: string) =>

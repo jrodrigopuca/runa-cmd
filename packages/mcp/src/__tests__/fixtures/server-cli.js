@@ -203,6 +203,10 @@ await defineCLI({
 			args: { size: z.number() },
 			run: ({ args }) => 'x'.repeat(args.size),
 		}),
+		paint: command('paint', {
+			options: { darkColor: z.string() },
+			run: ({ options }) => options.darkColor,
+		}),
 		crash: command('crash', { run: () => process.exit(9) }),
 		leave: command('leave', { run: () => process.exit(0) }),
 		slow: command('slow', {

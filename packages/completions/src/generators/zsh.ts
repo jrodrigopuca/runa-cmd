@@ -23,34 +23,34 @@ function formatOptionSpec(opt: OptionSchema): string[] {
 		// Boolean with alias
 		if (shortAlias) {
 			specs.push(
-				`'(${shortAlias} --${opt.name})'` + `{${shortAlias},--${opt.name}}` + `'[${desc}]'`,
+				`'(${shortAlias} --${opt.flag})'` + `{${shortAlias},--${opt.flag}}` + `'[${desc}]'`,
 			);
-			specs.push(`'--no-${opt.name}[${desc}]'`);
+			specs.push(`'--no-${opt.flag}[${desc}]'`);
 		} else {
-			specs.push(`'--${opt.name}[${desc}]'`);
-			specs.push(`'--no-${opt.name}[${desc}]'`);
+			specs.push(`'--${opt.flag}[${desc}]'`);
+			specs.push(`'--no-${opt.flag}[${desc}]'`);
 		}
 	} else if (opt.type === 'enum' && opt.enumValues?.length) {
 		const vals = opt.enumValues.map((v) => escapeZsh(v)).join(' ');
 		if (shortAlias) {
 			specs.push(
-				`'(${shortAlias} --${opt.name})'` +
-					`{${shortAlias},--${opt.name}}` +
-					`'[${desc}]:${opt.name}:(${vals})'`,
+				`'(${shortAlias} --${opt.flag})'` +
+					`{${shortAlias},--${opt.flag}}` +
+					`'[${desc}]:${opt.flag}:(${vals})'`,
 			);
 		} else {
-			specs.push(`'--${opt.name}[${desc}]` + `:${opt.name}:(${vals})'`);
+			specs.push(`'--${opt.flag}[${desc}]` + `:${opt.flag}:(${vals})'`);
 		}
 	} else {
 		// string, number, array — require value but no candidates
 		if (shortAlias) {
 			specs.push(
-				`'(${shortAlias} --${opt.name})'` +
-					`{${shortAlias},--${opt.name}}` +
-					`'[${desc}]:${opt.name}:'`,
+				`'(${shortAlias} --${opt.flag})'` +
+					`{${shortAlias},--${opt.flag}}` +
+					`'[${desc}]:${opt.flag}:'`,
 			);
 		} else {
-			specs.push(`'--${opt.name}[${desc}]` + `:${opt.name}:'`);
+			specs.push(`'--${opt.flag}[${desc}]` + `:${opt.flag}:'`);
 		}
 	}
 	return specs;

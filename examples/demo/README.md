@@ -55,7 +55,7 @@ pnpm demo deploy api
 pnpm demo deploy api --env production --replicas 3
 
 # Dry run — see what would happen
-pnpm demo deploy api --dryRun
+pnpm demo deploy api --dry-run
 
 # Use short aliases
 pnpm demo deploy api -e preview -r 2 -t v1.2.3

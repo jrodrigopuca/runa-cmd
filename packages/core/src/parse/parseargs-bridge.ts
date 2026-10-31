@@ -5,6 +5,7 @@
  * util.parseArgs configuration object.
  */
 import type { ParseArgsConfig } from 'node:util';
+import { flagName } from '../flag-name.js';
 import type { OptionMeta, ParamMetadata } from '../types.js';
 
 // ─── Types ──────────────────────────────────────────────────
@@ -76,13 +77,18 @@ export function buildParseArgsConfig(
 			}
 		}
 
+		// The flag is registered, not the key: `--darkColor` must stay unknown.
+		// It maps back like any long alias, so `--no-dark-mode` needs nothing else.
+		const flag = flagName(param.name);
+		if (flag !== param.name) longAliasMap[flag] = param.name;
+
 		// Never pass schema defaults here: a value from parseArgs counts as a CLI
 		// argument and would beat env and config. Zod applies them last.
-		options[param.name] = optConfig;
-		knownKeys.add(param.name);
+		options[flag] = optConfig;
+		knownKeys.add(flag);
 		if (parseArgsType === 'boolean') {
-			booleanKeys.add(param.name);
-			knownKeys.add(`no-${param.name}`);
+			booleanKeys.add(flag);
+			knownKeys.add(`no-${flag}`);
 		}
 	}
 

@@ -18,19 +18,19 @@ function optionDirectives(binName: string, opt: OptionSchema, condition: string)
 
 	if (opt.type === 'boolean') {
 		// Boolean flags don't take values — no -r
-		lines.push(`complete -c ${binName}${condPart}` + ` -l ${opt.name}${shortFlag}${desc}`);
+		lines.push(`complete -c ${binName}${condPart}` + ` -l ${opt.flag}${shortFlag}${desc}`);
 		// --no-* variant
-		lines.push(`complete -c ${binName}${condPart}` + ` -l no-${opt.name}${desc}`);
+		lines.push(`complete -c ${binName}${condPart}` + ` -l no-${opt.flag}${desc}`);
 	} else if (opt.type === 'enum' && opt.enumValues?.length) {
 		const vals = opt.enumValues.map((v) => escapeFish(v)).join(' ');
 		lines.push(
 			`complete -c ${binName}${condPart}` +
-				` -l ${opt.name}${shortFlag}${desc}` +
+				` -l ${opt.flag}${shortFlag}${desc}` +
 				` -r -a '${vals}'`,
 		);
 	} else {
 		// string, number, array — require argument
-		lines.push(`complete -c ${binName}${condPart}` + ` -l ${opt.name}${shortFlag}${desc} -r`);
+		lines.push(`complete -c ${binName}${condPart}` + ` -l ${opt.flag}${shortFlag}${desc} -r`);
 	}
 
 	return lines;

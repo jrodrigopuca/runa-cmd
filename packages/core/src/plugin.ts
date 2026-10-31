@@ -7,6 +7,8 @@
  */
 import type { ZodType } from 'zod';
 import { RunaError } from './errors.js';
+import { flagName, longFlag } from './flag-name.js';
+import { walkSchema } from './parse/schema-walker.js';
 import type {
 	CLISchema,
 	Command,
@@ -293,6 +295,54 @@ export async function runPluginSetup(plugins: PluginConfig[], refs: PluginHostRe
  */
 export const STATIC_GLOBAL_OPTION_SOURCE = '<cli-config>';
 
+/** A key that reads as the negation of another one: `noCache`, `no-cache`. */
+const NEGATED_KEY = /^no(?:-|(?=[A-Z]))(.+)$/;
+
+function assertUsableNames(options: Record<string, ZodType>, owner: string): void {
+	const keysByFlag = new Map<string, string>();
+
+	for (const { name, zodType } of walkSchema(options)) {
+		const flag = flagName(name);
+		const other = keysByFlag.get(flag);
+		if (other) {
+			throw new RunaError(`Options '${other}' and '${name}' of ${owner} are both '--${flag}'.`, {
+				code: 'OPTION_NAME',
+				exitCode: 1,
+			});
+		}
+		keysByFlag.set(flag, name);
+
+		const positive = NEGATED_KEY.exec(name)?.[1];
+		if (positive && zodType === 'boolean') {
+			const key = `${positive[0]?.toLowerCase()}${positive.slice(1)}`;
+			throw new RunaError(
+				`Boolean option '${name}' of ${owner} would clash with '--no-${flagName(key)}', ` +
+					`which already negates '${key}'. Declare '${key}' instead, with .default(true).`,
+				{ code: 'OPTION_NAME', exitCode: 1 },
+			);
+		}
+	}
+}
+
+/** Keys that can't become a usable flag fail at startup, not on the first use. */
+export function validateOptionNames(
+	commands: CommandTree,
+	globalOptions: Record<string, ZodType>,
+): void {
+	assertUsableNames(globalOptions, 'the CLI');
+
+	const walk = (tree: CommandTree, path: string[]): void => {
+		for (const [key, entry] of Object.entries(tree)) {
+			if (isCommandNode(entry)) {
+				assertUsableNames(entry.options ?? {}, `command '${[...path, key].join(' ')}'`);
+			} else {
+				walk(entry, [...path, key]);
+			}
+		}
+	};
+	walk(commands, []);
+}
+
 /** Human label for a registrant in collision messages. */
 function sourceLabel(registrant: string | undefined): string {
 	return registrant === undefined || registrant === STATIC_GLOBAL_OPTION_SOURCE
@@ -301,9 +351,7 @@ function sourceLabel(registrant: string | undefined): string {
 }
 
 /** Render a token for messages: long names as `--name`, short chars as `-c`. */
-function renderLong(name: string): string {
-	return `--${name}`;
-}
+const renderLong = longFlag;
 function renderShort(char: string): string {
 	return `-${char}`;
 }
@@ -394,7 +442,7 @@ export function validateOptionCollisions(
 	};
 
 	for (const name of Object.keys(globalOptions)) {
-		claim(globalLong, name, { canonical: name, token: renderLong(name) });
+		claim(globalLong, flagName(name), { canonical: name, token: renderLong(name) });
 		const { longs, shorts } = splitAliases(globalMeta.options[name]);
 		for (const long of longs) {
 			claim(globalLong, long, { canonical: name, token: renderLong(long) });
@@ -433,12 +481,13 @@ export function validateOptionCollisions(
 					);
 				};
 
-				for (const long of [optName, ...longs]) {
+				for (const long of [flagName(optName), ...longs]) {
 					const owner = globalLong.get(long);
 					if (owner) {
 						// Re-render the token from the command's side when the
 						// collision came through the command's long alias.
-						collide(long === owner.canonical ? owner : { ...owner, token: renderLong(long) });
+						const isOwnFlag = long === flagName(owner.canonical);
+						collide(isOwnFlag ? owner : { ...owner, token: renderLong(long) });
 					}
 				}
 				for (const short of shorts) {

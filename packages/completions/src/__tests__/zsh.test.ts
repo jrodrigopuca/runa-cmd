@@ -20,6 +20,7 @@ const testSchema: CLISchema = {
 			options: [
 				{
 					name: 'environment',
+					flag: 'environment',
 					type: 'enum',
 					required: false,
 					alias: ['-e'],
@@ -28,12 +29,14 @@ const testSchema: CLISchema = {
 				},
 				{
 					name: 'force',
+					flag: 'force',
 					type: 'boolean',
 					required: false,
 					description: 'Force deploy without confirmation',
 				},
 				{
 					name: 'replicas',
+					flag: 'replicas',
 					type: 'number',
 					required: false,
 					description: 'Number of replicas',
@@ -70,6 +73,7 @@ const testSchema: CLISchema = {
 					options: [
 						{
 							name: 'global',
+							flag: 'global',
 							type: 'boolean',
 							required: false,
 							alias: ['-g'],
@@ -99,6 +103,7 @@ const testSchema: CLISchema = {
 	globalOptions: [
 		{
 			name: 'help',
+			flag: 'help',
 			type: 'boolean',
 			required: false,
 			alias: ['-h'],
@@ -106,6 +111,7 @@ const testSchema: CLISchema = {
 		},
 		{
 			name: 'verbose',
+			flag: 'verbose',
 			type: 'boolean',
 			required: false,
 			alias: ['-v'],
@@ -113,6 +119,7 @@ const testSchema: CLISchema = {
 		},
 		{
 			name: 'format',
+			flag: 'format',
 			type: 'enum',
 			required: false,
 			enumValues: ['json', 'text', 'table'],

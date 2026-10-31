@@ -20,6 +20,7 @@ const bare = (token: string): string => token.replace(/^-+/, '');
 
 const BUILT_IN_HELP: OptionSchema = {
 	name: 'help',
+	flag: 'help',
 	description: 'Show help',
 	type: 'boolean',
 	required: false,
@@ -28,6 +29,7 @@ const BUILT_IN_HELP: OptionSchema = {
 
 const BUILT_IN_VERSION: OptionSchema = {
 	name: 'version',
+	flag: 'version',
 	description: 'Show the version',
 	type: 'boolean',
 	required: false,
@@ -110,7 +112,7 @@ function optionFlags(option: OptionSchema): string {
 	});
 	const value =
 		option.type === 'boolean' ? '' : ` <${option.enumValues?.join('|') ?? option.type}>`;
-	return `${[...aliases, `--${option.name}`].join(', ')}${value}`;
+	return `${[...aliases, `--${option.flag}`].join(', ')}${value}`;
 }
 
 function optionDetails(option: OptionSchema): string {

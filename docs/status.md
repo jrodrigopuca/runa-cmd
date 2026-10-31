@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, las tools corren en un subproceso de la propia CLI (T-303), quien opera le gana al modelo (T-306), un error dice si se puede reintentar (T-304), parar alcanza a todo el árbol de procesos (T-305), y el autor elige qué expone (T-302). La fase 3 solo tiene pendientes T-307 y T-308, opcionales. En la fase 4, `--help` ya funciona sin plugins (T-204), la ayuda usa el mismo ruteo que los comandos (T-205), y sigue T-206.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. En la fase 3, las tools corren en un subproceso de la propia CLI (T-303), quien opera le gana al modelo (T-306), un error dice si se puede reintentar (T-304), parar alcanza a todo el árbol de procesos (T-305), y el autor elige qué expone (T-302). La fase 3 solo tiene pendientes T-307 y T-308, opcionales. En la fase 4, `--help` ya funciona sin plugins (T-204), la ayuda usa el mismo ruteo que los comandos (T-205), las flags son kebab-case (T-206), y sigue T-207.
 
 ## Versiones
 
@@ -24,9 +24,9 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 993 pasan: core 563, help 212, completions 91, mcp 127 |
-| Aceptación con procesos reales | 143 de 144 casos pasan; el otro es un fallo esperado de T-206 |
-| Cobertura de `core` | 92,33% de líneas, 81,2% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
+| Tests | 1035 pasan: core 600, help 212, completions 94, mcp 129 |
+| Aceptación con procesos reales | 167 de 168 casos pasan; el otro es un fallo esperado de T-207 |
+| Cobertura de `core` | 92,22% de líneas, 80,99% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
 
 ## Dónde estamos

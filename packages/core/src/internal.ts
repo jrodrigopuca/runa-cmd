@@ -2,6 +2,7 @@
  * @runa-cmd/core/internal — Shared with other @runa-cmd packages only.
  * Not public API: it can change in any release.
  */
+export { longFlag } from './flag-name.js';
 export { renderHelp } from './help.js';
 export { killProcessTree, STOP_DEADLINE_MS } from './stop.js';
 export type { ToolReport, ToolRequest } from './tool-channel.js';

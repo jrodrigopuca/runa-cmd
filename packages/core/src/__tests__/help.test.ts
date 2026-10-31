@@ -10,6 +10,7 @@ import { z } from '../zod.js';
 
 const flag = (name: string, alias?: string[]): OptionSchema => ({
 	name,
+	flag: name,
 	type: 'boolean',
 	required: false,
 	alias,
@@ -117,21 +118,30 @@ describe('renderHelp', () => {
 				options: [
 					{
 						name: 'env',
+						flag: 'env',
 						description: 'Where',
 						type: 'enum',
 						enumValues: ['dev', 'prod'],
 						required: true,
 						env: 'APP_ENV',
 					},
-					{ name: 'size', type: 'number', required: false, defaultValue: 3, alias: ['s'] },
+					{
+						name: 'size',
+						flag: 'size',
+						type: 'number',
+						required: false,
+						defaultValue: 3,
+						alias: ['s'],
+					},
 					{
 						name: 'old',
+						flag: 'old',
 						type: 'string',
 						required: false,
 						deprecated: 'Use new',
 						alias: ['legacy'],
 					},
-					{ name: 'token', type: 'string', required: false, group: 'auth' },
+					{ name: 'token', flag: 'token', type: 'string', required: false, group: 'auth' },
 				],
 			}),
 		);

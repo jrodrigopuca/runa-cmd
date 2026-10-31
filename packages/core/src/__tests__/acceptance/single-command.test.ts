@@ -72,8 +72,14 @@ describe('version', () => {
 	});
 });
 
+describe('repeated options (T-207)', () => {
+	pending('--tag a --tag b fills options.tag', () => {
+		expect(received('hola', '--tag', 'a', '--tag', 'b').options.tag).toEqual(['a', 'b']);
+	});
+});
+
 describe('option names (T-206)', () => {
-	pending('--dark-color fills options.darkColor', () => {
+	it('--dark-color fills options.darkColor', () => {
 		expect(received('hola', '--dark-color', '#111').options.darkColor).toBe('#111');
 	});
 });

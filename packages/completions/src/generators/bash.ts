@@ -15,9 +15,9 @@ function safeName(name: string): string {
 
 /** Build --long option names for an option, including --no-* for booleans */
 function optionFlags(opt: OptionSchema): string[] {
-	const flags: string[] = [`--${opt.name}`];
+	const flags: string[] = [`--${opt.flag}`];
 	if (opt.type === 'boolean') {
-		flags.push(`--no-${opt.name}`);
+		flags.push(`--no-${opt.flag}`);
 	}
 	if (opt.alias) {
 		for (const a of opt.alias) {
@@ -39,7 +39,7 @@ function buildPrevCases(options: OptionSchema[], globalOptions: OptionSchema[]):
 	const all = [...options, ...globalOptions];
 	for (const opt of all) {
 		if (opt.type === 'enum' && opt.enumValues?.length) {
-			const triggers: string[] = [`--${opt.name}`];
+			const triggers: string[] = [`--${opt.flag}`];
 			if (opt.alias) {
 				for (const a of opt.alias) {
 					triggers.push(a);
