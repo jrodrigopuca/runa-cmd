@@ -51,3 +51,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0034](./0034-sin-nada-que-correr-es-un-error-de-uso.md) | Sin nada que correr, la ayuda sale por stderr con exit 2 | Aceptada |
 | [0035](./0035-listas-desde-env-y-config.md) | Una lista en env se separa por comas, y en config es un array | Aceptada |
 | [0036](./0036-rest-se-declara.md) | `--` llena posicionales, y lo que sobra es un error si el comando no pidió `rest` | Aceptada |
+| [0037](./0037-politica-de-versiones.md) | Lo que es contrato se puede usar en un programa | Aceptada |

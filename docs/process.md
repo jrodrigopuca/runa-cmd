@@ -47,7 +47,7 @@ Si un comportamiento depende de `process.exit`, stdout o exit codes, probalo ac�
 | Un problema se resolvió o apareció | [Known issues](./known-issues.md) |
 | Versiones, salud técnica o decisiones abiertas | [Estado](./status.md) |
 | Estado de una tarea | [Backlog](./backlog.md) |
-| Paquete publicado | Changeset, con guía de migración si rompe algo |
+| Paquete publicado | Changeset, con guía de migración si rompe algo. Qué rompe lo define [`VERSIONING.md`](../VERSIONING.md) |
 
 ## Qué se controla y qué no
 

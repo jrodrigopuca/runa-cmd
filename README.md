@@ -254,6 +254,8 @@ Boolean options accept `true`, `1`, `false` and `0` from any source.
 
 Everything about the project lives in [`docs/`](./docs/README.md): [status](./docs/status.md), [known issues](./docs/known-issues.md), [backlog](./docs/backlog.md), [architecture](./docs/architecture.md), [components](./docs/components/), [flows](./docs/flows/) and [decisions](./docs/adr/README.md).
 
+[`VERSIONING.md`](./VERSIONING.md) says what a new version can break, and how deprecation works.
+
 ## Development
 
 ```bash

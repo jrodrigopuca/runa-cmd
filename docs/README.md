@@ -23,6 +23,7 @@ Esta carpeta es la fuente de verdad del proyecto. Está escrita para que la lea 
 | [`known-issues.md`](./known-issues.md) | Problemas conocidos, con evidencia y tarea asociada |
 | [`backlog.md`](./backlog.md) | Tareas con estado y criterios de aceptación |
 | [`process.md`](./process.md) | Forma de trabajar y cómo se controla |
+| [`VERSIONING.md`](../VERSIONING.md) | Qué es contrato, y cómo se deprecia |
 | [`architecture.md`](./architecture.md) | Paquetes, límites y dirección de dependencias |
 | [`components/`](./components/) | Referencia de [core](./components/core.md), [help](./components/help.md), [mcp](./components/mcp.md) y [completions](./components/completions.md) |
 | [`flows/`](./flows/) | Flujos con diagramas |

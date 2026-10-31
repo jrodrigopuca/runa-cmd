@@ -60,7 +60,7 @@
 | | T-211 | Errores de uso desde un comando | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Pendiente |
-| | T-502 | Política de semver y deprecación | Requerido | Pendiente |
+| | T-502 | Política de semver y deprecación | Requerido | Hecho |
 | | T-503 | Documentación de v1 | Requerido | Pendiente |
 | | T-504 | Grupo de versiones de los paquetes | Requerido | Decisión pendiente |
 | | T-505 | Trusted Publishing | Requerido | Pendiente |
@@ -552,8 +552,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-502 Política de semver y deprecación
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Descripción:** como usuario de Runa, quiero saber qué se considera breaking y cuánto dura algo deprecado.
+- **Estado:** Hecho
+- **Descripción:** como usuario de Runa, quiero saber qué se considera breaking y cuánto dura algo deprecado. La política está en [`VERSIONING.md`](../VERSIONING.md).
 - **Criterios de aceptación:**
   - La política define si son contrato los tipos, exit codes, mensajes, salida de ayuda y nombres de tools MCP.
   - Define cómo se anuncia una deprecación y su duración mínima.
