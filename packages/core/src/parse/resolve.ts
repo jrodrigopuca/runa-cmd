@@ -316,52 +316,114 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 		env = process.env as Record<string, string | undefined>,
 	} = input;
 
-	// ─── Args resolution ─────────────────────────────────
-	let parsedArgs: Record<string, unknown> = {};
-
 	// Mapped even without declared args: that's what rejects extra positionals.
 	const argSchemas = schemas.args ?? {};
 	const rawArgs = mapPositionals(parseArgsResult.positionals, argSchemas);
 
-	if (Object.keys(argSchemas).length > 0) {
-		// Build Zod object schema for args and validate
-		const argsZodSchema = z.object(argSchemas);
-		try {
-			parsedArgs = argsZodSchema.parse(rawArgs) as Record<string, unknown>;
-		} catch (err) {
-			if (err instanceof ZodError) {
-				throw new ValidationError(humanizeArgIssues(err.issues, argSchemas));
-			}
-			throw err;
-		}
-	}
-
-	// ─── Options resolution ──────────────────────────────
-	let parsedOptions: Record<string, unknown> = {};
-
-	if (schemas.options && Object.keys(schemas.options).length > 0) {
-		const optionsMetadata = walkSchema(schemas.options);
-		const rawOptions = resolveOptionValues(
+	return {
+		parsedArgs: validateArgs(rawArgs, argSchemas),
+		parsedOptions: validateOptions(
 			parseArgsResult.values,
 			longAliasMap,
 			schemas.options,
 			meta?.options,
 			configValues,
 			env,
-			optionsMetadata,
-		);
+		),
+	};
+}
 
-		// Build Zod object schema for options and validate
-		const optionsZodSchema = z.object(schemas.options as Record<string, ZodType>);
-		try {
-			parsedOptions = optionsZodSchema.parse(rawOptions) as Record<string, unknown>;
-		} catch (err) {
-			if (err instanceof ZodError) {
-				throw new ValidationError(humanizeOptionIssues(err.issues, schemas.options));
-			}
-			throw err;
+export interface ResolveToolInput {
+	/** The call's arguments, as one object */
+	input: Record<string, unknown>;
+	schemas: ResolveInput['schemas'];
+	meta?: ResolveInput['meta'];
+	configValues?: Record<string, unknown>;
+	env?: Record<string, string | undefined>;
+}
+
+/**
+ * Same resolution as resolveValues, from an object instead of parsed argv. Each
+ * key names its target, so there are no positions, tokens or aliases to read:
+ * arrays, objects and numbers arrive as they are, and data is never a route.
+ */
+export function resolveToolInput(toolInput: ResolveToolInput): ResolveOutput {
+	const {
+		input,
+		schemas,
+		meta,
+		configValues,
+		env = process.env as Record<string, string | undefined>,
+	} = toolInput;
+
+	const argSchemas = schemas.args ?? {};
+	const optionSchemas = schemas.options ?? {};
+	const rawArgs: Record<string, unknown> = {};
+	const rawOptions: Record<string, unknown> = {};
+
+	for (const [key, value] of Object.entries(input)) {
+		if (Object.hasOwn(argSchemas, key)) rawArgs[key] = value;
+		else if (Object.hasOwn(optionSchemas, key)) rawOptions[key] = value;
+		else {
+			throw new ValidationError([{ code: 'custom', message: `Unknown input: ${key}`, path: [] }]);
 		}
 	}
 
-	return { parsedArgs, parsedOptions };
+	return {
+		parsedArgs: validateArgs(rawArgs, argSchemas),
+		parsedOptions: validateOptions(
+			rawOptions,
+			{},
+			schemas.options,
+			meta?.options,
+			configValues,
+			env,
+		),
+	};
+}
+
+function validateArgs(
+	rawArgs: Record<string, unknown>,
+	argSchemas: Record<string, ZodType>,
+): Record<string, unknown> {
+	if (Object.keys(argSchemas).length === 0) return {};
+
+	try {
+		return z.object(argSchemas).parse(rawArgs) as Record<string, unknown>;
+	} catch (err) {
+		if (err instanceof ZodError) {
+			throw new ValidationError(humanizeArgIssues(err.issues, argSchemas));
+		}
+		throw err;
+	}
+}
+
+function validateOptions(
+	values: Record<string, unknown>,
+	longAliasMap: Record<string, string>,
+	optionSchemas: Record<string, ZodType> | undefined,
+	optionsMeta: Record<string, OptionMeta> | undefined,
+	configValues: Record<string, unknown> | undefined,
+	env: Record<string, string | undefined>,
+): Record<string, unknown> {
+	if (!optionSchemas || Object.keys(optionSchemas).length === 0) return {};
+
+	const rawOptions = resolveOptionValues(
+		values,
+		longAliasMap,
+		optionSchemas,
+		optionsMeta,
+		configValues,
+		env,
+		walkSchema(optionSchemas),
+	);
+
+	try {
+		return z.object(optionSchemas).parse(rawOptions) as Record<string, unknown>;
+	} catch (err) {
+		if (err instanceof ZodError) {
+			throw new ValidationError(humanizeOptionIssues(err.issues, optionSchemas));
+		}
+		throw err;
+	}
 }

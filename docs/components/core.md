@@ -75,7 +75,7 @@ interface CLIConfig {
 
 | Módulo | Responsabilidad |
 |---|---|
-| `packages/core/src/cli.ts` | Orquesta la ejecución, resuelve comandos y compone middleware |
+| `packages/core/src/cli.ts` | Orquesta la ejecución, selecciona comando y valores desde argv o desde un objeto, y compone middleware. `runToolCall` es interno, para `@runa-cmd/mcp`, y no se exporta |
 | `packages/core/src/command.ts` | `defineCommand` y sus validaciones |
 | `packages/core/src/lifecycle.ts` | Registro y emisión de hooks |
 | `packages/core/src/plugin.ts` | Host de plugins, orden topológico, capacidades y colisiones |
@@ -85,7 +85,7 @@ interface CLIConfig {
 | `packages/core/src/parse/parseargs-bridge.ts` | Traduce schema a configuración de `parseArgs` |
 | `packages/core/src/parse/strict.ts` | Rechaza flags desconocidas y opciones sin valor |
 | `packages/core/src/parse/deprecated.ts` | Genera los avisos de opciones deprecadas |
-| `packages/core/src/parse/resolve.ts` | Mapea posicionales, resuelve valores, valida y humaniza errores |
+| `packages/core/src/parse/resolve.ts` | Mapea posicionales, resuelve valores desde argv o desde un objeto, valida y humaniza errores |
 | `packages/core/src/parse/schema-walker.ts` | Convierte schemas en `ParamMetadata` |
 | `packages/core/src/parse/schema-adapter.ts` | Interfaz de introspección |
 | `packages/core/src/parse/adapters/zod-v4.ts` | Único módulo que toca `._zod` |

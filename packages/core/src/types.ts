@@ -194,8 +194,12 @@ export const HOOK_NAMES = {
 
 export type HookName = (typeof HOOK_NAMES)[keyof typeof HOOK_NAMES];
 
+/** Where a run comes from: a person or script at the CLI, or a tool call. */
+export type Invocation = { surface: 'cli' } | { surface: 'tool'; tool: string };
+
 export interface HookContext {
 	cli: CLIMeta;
+	invocation: Invocation;
 	rawArgs: string[];
 	globalOptions?: Record<string, unknown>;
 	command?: CommandMeta;

@@ -50,6 +50,7 @@ export type {
 	// Inference helpers
 	InferArgs,
 	InferOptions,
+	Invocation,
 	// Middleware
 	Middleware,
 	MiddlewareContext,

@@ -18,7 +18,7 @@ import { getSchema } from './introspect.js';
 import { createHookRegistry } from './lifecycle.js';
 import { deprecationWarnings } from './parse/deprecated.js';
 import { buildParseArgsConfig } from './parse/parseargs-bridge.js';
-import { distributeRest, resolveValues } from './parse/resolve.js';
+import { distributeRest, resolveToolInput, resolveValues } from './parse/resolve.js';
 import { walkSchema } from './parse/schema-walker.js';
 import { assertKnownOptions, assertOptionValues } from './parse/strict.js';
 import type { PluginHostRefs } from './plugin.js';
@@ -152,17 +152,203 @@ function composeMiddleware(
 	return chain;
 }
 
+// ─── Selecting the command and its values ───────────────────
+
+/** A command to run from an object, with no argv to parse (ADR-0030). */
+export interface ToolCall {
+	/** Command path in the tree, e.g. ['config', 'set'] */
+	path: string[];
+	input: Record<string, unknown>;
+}
+
+/** What the two entry points produce. From here on, a run is one single path. */
+interface Selection {
+	command: Command;
+	parsedArgs: Record<string, unknown>;
+	parsedOptions: Record<string, unknown>;
+	rest: string[];
+}
+
+interface SelectionScope {
+	config: CLIConfig;
+	commands: CommandTree;
+	globalOptions: Record<string, ZodType>;
+	globalMeta: { options: Record<string, OptionMeta> };
+	hookCtx: HookContext;
+}
+
+function loadConfigValues(config: CLIConfig): Promise<Record<string, unknown> | undefined> {
+	return config.config ? loadAndMergeConfig(config.config) : Promise.resolve(undefined);
+}
+
+function reportDeprecations(input: Parameters<typeof deprecationWarnings>[0]): void {
+	for (const warning of deprecationWarnings(input)) {
+		console.error(warning);
+	}
+}
+
+/** Select from argv. Undefined means the run ended here, as with --version. */
+async function selectFromArgv(
+	scope: SelectionScope,
+	rest: string[],
+	rootName: string | undefined,
+): Promise<Selection | undefined> {
+	const { config, commands, globalOptions, globalMeta, hookCtx } = scope;
+	const commandArgv = hookCtx.rawArgs;
+
+	// ─── Built-in --version (ADR-0021) ────────────────
+	// Globals were extracted above, so a plugin's own --version never gets here.
+	if (
+		config.meta.version !== undefined &&
+		commandArgv.includes('--version') &&
+		!commandDeclaresVersion(commands, commandArgv, rootName)
+	) {
+		console.log(config.meta.version);
+		return undefined;
+	}
+
+	// ─── Resolve command ──────────────────────────────
+	const { command, remainingArgv } = resolveCommandFromTree(commands, commandArgv, rootName);
+
+	hookCtx.command = command.meta;
+
+	// ─── Parse command args + options ──────────────────
+	const optionMetadata = command.options ? walkSchema(command.options) : [];
+
+	const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
+
+	const { parseArgsConfig, longAliasMap, knownKeys, booleanKeys } = buildParseArgsConfig(
+		optionMetadata,
+		commandOptionMeta,
+		true, // Extra positionals are rejected in resolveValues, as a usage error
+	);
+
+	const cmdParseResult = parseArgs({
+		...parseArgsConfig,
+		args: remainingArgv,
+		tokens: true,
+	});
+	const commandValues = cmdParseResult.values as Record<string, unknown>;
+
+	// ─── Strict options check ─────────────────────────
+	if (config.strictOptions !== false) {
+		// Command canonical names + long aliases (= keys of the parseArgs config)
+		const suggestionCandidates = Object.keys(parseArgsConfig.options ?? {});
+
+		// Globals are extracted before command parsing, but their names must
+		// still be known here: parseArgs maps a stray global short flag to its
+		// bare character, and typo'd globals should suggest the global name.
+		for (const name of Object.keys(globalOptions)) {
+			knownKeys.add(name);
+			suggestionCandidates.push(name);
+			for (const alias of globalMeta.options[name]?.alias ?? []) {
+				if (alias.startsWith('--')) {
+					knownKeys.add(alias.slice(2));
+					suggestionCandidates.push(alias.slice(2));
+				} else if (alias.startsWith('-') && alias.length === 2) {
+					knownKeys.add(alias.slice(1));
+				}
+			}
+		}
+
+		assertKnownOptions({
+			producedKeys: Object.keys(commandValues),
+			knownKeys,
+			booleanKeys,
+			suggestionCandidates,
+		});
+	}
+
+	assertOptionValues({
+		tokens: cmdParseResult.tokens,
+		options: parseArgsConfig.options ?? {},
+		longAliasMap,
+		optionMeta: commandOptionMeta,
+	});
+
+	const configValues = await loadConfigValues(config);
+	const operands = distributeRest(cmdParseResult.positionals, rest, command.args ?? {});
+
+	const { parsedArgs, parsedOptions } = resolveValues({
+		parseArgsResult: {
+			values: commandValues,
+			positionals: operands.positionals,
+		},
+		longAliasMap,
+		schemas: {
+			args: command.args,
+			options: command.options,
+		},
+		meta: { options: commandOptionMeta },
+		configValues,
+	});
+
+	reportDeprecations({
+		provided: Object.keys(commandValues),
+		longAliasMap,
+		optionMeta: commandOptionMeta,
+		configValues,
+	});
+
+	return { command, parsedArgs, parsedOptions, rest: operands.rest };
+}
+
+function commandAtPath(commands: CommandTree, path: string[]): Command {
+	const notFound = new CommandNotFoundError(path.join(' '));
+	let current: Command | CommandTree = commands;
+
+	for (const segment of path) {
+		if (isCommand(current) || !Object.hasOwn(current, segment)) throw notFound;
+		current = current[segment] as Command | CommandTree;
+	}
+
+	if (!isCommand(current)) throw notFound;
+	return current;
+}
+
+/** Select from a tool call: the path names the command, the input carries its values. */
+async function selectFromInput(scope: SelectionScope, call: ToolCall): Promise<Selection> {
+	const { config, commands, hookCtx } = scope;
+	const command = commandAtPath(commands, call.path);
+	hookCtx.command = command.meta;
+
+	const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
+	const configValues = await loadConfigValues(config);
+
+	const { parsedArgs, parsedOptions } = resolveToolInput({
+		input: call.input,
+		schemas: { args: command.args, options: command.options },
+		meta: { options: commandOptionMeta },
+		configValues,
+	});
+
+	reportDeprecations({
+		provided: Object.keys(call.input),
+		longAliasMap: {},
+		optionMeta: commandOptionMeta,
+		configValues,
+	});
+
+	return { command, parsedArgs, parsedOptions, rest: [] };
+}
+
 // ─── CLI Execution Engine ───────────────────────────────────
 
+interface LifecycleOptions {
+	/** The command that runs without a subcommand (runCLI only) */
+	rootName?: string;
+	/** Run this call instead of reading the command from argv */
+	toolCall?: ToolCall;
+}
+
 /**
- * Run the full CLI lifecycle.
- *
- * @param rootName - The command that runs without a subcommand (runCLI only)
+ * Run the full CLI lifecycle. Only selecting the command and its values depends
+ * on the entry point: everything else is what any run goes through.
  */
 async function runCLILifecycle(
 	config: CLIConfig,
 	argv: string[],
-	rootName?: string,
+	{ rootName, toolCall }: LifecycleOptions = {},
 ): Promise<void> {
 	// ─── State ─────────────────────────────────────────
 	const hookRegistry = createHookRegistry();
@@ -184,6 +370,7 @@ async function runCLILifecycle(
 	// Hook context that grows as we progress through the lifecycle
 	const hookCtx: HookContext = {
 		cli: config.meta,
+		invocation: toolCall ? { surface: 'tool', tool: toolCall.path.join('_') } : { surface: 'cli' },
 		rawArgs: argv,
 	};
 
@@ -346,13 +533,11 @@ async function runCLILifecycle(
 			});
 			parsedGlobalOptions = parsedOptions;
 
-			for (const warning of deprecationWarnings({
+			reportDeprecations({
 				provided: Object.keys(globalValues),
 				longAliasMap,
 				optionMeta: mutableGlobalMeta.options,
-			})) {
-				console.error(warning);
-			}
+			});
 
 			// Pass remaining argv (command tokens only) to command parsing
 			hookCtx.rawArgs = commandArgv;
@@ -367,112 +552,20 @@ async function runCLILifecycle(
 			return;
 		}
 
-		const commandArgv = hookCtx.rawArgs;
+		// ─── Select the command and its values ────────────
+		const scope: SelectionScope = {
+			config,
+			commands: mutableCommands,
+			globalOptions: mutableGlobalOptions,
+			globalMeta: mutableGlobalMeta,
+			hookCtx,
+		};
+		const selection = toolCall
+			? await selectFromInput(scope, toolCall)
+			: await selectFromArgv(scope, rest, rootName);
+		if (!selection) return;
 
-		// ─── Built-in --version (ADR-0021) ────────────────
-		// Globals were extracted above, so a plugin's own --version never gets here.
-		if (
-			config.meta.version !== undefined &&
-			commandArgv.includes('--version') &&
-			!commandDeclaresVersion(mutableCommands, commandArgv, rootName)
-		) {
-			console.log(config.meta.version);
-			return;
-		}
-
-		// ─── Resolve command ──────────────────────────────
-		const { command, remainingArgv } = resolveCommandFromTree(
-			mutableCommands,
-			commandArgv,
-			rootName,
-		);
-
-		hookCtx.command = command.meta;
-
-		// ─── Parse command args + options ──────────────────
-		const optionMetadata = command.options ? walkSchema(command.options) : [];
-
-		const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
-
-		const { parseArgsConfig, longAliasMap, knownKeys, booleanKeys } = buildParseArgsConfig(
-			optionMetadata,
-			commandOptionMeta,
-			true, // Extra positionals are rejected in resolveValues, as a usage error
-		);
-
-		const cmdParseResult = parseArgs({
-			...parseArgsConfig,
-			args: remainingArgv,
-			tokens: true,
-		});
-		const commandValues = cmdParseResult.values as Record<string, unknown>;
-
-		// ─── Strict options check ─────────────────────────
-		if (config.strictOptions !== false) {
-			// Command canonical names + long aliases (= keys of the parseArgs config)
-			const suggestionCandidates = Object.keys(parseArgsConfig.options ?? {});
-
-			// Globals are extracted before command parsing, but their names must
-			// still be known here: parseArgs maps a stray global short flag to its
-			// bare character, and typo'd globals should suggest the global name.
-			for (const name of Object.keys(mutableGlobalOptions)) {
-				knownKeys.add(name);
-				suggestionCandidates.push(name);
-				for (const alias of mutableGlobalMeta.options[name]?.alias ?? []) {
-					if (alias.startsWith('--')) {
-						knownKeys.add(alias.slice(2));
-						suggestionCandidates.push(alias.slice(2));
-					} else if (alias.startsWith('-') && alias.length === 2) {
-						knownKeys.add(alias.slice(1));
-					}
-				}
-			}
-
-			assertKnownOptions({
-				producedKeys: Object.keys(commandValues),
-				knownKeys,
-				booleanKeys,
-				suggestionCandidates,
-			});
-		}
-
-		assertOptionValues({
-			tokens: cmdParseResult.tokens,
-			options: parseArgsConfig.options ?? {},
-			longAliasMap,
-			optionMeta: commandOptionMeta,
-		});
-
-		// Load config values if configured
-		let configValues: Record<string, unknown> | undefined;
-		if (config.config) {
-			configValues = await loadAndMergeConfig(config.config);
-		}
-
-		const operands = distributeRest(cmdParseResult.positionals, rest, command.args ?? {});
-
-		const { parsedArgs, parsedOptions } = resolveValues({
-			parseArgsResult: {
-				values: commandValues,
-				positionals: operands.positionals,
-			},
-			longAliasMap,
-			schemas: {
-				args: command.args,
-				options: command.options,
-			},
-			meta: { options: commandOptionMeta },
-			configValues,
-		});
-
-		for (const warning of deprecationWarnings({
-			provided: Object.keys(commandValues),
-			longAliasMap,
-			optionMeta: commandOptionMeta,
-			configValues,
-		})) {
-			console.error(warning);
-		}
+		const { command, parsedArgs, parsedOptions } = selection;
 
 		hookCtx.args = parsedArgs;
 		hookCtx.options = parsedOptions;
@@ -490,7 +583,7 @@ async function runCLILifecycle(
 			globalOptions: parsedGlobalOptions,
 			command: command.meta,
 			rawArgs: argv,
-			rest: operands.rest,
+			rest: selection.rest,
 		};
 
 		const innerFn = async () => {
@@ -654,6 +747,20 @@ export async function runCLI(command: Command, options: RunCLIOptions = {}): Pro
 	await runCLILifecycle(
 		{ ...config, meta: { name, version, description }, commands: { [name]: command } },
 		argv,
-		name,
+		{ rootName: name },
 	);
+}
+
+/**
+ * Run a command from an object, through the same lifecycle as a CLI run.
+ * Internal, for @runa-cmd/mcp: not exported from the package barrel.
+ *
+ * @param options.argv - Startup arguments, read for global options only
+ */
+export async function runToolCall(
+	config: CLIConfig,
+	call: ToolCall,
+	options: { argv?: string[]; rootName?: string } = {},
+): Promise<void> {
+	await runCLILifecycle(config, options.argv ?? [], { rootName: options.rootName, toolCall: call });
 }

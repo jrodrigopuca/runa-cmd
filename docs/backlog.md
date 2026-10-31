@@ -39,7 +39,7 @@
 | | T-202 | `--` llena posicionales | Requerido | Hecho |
 | | T-203 | `runCLI` con plugins y modo raíz explícito | Requerido | Hecho |
 | 3. MCP utilizable | T-300 | Comprobar lo crítico en Windows | Requerido | Hecho |
-| | T-301 | Separar parseo y ejecución en `core` | Requerido | Pendiente |
+| | T-301 | Separar parseo y ejecución en `core` | Requerido | Hecho |
 | | T-303 | Ejecutar cada tool en un subproceso | Requerido | Pendiente |
 | | T-306 | Valores de quien opera fuera del schema | Requerido | Pendiente |
 | | T-304 | Contrato de resultado y errores | Requerido | Pendiente |
@@ -275,8 +275,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-301 Separar parseo y ejecución en `core`
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** T-300
+- **Estado:** Hecho
 - **Descripción:** como mantenedor, quiero una sola ejecución que reciba valores ya resueltos, para que CLI y tools corran exactamente lo mismo.
 - **Criterios de aceptación:**
   - La CLI usa esa ejecución, y su comportamiento no cambia: todos los tests pasan sin tocarlos.
@@ -289,7 +288,6 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Bloqueada por:** T-301
 - **Descripción:** como autor de una CLI, quiero que una tool sea el mismo comando que corre una persona, con mi middleware, hooks, env y config.
 - **Criterios de aceptación:**
   - Una llamada corre `beforeRun`, middleware, `run()`, `afterRun` y `cleanup`.
@@ -299,6 +297,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Dos llamadas simultáneas no se mezclan.
   - Un `process.exit` del comando no tumba al servidor.
   - La entrada y el resultado viajan por canales internos, no documentados como API.
+  - Un `.transform` no corre dos veces: el servidor reenvía la entrada sin transformar, y valida el hijo.
   - Una CLI anidada no hereda esos canales ni sus variables.
   - Un binario compilado declara cómo reinvocarse, y el servidor lo comprueba al arrancar.
   - El servidor importa el SDK en diferido.

@@ -33,6 +33,8 @@ flowchart TD
     Y --> V["process.exitCode, si el plugin no lo fijó"]
 ```
 
+Solo una parte depende de cómo se invocó: elegir el comando y sus valores. `selectFromArgv` lo hace desde argv, y `selectFromInput` desde un objeto, sin parsear tokens. De ahí en adelante, el recorrido es uno solo. `ctx.invocation` indica el origen: `{ surface: 'cli' }` o `{ surface: 'tool', tool }`.
+
 El motivo se imprime antes de `cleanup`, para que siga visible aunque `cleanup` se cuelgue. Los mensajes están en [core](../components/core.md#cómo-termina-una-ejecución-fallida).
 
 ## Hooks
