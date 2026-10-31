@@ -155,6 +155,11 @@ describe('renderHelp', () => {
 		expect(output).toContain('AUTH OPTIONS');
 	});
 
+	it('leaves out a default of false: it says nothing a flag does not say', () => {
+		const off = { ...flag('invert'), defaultValue: false };
+		expect(renderHelp(command('deploy', { options: [off] }))).not.toContain('default');
+	});
+
 	it('shows the commands of a group', () => {
 		const output = renderHelp(db);
 		expect(output).toContain('db <command> [options]');

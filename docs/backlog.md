@@ -51,9 +51,12 @@
 | | T-205 | Ruteo único para la ayuda | Requerido | Hecho |
 | | T-206 | Kebab-case por defecto | Requerido | Hecho |
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Hecho |
-| 5. Validación | T-401 | Publicar la siguiente beta | Requerido | En curso |
-| | T-402 | Revalidar qr-plus, CLI y MCP | Requerido | Pendiente |
+| 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Hecho |
+| | T-402 | Revalidar qr-plus | Requerido | En curso |
+| | T-404 | Usar MCP desde un agente real | Requerido | Pendiente |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
+| | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Pendiente |
+| | T-210 | Nombre del valor en la ayuda | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Pendiente |
 | | T-502 | Política de semver y deprecación | Requerido | Pendiente |
@@ -454,7 +457,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-401 Publicar la siguiente beta
 
 - **v1:** Requerido
-- **Estado:** En curso
+- **Estado:** Hecho
 - **Descripción:** como mantenedor, quiero publicar estos cambios bajo `beta`, para probarlos en un proyecto real. La publicación es manual.
 - **Criterios de aceptación:**
   - La versión llega al dist-tag `beta`, y `latest` no cambia.
@@ -462,16 +465,24 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - El changelog incluye una guía de migración con cada cambio de comportamiento.
   - Una instalación limpia corre el ejemplo del README.
 
-### T-402 Revalidar qr-plus, CLI y MCP
+### T-402 Revalidar qr-plus
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** T-401
-- **Descripción:** como mantenedor, quiero comprobar en un proyecto real que el trabajo resolvió el problema, antes de iniciar la ventana de estabilidad.
+- **Estado:** En curso
+- **Descripción:** como mantenedor, quiero comprobar en un proyecto real que el trabajo resolvió el problema, antes de iniciar la ventana de estabilidad. El resultado está en [la revalidación](./research/2026-10-qr-plus-revalidation.md).
 - **Criterios de aceptación:**
   - qr-plus borra los cinco workarounds sin cambiar su comportamiento.
   - Se registra cuántas líneas de setup quedan respecto de las 170 actuales.
-  - `qr-plus --mcp` se usa desde un agente real, que recibe el resultado completo.
+  - Toda fricción nueva entra en este backlog.
+
+### T-404 Usar MCP desde un agente real
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio.
+- **Criterios de aceptación:**
+  - Un agente real llama tools de una CLI, por `--mcp`, y recibe el resultado completo.
+  - Un error de la tool llega al agente, y este no repite un efecto que ya ocurrió.
   - Toda fricción nueva entra en este backlog.
 
 ### T-403 Migración de un dev externo
@@ -483,6 +494,25 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Criterios de aceptación:**
   - Al menos un dev externo migra o crea una CLI con la documentación pública.
   - Sus problemas quedan registrados con sus palabras, sin resumir.
+
+### T-209 Lo que sobra después de `--` no se pierde
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero un error si paso algo de más, y no que se ignore. qr-plus necesita 5 líneas propias para que `qr-plus a -- b` no genere el QR de `a` y descarte `b`.
+- **Criterios de aceptación:**
+  - Un comando que no pidió `rest` rechaza lo que sobra después de `--`, con exit 2.
+  - Un comando que envuelve a otro sigue recibiendo esos tokens, declarándolo.
+  - qr-plus borra su validación propia.
+
+### T-210 Nombre del valor en la ayuda
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor de una CLI, quiero mostrar `--dark-color <hex>` en vez de `--dark-color <string>`. qr-plus lo hacía con `hint`, que se eliminó.
+- **Criterios de aceptación:**
+  - `meta.options` acepta el nombre del valor, y la ayuda de `core` y del plugin lo muestran.
+  - Sin declararlo, la ayuda sigue mostrando el tipo.
 
 ### T-208 Retirar el modo implícito
 

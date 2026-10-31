@@ -122,7 +122,8 @@ function optionFlags(option: OptionSchema): string {
 function optionDetails(option: OptionSchema): string {
 	const details = [option.description ?? ''];
 	if (option.required) details.push('(required)');
-	if (option.defaultValue !== undefined) details.push(`(default: ${option.defaultValue})`);
+	const hasDefault = option.defaultValue !== undefined && option.defaultValue !== false;
+	if (hasDefault) details.push(`(default: ${option.defaultValue})`);
 	if (option.env) details.push(`[env: ${option.env}]`);
 	if (option.deprecated) details.push(`(deprecated: ${option.deprecated})`);
 	return details.filter(Boolean).join(' ');

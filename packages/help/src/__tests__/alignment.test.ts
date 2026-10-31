@@ -91,6 +91,14 @@ describe.each([
 		expect(titles(plugin(target))).toEqual(expected);
 	});
 
+	it('agree on what to leave out', () => {
+		const off = { ...option('invert'), type: 'boolean' as const, defaultValue: false };
+		const quiet = { ...command, options: [off] };
+
+		expect(words(renderHelp(quiet)).has('default')).toBe(false);
+		expect(words(plugin(quiet)).has('default')).toBe(false);
+	});
+
 	it('show everything the plain one shows', () => {
 		const missing = [...words(renderHelp(target))].filter(
 			(word) => !words(plugin(target)).has(word),
