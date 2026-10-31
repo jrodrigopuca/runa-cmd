@@ -2,16 +2,16 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. La revalidación de qr-plus (T-402) borró casi todos sus workarounds. Sus pedidos, T-209 y T-210, están en `main`, pendientes de `0.2.0-beta.2`, y sigue pendiente T-404.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. La revalidación de qr-plus (T-402) borró casi todos sus workarounds, y sus pedidos, T-209 y T-210, salieron en `0.2.0-beta.2`. Falta que qr-plus repita sus casos con esa versión, y sigue pendiente T-404.
 
 ## Versiones
 
 | Paquete | `latest` | `beta` | Repo |
 |---|---|---|---|
-| `@runa-cmd/core` | 0.1.0 | 0.2.0-beta.1 | 0.2.0-beta.1 |
-| `@runa-cmd/help` | 0.1.0 | 0.2.0-beta.1 | 0.2.0-beta.1 |
-| `@runa-cmd/mcp` | 0.1.0 | 0.2.0-beta.1 | 0.2.0-beta.1 |
-| `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.1 | 0.2.0-beta.1 |
+| `@runa-cmd/core` | 0.1.0 | 0.2.0-beta.2 | 0.2.0-beta.2 |
+| `@runa-cmd/help` | 0.1.0 | 0.2.0-beta.2 | 0.2.0-beta.2 |
+| `@runa-cmd/mcp` | 0.1.0 | 0.2.0-beta.2 | 0.2.0-beta.2 |
+| `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.2 | 0.2.0-beta.2 |
 
 Changesets está en modo pre-release con el tag `beta`.
 
