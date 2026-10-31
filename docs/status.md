@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. qr-plus ya corre sobre `0.2.0-beta.2` sin workarounds (T-402), y no tiene pedidos pendientes para 1.0. Falta que un proyecto independiente use MCP desde un agente real (T-404), y después retirar el modo implícito (T-208).
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. qr-plus ya migró a `0.2.0-beta.2` sin workarounds (T-402), pero esa versión no está publicada: su versión en npm sigue con commander, y migra después de la estable. Falta que otro proyecto, cuyo agente solo ve lo publicado, use MCP (T-404), y después retirar el modo implícito (T-208).
 
 ## Versiones
 
@@ -32,13 +32,13 @@ Changesets está en modo pre-release con el tag `beta`.
 ## Dónde estamos
 
 - **Beta publicada:** `0.2.0-beta.1` incluye `--help` sin plugins, kebab-case, opciones repetidas, y tools MCP en subprocesos con cancelación y límites.
-- **Primer uso real:** la migración de `@qr-plus/cli` desde commander dejó cinco workarounds. Está en [research](./research/2026-10-qr-plus-migration.md).
+- **Primera migración:** pasar `@qr-plus/cli` desde commander dejó cinco workarounds, ya eliminados. Es evidencia de migración, no de uso, porque esa versión no se publicó. Está en [research](./research/2026-10-qr-plus-migration.md).
 - **Investigación:** el comportamiento de librerías y el uso público están en [research](./research/2026-10-cli-usage.md).
 - **Problemas abiertos:** se listan en [known-issues.md](./known-issues.md). Quedan el modo implícito de `defineCLI` (T-208), que se retira después de T-402, y `completions` como tool (T-308).
 
 ## Camino a v1
 
-La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([T-501](./backlog.md#t-501-criterio-de-estabilidad-verificable)). Esa ventana no empezó, porque todavía hay cambios incompatibles planificados.
+La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([ADR-0038](./adr/0038-ventana-de-estabilidad.md)). El camino es: proyecto de MCP (T-404), retiro del modo implícito (T-208), 4 semanas de uso sobre la beta publicada, 1.0, y después qr-plus estable. Esa ventana no empezó, porque todavía hay cambios incompatibles planificados.
 
 ## Decisiones abiertas
 

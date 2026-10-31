@@ -52,3 +52,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0035](./0035-listas-desde-env-y-config.md) | Una lista en env se separa por comas, y en config es un array | Aceptada |
 | [0036](./0036-rest-se-declara.md) | `--` llena posicionales, y lo que sobra es un error si el comando no pidió `rest` | Aceptada |
 | [0037](./0037-politica-de-versiones.md) | Lo que es contrato se puede usar en un programa | Aceptada |
+| [0038](./0038-ventana-de-estabilidad.md) | La ventana de estabilidad mide uso sobre una versión publicada | Aceptada |

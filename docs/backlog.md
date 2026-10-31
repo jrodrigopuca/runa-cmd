@@ -8,7 +8,7 @@
 - El dev no escribe nada dos veces.
 - No buscamos paridad con commander: lo básico se hace lo justo para que nadie abandone en los primeros cinco minutos.
 
-**Criterio de v1:** la API pública no necesita cambios incompatibles durante una ventana sostenida de uso real. La ventana se define en T-501 y empieza a contar al cerrar T-208.
+**Criterio de v1:** la API pública no necesita cambios incompatibles durante una ventana sostenida de uso real. La ventana se define en T-501 y empieza a contar cuando se publica la beta que incluye T-208.
 
 ## Cómo leerlo
 
@@ -59,7 +59,7 @@
 | | T-210 | Nombre del valor en la ayuda | Requerido | Hecho |
 | | T-211 | Errores de uso desde un comando | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
-| 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Pendiente |
+| 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
 | | T-503 | Documentación de v1 | Requerido | Pendiente |
 | | T-504 | Grupo de versiones de los paquetes | Requerido | Decisión pendiente |
@@ -481,9 +481,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio. La prueba la hace un proyecto independiente que necesite MCP, y no quien mantiene Runa, para que no la sesgue la herramienta.
+- **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio. La prueba la hace otro proyecto, y su agente solo ve lo publicado, para que no lo sesgue conocer Runa por dentro.
 - **Criterios de aceptación:**
-  - El proyecto necesita MCP por sí mismo, y lo adopta sin ayuda del mantenedor.
+  - El proyecto necesita MCP por sí mismo, y su agente lo adopta con el paquete publicado, sin acceso a este repo.
   - Un agente real llama tools de una CLI, por `--mcp`, y recibe el resultado completo.
   - Un error de la tool llega al agente, y este no repite un efecto que ya ocurrió.
   - Toda fricción nueva entra en este backlog.
@@ -542,8 +542,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-501 Criterio de estabilidad verificable
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como usuario de Runa, quiero saber qué condición habilita la 1.0, para que no dependa de una impresión.
+- **Resultado:** [ADR-0038](./adr/0038-ventana-de-estabilidad.md). La ventana dura 4 semanas desde que se publica la beta con T-208, y cuenta el uso del proyecto de T-404 sobre una versión instalada desde npm. La 1.0 sale cuando la ventana se completa sin cambios incompatibles.
 - **Criterios de aceptación:**
   - Queda escrita la duración de la ventana y qué uso real cuenta.
   - Un cambio incompatible en la API pública reinicia la ventana.
