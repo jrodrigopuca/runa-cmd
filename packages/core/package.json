@@ -25,6 +25,10 @@
 			"types": "./dist/zod.d.ts",
 			"import": "./dist/zod.js"
 		},
+		"./testing": {
+			"types": "./dist/testing.d.ts",
+			"import": "./dist/testing.js"
+		},
 		"./internal": {
 			"types": "./dist/internal.d.ts",
 			"import": "./dist/internal.js"

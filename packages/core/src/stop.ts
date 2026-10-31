@@ -57,8 +57,9 @@ export interface RunStop {
  * Start listening for a stop.
  *
  * @param isTool - This process leads its own group, and has a server above it
+ * @param listen - False if signals aren't for this run, as under testCLI()
  */
-export function watchForStop(isTool: boolean): RunStop {
+export function watchForStop(isTool: boolean, listen = true): RunStop {
 	const controller = new AbortController();
 	let cause: StopCause | undefined;
 
@@ -90,8 +91,10 @@ export function watchForStop(isTool: boolean): RunStop {
 	const onSigterm = () => stop('SIGTERM');
 	const onDisconnect = () => stop('cancelled');
 
-	process.on('SIGINT', onSigint);
-	process.on('SIGTERM', onSigterm);
+	if (listen) {
+		process.on('SIGINT', onSigint);
+		process.on('SIGTERM', onSigterm);
+	}
 	if (isTool) {
 		process.on('disconnect', onDisconnect);
 		// With the server gone, a write finds a closed pipe: that must not end

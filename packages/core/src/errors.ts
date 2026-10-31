@@ -111,6 +111,16 @@ export class CommandError extends RunaError {
 	}
 }
 
+// ─── ProcessExit (internal, not exported from the barrel) ───
+
+/** process.exit() under testCLI(): it has to end the run, not the test. */
+export class ProcessExit extends Error {
+	constructor(readonly exitCode: number) {
+		super(`process.exit(${exitCode})`);
+		this.name = 'ProcessExit';
+	}
+}
+
 // ─── Exit reason (internal, not exported from the barrel) ───
 
 const DEBUG_HINT = 'Run with RUNA_DEBUG=1 for details.';

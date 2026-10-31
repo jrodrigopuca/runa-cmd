@@ -60,7 +60,7 @@
 | | T-211 | Errores de uso desde un comando | Opcional | Pendiente |
 | | T-219 | Las opciones globales leen el config | Requerido | Hecho |
 | | T-220 | Forma del archivo de config | Requerido | Hecho |
-| | T-221 | Probar una CLI sin subproceso | Requerido | Pendiente |
+| | T-221 | Probar una CLI sin subproceso | Requerido | Hecho |
 | | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Pendiente |
 | | T-222 | Los posicionales convierten como las opciones | Requerido | Pendiente |
 | | T-223 | Flag desconocida en la raíz | Requerido | Pendiente |
@@ -673,17 +673,21 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-221 Probar una CLI sin subproceso
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero probar mis comandos sin que un error termine el runner. Hoy `cli.run()` llama a `process.exit`, devuelve `undefined`, y no se pueden capturar stdout, stderr ni el exit code. Son H4 y F-09.
-- **Decisión:** [ADR-0041](./adr/0041-funcion-de-pruebas.md). Una función `testCLI()` envuelve la CLI y da más detalle que una ejecución normal.
+- **Decisión:** [ADR-0041](./adr/0041-funcion-de-pruebas.md). Una función `testCLI()` envuelve la CLI y da más detalle que una ejecución normal. Un [experimento](./research/2026-10-testcli-capture-spike.md) confirmó que puede admitir ejecuciones concurrentes.
 - **Criterios de aceptación:**
   - Una prueba ejecuta un comando que falla y sigue corriendo.
   - La prueba lee el exit code, stdout, stderr y lo devuelto.
   - La prueba pasa variables y valores de config sin archivos ni parches.
   - Ante un fallo, la prueba lee el error original, y un registro de lo ocurrido.
+  - El registro dice de dónde salió cada valor, qué hooks corrieron y cuánto tardaron, y la salida en orden, según [ADR-0045](./adr/0045-registro-de-la-ejecucion.md).
+  - Un valor de `env` nunca aparece en el registro, y `RUNA_DEBUG=1` no imprime ningún valor.
+  - `RUNA_DEBUG=1` muestra el registro por stderr mientras ocurre.
   - `cleanup` corre igual que en una ejecución real.
   - No se pierden los resultados de `node --test` ni de Vitest.
-  - Se comprueba si admite ejecuciones concurrentes, y el resultado queda documentado.
+  - Admite ejecuciones concurrentes en un proceso, sin `MaxListenersExceededWarning` y capturando `console` con Vitest.
+  - Un `process.exit` dentro de un comando termina el comando y devuelve su código.
   - La guía de testing de T-503 la usa.
 
 ### T-222 Los posicionales convierten como las opciones

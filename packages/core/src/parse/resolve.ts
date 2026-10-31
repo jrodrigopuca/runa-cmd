@@ -9,6 +9,7 @@ import { ZodError, type ZodType, z } from 'zod';
 import type { ConfigSource } from '../config/scope.js';
 import { ValidationError } from '../errors.js';
 import { longFlag } from '../flag-name.js';
+import type { ValueSource } from '../trace.js';
 import type { OptionMeta, ParamMetadata } from '../types.js';
 import { walkSchema } from './schema-walker.js';
 import { isVariadic } from './variadic.js';
@@ -43,6 +44,8 @@ export interface ResolveInput {
 export interface ResolveOutput {
 	parsedArgs: Record<string, unknown>;
 	parsedOptions: Record<string, unknown>;
+	/** Which source gave each option a value. An option left out took its default */
+	optionSources: Record<string, ValueSource>;
 }
 
 // ─── Positional Mapping ─────────────────────────────────────
@@ -190,7 +193,8 @@ function resolveOptionValues(
 	configValues: Record<string, unknown> | undefined,
 	env: Record<string, string | undefined>,
 	optionsMetadata: ParamMetadata[],
-	fromConfig: Set<string>,
+	sources: Record<string, ValueSource>,
+	directSource: ValueSource,
 ): Record<string, unknown> {
 	const resolved: Record<string, unknown> = {};
 
@@ -217,6 +221,7 @@ function resolveOptionValues(
 		// Priority 1: CLI arg
 		if (key in normalizedValues && normalizedValues[key] !== undefined) {
 			resolved[key] = coerceField(normalizedValues[key], field);
+			sources[key] = directSource;
 			continue;
 		}
 
@@ -225,13 +230,14 @@ function resolveOptionValues(
 		const envValue = envName ? env[envName] : undefined;
 		if (envValue !== undefined) {
 			resolved[key] = coerceField(field?.isArray ? splitEnvList(envValue) : envValue, field);
+			sources[key] = 'env';
 			continue;
 		}
 
 		// Priority 3: Config file value
 		if (configValues && key in configValues && configValues[key] !== undefined) {
 			resolved[key] = coerceField(configValues[key], field);
-			fromConfig.add(key);
+			sources[key] = 'config';
 		}
 
 		// Priority 4: Omit — let Zod .default() handle it
@@ -359,6 +365,7 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 	// Mapped even without declared args: that's what rejects extra positionals.
 	const argSchemas = schemas.args ?? {};
 	const rawArgs = mapPositionals(parseArgsResult.positionals, argSchemas);
+	const optionSources: Record<string, ValueSource> = {};
 
 	return {
 		parsedArgs: validateArgs(rawArgs, argSchemas),
@@ -370,7 +377,10 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 			configValues,
 			env,
 			configSource,
+			optionSources,
+			'cli',
 		),
+		optionSources,
 	};
 }
 
@@ -412,6 +422,8 @@ export function resolveToolInput(toolInput: ResolveToolInput): ResolveOutput {
 		}
 	}
 
+	const optionSources: Record<string, ValueSource> = {};
+
 	return {
 		parsedArgs: validateArgs(rawArgs, argSchemas),
 		parsedOptions: validateOptions(
@@ -422,7 +434,10 @@ export function resolveToolInput(toolInput: ResolveToolInput): ResolveOutput {
 			configValues,
 			env,
 			configSource,
+			optionSources,
+			'input',
 		),
+		optionSources,
 	};
 }
 
@@ -450,10 +465,11 @@ function validateOptions(
 	configValues: Record<string, unknown> | undefined,
 	env: Record<string, string | undefined>,
 	configSource: ConfigSource | undefined,
+	sources: Record<string, ValueSource>,
+	directSource: ValueSource,
 ): Record<string, unknown> {
 	if (!optionSchemas || Object.keys(optionSchemas).length === 0) return {};
 
-	const fromConfig = new Set<string>();
 	const rawOptions = resolveOptionValues(
 		values,
 		longAliasMap,
@@ -462,7 +478,8 @@ function validateOptions(
 		configValues,
 		env,
 		walkSchema(optionSchemas),
-		fromConfig,
+		sources,
+		directSource,
 	);
 
 	try {
@@ -472,7 +489,7 @@ function validateOptions(
 			const humanized = humanizeOptionIssues(err.issues, optionSchemas);
 			throw new ValidationError(
 				err.issues.map((issue, index) =>
-					configSource && fromConfig.has(String(issue.path[0]))
+					configSource && sources[String(issue.path[0])] === 'config'
 						? configIssue(issue, configSource)
 						: (humanized[index] as ZodIssue),
 				),

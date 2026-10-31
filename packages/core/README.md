@@ -371,7 +371,7 @@ No failure exits silently. The reason goes to stderr, `cleanup` runs, and then t
 
 - Usage errors end with `Run '<cli> --help' for usage.`
 - Throw `CommandError` for messages meant for people using your CLI.
-- Set `RUNA_DEBUG=1` to add the stack trace, error code and cause.
+- Set `RUNA_DEBUG=1` to add the stack trace, error code and cause, and to see each step on stderr while it happens: which config file was read, where each option came from, and how long hooks and the command took. It never prints a value, because this output ends up in CI logs.
 - `ctx.handled` only stops the default output. If a plugin truly recovered, it sets `process.exitCode = 0` in `onError`.
 
 #### How a run stops
@@ -407,6 +407,47 @@ PARAM_TYPES.BOOLEAN  // 'boolean'
 PARAM_TYPES.ENUM     // 'enum'
 PARAM_TYPES.ARRAY    // 'array'
 ```
+
+### Testing: `testCLI()`
+
+Run a command through its real lifecycle, without ending the process:
+
+```ts
+import { testCLI } from '@runa-cmd/core/testing';
+
+const result = await testCLI(cli, ['add', 'x'], {
+  env: { TOKEN: 'abc' },            // What Runa sees as the environment
+  config: { add: { tag: ['a'] } },  // The contents of the config file
+});
+
+result.code;    // The exit code the process would end with
+result.stdout;  // What it printed, and result.stderr
+result.result;  // What run() returned
+result.error;   // The original error, with its class, code and cause
+result.trace;   // What happened, in order
+```
+
+It takes a CLI or a single command, and a single command also accepts `plugins`, `middleware`, `globalOptions` and `globalMeta`.
+
+`trace` says where each value came from, which hooks ran and for how long, and everything written, in order:
+
+```ts
+[
+  { step: 'option', name: 'tag', scope: 'command', source: 'config', value: ['a'] },
+  { step: 'option', name: 'token', scope: 'command', source: 'env' },
+  { step: 'hook', name: 'beforeRun', ms: 1 },
+  { step: 'output', stream: 'stdout', text: 'Added x\n' },
+  { step: 'run', command: ['add'], ms: 12 },
+]
+```
+
+A value from env is left out, because it can be a secret. The shape of `trace` isn't part of the [versioning contract](https://github.com/jrodrigopuca/runa-cmd/blob/main/VERSIONING.md).
+
+**What's isolated:** the test doesn't read the real environment or config files, and several runs can share a process, as with `it.concurrent`.
+
+**What isn't:** a command that reads `process.env` by itself sees the real one. A child process, or a write straight to a file descriptor, isn't captured. `process.exitCode` is global, so it isn't reliable with concurrent runs: exit or throw instead.
+
+A `process.exit` inside a command ends the run with its code and skips `cleanup`, as in a real run.
 
 ### Subpath Export: `@runa-cmd/core/zod`
 

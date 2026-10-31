@@ -198,7 +198,17 @@ Ninguna falla sale en silencio ([ADR-0027](../adr/0027-toda-salida-explica-el-mo
 | Falla previa a resolver el comando | Igual, con el nombre de la CLI | El del error, o 1 |
 | `onError` marca `ctx.handled` | Nada de Runa | El del error, o 1 |
 
-- **Para quien desarrolla la CLI:** `RUNA_DEBUG=1` agrega stack, código y causa. `RUNA_DEBUG=0` lo desactiva.
+- **Para quien desarrolla la CLI:** `RUNA_DEBUG=1` agrega stack, código y causa, y muestra por stderr cada paso: archivo de config, fuente de cada opción y duración de hooks y comando. No imprime valores ([ADR-0045](../adr/0045-registro-de-la-ejecucion.md)). `RUNA_DEBUG=0` lo desactiva.
+
+## Probar una CLI
+
+`testCLI(cli, argv, options)`, de `@runa-cmd/core/testing`, ejecuta el ciclo de vida real sin terminar el proceso ([ADR-0041](../adr/0041-funcion-de-pruebas.md)). Devuelve `code`, `stdout`, `stderr`, `result`, `error` y `trace`.
+
+- **Entrada:** `env` y `config` reemplazan el entorno y el archivo. No lee `process.env` ni archivos, para que la máquina no cambie el resultado.
+- **Salida:** se dirige con `AsyncLocalStorage`, así que varias ejecuciones comparten un proceso sin mezclarse. También se dirigen los métodos de `console`, porque un runner puede reemplazarlos. El resto del proceso escribe donde siempre ([experimento](../research/2026-10-testcli-capture-spike.md)).
+- **`trace`:** eventos `config`, `option`, `hook`, `run` y `output`. Un valor de `env` no aparece, solo su fuente. No es contrato.
+- **`process.exit` en un comando:** termina la ejecución con su código y sin `cleanup`, igual que en una real.
+- **Señales:** no registra listeners por ejecución, así que `ctx.signal` no se aborta.
 - **Mensajes para quien usa la CLI:** lanzá `CommandError`. Cualquier otro error se considera inesperado.
 - **`ctx.handled`:** solo evita la salida por defecto. Si el plugin se recuperó de verdad, fija `process.exitCode = 0` en `onError`.
 - **Sin `handled`:** `cli.run()` termina el proceso con `process.exit`, incluso si la CLI está embebida.

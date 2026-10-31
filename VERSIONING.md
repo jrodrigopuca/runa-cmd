@@ -10,7 +10,7 @@ A change here needs a major version.
 
 | Area | What you can rely on |
 |---|---|
-| Exports | Everything exported from `@runa-cmd/core`, `@runa-cmd/core/zod`, `@runa-cmd/help`, `@runa-cmd/mcp` and `@runa-cmd/completions` |
+| Exports | Everything exported from `@runa-cmd/core`, `@runa-cmd/core/zod`, `@runa-cmd/core/testing`, `@runa-cmd/help`, `@runa-cmd/mcp` and `@runa-cmd/completions` |
 | Exit codes | `0` success, `1` failure, `2` usage error, `127` command not found, `130` `SIGINT`, `143` `SIGTERM`, and the case each one covers |
 | Streams | Results go to stdout. Errors, warnings and the help of a run with nothing to do go to stderr |
 | Error codes | The `code` of each `RunaError`: use it, not the message, to tell errors apart |
@@ -43,6 +43,7 @@ These can change in any minor version, and are listed in the changelog.
 | Text and layout of help | Read `getSchema()` |
 | Text of MCP tool results | Read `_meta['runa/error']`. A client should tolerate a `class` it doesn't know |
 | Generated completion scripts | What they complete stays, not how they're written |
+| The `trace` of `testCLI()` and the output of `RUNA_DEBUG` | Assert on the exit code, the output and the result |
 | Default limits and deadlines | The 2 and 5 seconds to stop, and the 100 KiB of tool output, can be tuned. Set `maxOutput` if you depend on it |
 | `@runa-cmd/core/internal` | Not for you: it can change in any release |
 | Anything undocumented | Open an issue if you need it covered |

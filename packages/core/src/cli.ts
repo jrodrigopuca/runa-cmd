@@ -12,7 +12,7 @@
  */
 import { parseArgs } from 'node:util';
 import type { ZodType } from 'zod';
-import { loadConfigFile } from './config/merge.js';
+import { type ConfigFile, loadConfigFile } from './config/merge.js';
 import {
 	assertConfigNames,
 	assertValidConfig,
@@ -25,13 +25,14 @@ import {
 	failureReason,
 	isDebugEnabled,
 	isUsageError,
+	ProcessExit,
 	RunaError,
 	ValidationError,
 } from './errors.js';
 import { flagName } from './flag-name.js';
 import { commandClaims, findHelpTarget, HELP_TOKENS, renderHelp } from './help.js';
 import { getSchema } from './introspect.js';
-import { createHookRegistry } from './lifecycle.js';
+import { createHookRegistry, type EmitResult } from './lifecycle.js';
 import { deprecationWarnings } from './parse/deprecated.js';
 import { buildParseArgsConfig } from './parse/parseargs-bridge.js';
 import { distributeRest, resolveToolInput, resolveValues } from './parse/resolve.js';
@@ -55,6 +56,7 @@ import {
 	type ToolReport,
 	takeToolRequest,
 } from './tool-channel.js';
+import { debugLine, optionEvents, type TraceEvent, type ValueSource } from './trace.js';
 import type {
 	CLI,
 	CLIConfig,
@@ -62,6 +64,7 @@ import type {
 	Command,
 	CommandTree,
 	HookContext,
+	HookName,
 	Middleware,
 	MiddlewareContext,
 	OptionMeta,
@@ -215,8 +218,10 @@ export interface ToolCall {
 /** What the two entry points produce. From here on, a run is one single path. */
 interface Selection {
 	command: Command;
+	path: string[];
 	parsedArgs: Record<string, unknown>;
 	parsedOptions: Record<string, unknown>;
+	optionSources: Record<string, ValueSource>;
 	rest: string[];
 }
 
@@ -230,6 +235,7 @@ interface SelectionScope {
 	schema: () => CLISchema;
 	exitWith: (code: number) => void;
 	loadConfig: (path: string[]) => Promise<CommandConfig>;
+	env: Record<string, string | undefined>;
 }
 
 interface CommandConfig {
@@ -359,7 +365,8 @@ async function selectFromArgv(
 
 	// Nothing reads what's left unless the command asked for it, so it can't stay
 	// silent: as positionals, it gets the same error as any other extra (ADR-0036).
-	const { parsedArgs, parsedOptions } = resolveValues({
+	const { parsedArgs, parsedOptions, optionSources } = resolveValues({
+		env: scope.env,
 		parseArgsResult: {
 			values: commandValues,
 			positionals: command.rest
@@ -381,9 +388,10 @@ async function selectFromArgv(
 		longAliasMap,
 		optionMeta: commandOptionMeta,
 		configValues,
+		env: scope.env,
 	});
 
-	return { command, parsedArgs, parsedOptions, rest: operands.rest };
+	return { command, path, parsedArgs, parsedOptions, optionSources, rest: operands.rest };
 }
 
 function commandAtPath(commands: CommandTree, path: string[]): Command {
@@ -408,7 +416,8 @@ async function selectFromInput(scope: SelectionScope, call: ToolCall): Promise<S
 	const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
 	const { configValues, configSource } = await scope.loadConfig(call.path);
 
-	const { parsedArgs, parsedOptions } = resolveToolInput({
+	const { parsedArgs, parsedOptions, optionSources } = resolveToolInput({
+		env: scope.env,
 		input: call.input,
 		schemas: { args: command.args, options: command.options },
 		meta: { options: commandOptionMeta },
@@ -421,9 +430,10 @@ async function selectFromInput(scope: SelectionScope, call: ToolCall): Promise<S
 		longAliasMap: {},
 		optionMeta: commandOptionMeta,
 		configValues,
+		env: scope.env,
 	});
 
-	return { command, parsedArgs, parsedOptions, rest: [] };
+	return { command, path: call.path, parsedArgs, parsedOptions, optionSources, rest: [] };
 }
 
 // ─── CLI Execution Engine ───────────────────────────────────
@@ -435,6 +445,21 @@ interface LifecycleOptions {
 	toolCall?: ToolCall;
 	/** Tells the process that started this one how the command went */
 	report?: (report: ToolReport) => void;
+	/** Takes the place of the process, under testCLI() */
+	harness?: RunHarness;
+}
+
+/**
+ * What a run needs from outside, handed in instead of read from the process, so
+ * the machine that runs a test doesn't change its result.
+ */
+export interface RunHarness {
+	env: Record<string, string | undefined>;
+	configValues?: Record<string, unknown>;
+	trace: (event: TraceEvent) => void;
+	onResult: (value: unknown) => void;
+	onError: (error: Error) => void;
+	onExit: (code: number) => void;
 }
 
 /**
@@ -444,7 +469,7 @@ interface LifecycleOptions {
 async function runCLILifecycle(
 	config: CLIConfig,
 	argv: string[],
-	{ rootName, toolCall, report }: LifecycleOptions = {},
+	{ rootName, toolCall, report, harness }: LifecycleOptions = {},
 ): Promise<void> {
 	// ─── State ─────────────────────────────────────────
 	const hookRegistry = createHookRegistry();
@@ -473,7 +498,15 @@ async function runCLILifecycle(
 		root: rootName,
 	});
 
-	const stop = watchForStop(report !== undefined);
+	const stop = watchForStop(report !== undefined, harness === undefined);
+	const env = harness?.env ?? (process.env as Record<string, string | undefined>);
+	const debug = isDebugEnabled(env as NodeJS.ProcessEnv);
+
+	const trace = (event: TraceEvent): void => {
+		harness?.trace(event);
+		const line = debug ? debugLine(event) : undefined;
+		if (line) console.error(line);
+	};
 
 	// Hook context that grows as we progress through the lifecycle
 	const hookCtx: HookContext = {
@@ -486,6 +519,42 @@ async function runCLILifecycle(
 	let lifecycleError: Error | undefined;
 	let failureExitCode: number | undefined;
 	let commandResult: unknown;
+	let leftByExit = false;
+
+	const finishRun = async (): Promise<void> => {
+		// ─── cleanup (ALWAYS runs) ────────────────────────
+		try {
+			await emitHook('cleanup');
+		} catch (hookErr) {
+			// ADR-0009: same treatment as onError — log the defect, keep cleaning up.
+			console.error('runa: cleanup hook threw:', hookErr);
+		}
+
+		// Plugin cleanup in reverse topological order
+		if (sortedPlugins.length > 0) {
+			const cleanupErrors = await runPluginCleanup(sortedPlugins);
+			if (cleanupErrors.length > 0) {
+				for (const err of cleanupErrors) {
+					console.error(`Plugin cleanup error: ${err.message}`);
+				}
+			}
+		}
+
+		stop.finish();
+
+		// Exit only after cleanup: process.exit inside catch would skip the rest of
+		// this block. It can't go after it either: a return in the try never gets there.
+		const exitCode = stop.exitCode ?? failureExitCode;
+		if (exitCode === undefined) return;
+
+		if (harness) harness.onExit(exitCode);
+		else if (hookCtx.handled) {
+			// A plugin that truly recovered keeps control by setting process.exitCode.
+			process.exitCode ??= exitCode;
+		} else {
+			process.exit(exitCode);
+		}
+	};
 
 	const configTarget = {
 		commands: mutableCommands,
@@ -495,10 +564,31 @@ async function runCLILifecycle(
 	};
 
 	/** Read when a run needs it: a broken file must not get in the way of --help. */
+	const readConfigFile = async (): Promise<ConfigFile | undefined> => {
+		if (harness) {
+			const values = harness.configValues;
+			return values && { filePath: 'testCLI config', values };
+		}
+		return config.config && loadConfigFile(config.config);
+	};
+
+	let tracedConfig = false;
 	const loadCheckedConfig = async () => {
-		const file = config.config && (await loadConfigFile(config.config));
+		const file = await readConfigFile();
+		if (!tracedConfig && (config.config || file)) {
+			tracedConfig = true;
+			trace({ step: 'config', file: file?.filePath });
+		}
 		if (file) assertValidConfig(file, configTarget);
 		return file;
+	};
+
+	const emitHook = async (name: HookName): Promise<EmitResult> => {
+		if (hookRegistry.getHandlers(name).length === 0) return { shortCircuited: false };
+		const started = performance.now();
+		const result = await hookRegistry.emit(name, hookCtx);
+		trace({ step: 'hook', name, ms: Math.round(performance.now() - started) });
+		return result;
 	};
 
 	const loadConfig = async (path: string[]): Promise<CommandConfig> => {
@@ -542,10 +632,10 @@ async function runCLILifecycle(
 			mutableGlobalMeta,
 			globalOptionSources,
 		);
-		if (config.config) assertConfigNames(configTarget);
+		if (config.config || harness?.configValues) assertConfigNames(configTarget);
 
 		// ─── beforeParse ──────────────────────────────────
-		await hookRegistry.emit('beforeParse', hookCtx);
+		await emitHook('beforeParse');
 		// Handlers may have mutated hookCtx.rawArgs
 		const currentArgv = hookCtx.rawArgs;
 
@@ -663,14 +753,18 @@ async function runCLILifecycle(
 			const { configValues, configSource } =
 				answer && !toolCall ? ({} as CommandConfig) : await loadConfig([]);
 			try {
-				parsedGlobalOptions = resolveValues({
+				const { parsedOptions, optionSources } = resolveValues({
 					parseArgsResult: { values: globalValues, positionals: [] },
 					longAliasMap,
 					schemas: { options: mutableGlobalOptions },
 					meta: { options: mutableGlobalMeta.options },
 					configValues,
 					configSource,
-				}).parsedOptions;
+					env,
+				});
+				parsedGlobalOptions = parsedOptions;
+				const names = Object.keys(mutableGlobalOptions);
+				optionEvents('global', names, parsedOptions, optionSources).forEach(trace);
 			} catch (err) {
 				const isQuestion = answer === 'help' || answer === 'version';
 				if (!isQuestion || !(err instanceof ValidationError)) throw err;
@@ -681,6 +775,7 @@ async function runCLILifecycle(
 				longAliasMap,
 				optionMeta: mutableGlobalMeta.options,
 				configValues,
+				env,
 			});
 
 			// Pass remaining argv (command tokens only) to command parsing
@@ -690,7 +785,7 @@ async function runCLILifecycle(
 		hookCtx.globalOptions = parsedGlobalOptions;
 
 		// ─── onGlobalFlags ────────────────────────────────
-		const globalFlagsResult = await hookRegistry.emit('onGlobalFlags', hookCtx);
+		const globalFlagsResult = await emitHook('onGlobalFlags');
 		if (globalFlagsResult.shortCircuited) {
 			// Short-circuit: skip command resolution and execution, go to cleanup
 			return;
@@ -709,22 +804,25 @@ async function runCLILifecycle(
 				failureExitCode = code;
 			},
 			loadConfig,
+			env,
 		};
 		const selection = toolCall
 			? await selectFromInput(scope, toolCall)
 			: await selectFromArgv(scope, rest, rootName);
 		if (!selection) return;
 
-		const { command, parsedArgs, parsedOptions } = selection;
+		const { command, path, parsedArgs, parsedOptions, optionSources } = selection;
+		const optionNames = Object.keys(command.options ?? {});
+		optionEvents('command', optionNames, parsedOptions, optionSources).forEach(trace);
 
 		hookCtx.args = parsedArgs;
 		hookCtx.options = parsedOptions;
 
 		// ─── afterParse ───────────────────────────────────
-		await hookRegistry.emit('afterParse', hookCtx);
+		await emitHook('afterParse');
 
 		// ─── beforeRun ────────────────────────────────────
-		await hookRegistry.emit('beforeRun', hookCtx);
+		await emitHook('beforeRun');
 
 		// ─── Middleware chain + command execution ──────────
 		const runContext = {
@@ -739,7 +837,9 @@ async function runCLILifecycle(
 
 		const innerFn = async () => {
 			report?.({ kind: 'running' });
+			const started = performance.now();
 			commandResult = await command.run(runContext);
+			trace({ step: 'run', command: path, ms: Math.round(performance.now() - started) });
 			report?.({ kind: 'ran' });
 
 			// Validate output schema if present
@@ -747,6 +847,7 @@ async function runCLILifecycle(
 				assertValidOutput(command, command.output, commandResult);
 			}
 			report?.({ kind: 'result', value: commandResult });
+			harness?.onResult(commandResult);
 		};
 
 		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, innerFn);
@@ -754,15 +855,22 @@ async function runCLILifecycle(
 		await stop.guard(chain);
 
 		// ─── afterRun ─────────────────────────────────────
-		await hookRegistry.emit('afterRun', hookCtx);
+		await emitHook('afterRun');
 	} catch (err) {
+		// A real exit ends here: no onError, no cleanup, no message
+		if (err instanceof ProcessExit) {
+			leftByExit = true;
+			throw err;
+		}
+
 		lifecycleError = err instanceof Error ? err : new Error(err == null ? '' : String(err));
+		harness?.onError(lifecycleError);
 
 		// ─── onError ──────────────────────────────────────
 		hookCtx.error = lifecycleError;
 
 		try {
-			await hookRegistry.emit('onError', hookCtx);
+			await emitHook('onError');
 		} catch (hookErr) {
 			// ADR-0009: log to stderr, never rethrow — a broken error handler must
 			// not prevent cleanup, but its own defect must not vanish either.
@@ -776,7 +884,6 @@ async function runCLILifecycle(
 		// `handled` means the plugin owns the output, not that the run succeeded.
 		if (!hookCtx.handled) {
 			const subject = hookCtx.command?.name ?? config.meta.name;
-			const debug = isDebugEnabled();
 			// An agent cannot use a hint for people, unless the operator asked for details.
 			const helpCommand = report ? undefined : config.meta.name;
 			console.error(
@@ -787,37 +894,8 @@ async function runCLILifecycle(
 		}
 		report?.({ kind: 'failed', reason: toolFailureReason(lifecycleError) });
 	} finally {
-		// ─── cleanup (ALWAYS runs) ────────────────────────
-		try {
-			await hookRegistry.emit('cleanup', hookCtx);
-		} catch (hookErr) {
-			// ADR-0009: same treatment as onError — log the defect, keep cleaning up.
-			console.error('runa: cleanup hook threw:', hookErr);
-		}
-
-		// Plugin cleanup in reverse topological order
-		if (sortedPlugins.length > 0) {
-			const cleanupErrors = await runPluginCleanup(sortedPlugins);
-			if (cleanupErrors.length > 0) {
-				for (const err of cleanupErrors) {
-					console.error(`Plugin cleanup error: ${err.message}`);
-				}
-			}
-		}
-
-		stop.finish();
-
-		// Exit only after cleanup: process.exit inside catch would skip the rest of
-		// this block. It can't go after it either: a return in the try never gets there.
-		const exitCode = stop.exitCode ?? failureExitCode;
-		if (exitCode !== undefined) {
-			if (hookCtx.handled) {
-				// A plugin that truly recovered keeps control by setting process.exitCode.
-				process.exitCode ??= exitCode;
-			} else {
-				process.exit(exitCode);
-			}
-		}
+		if (leftByExit) stop.finish();
+		else await finishRun();
 	}
 }
 
@@ -937,4 +1015,17 @@ export async function runToolCall(
 	options: { argv?: string[]; rootName?: string } = {},
 ): Promise<void> {
 	await runCLILifecycle(config, options.argv ?? [], { rootName: options.rootName, toolCall: call });
+}
+
+/**
+ * Run a CLI without ending the process.
+ * Internal, for testCLI(): not exported from the package barrel.
+ */
+export async function runWithHarness(
+	config: CLIConfig,
+	argv: string[],
+	rootName: string | undefined,
+	harness: RunHarness,
+): Promise<void> {
+	await runCLILifecycle(config, argv, { rootName, harness });
 }

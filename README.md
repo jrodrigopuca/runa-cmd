@@ -226,7 +226,7 @@ Unexpected error in 'deploy': kaboom
 Run with RUNA_DEBUG=1 for details.
 ```
 
-`RUNA_DEBUG=1` adds the stack trace, error code and cause. `cleanup` always runs before the process exits.
+`RUNA_DEBUG=1` adds the stack trace, error code and cause, and shows each step of the run on stderr. `cleanup` always runs before the process exits.
 
 ### Value Resolution Order
 
