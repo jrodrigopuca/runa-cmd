@@ -9,6 +9,22 @@
     "@runa-cmd/mcp": "0.1.0"
   },
   "changesets": [
-    "beta-readiness-hardening"
+    "beta-readiness-hardening",
+    "boolean-values-from-any-source",
+    "choose-what-agents-get",
+    "clearer-usage-errors",
+    "env-options-belong-to-the-operator",
+    "errors-say-if-a-retry-is-safe",
+    "explain-every-failure",
+    "help-from-the-first-command",
+    "hook-invocation",
+    "kebab-case-flags",
+    "migration-guide-beta-1",
+    "nothing-to-run-is-a-usage-error",
+    "operator-beats-the-model",
+    "options-that-repeat",
+    "single-command-first-class",
+    "stopping-reaches-the-whole-tree",
+    "tools-as-subprocesses"
   ]
 }
