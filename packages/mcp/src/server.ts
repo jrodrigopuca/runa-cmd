@@ -16,6 +16,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { RunaError } from '@runa-cmd/core';
 import { type ZodType, z } from 'zod';
+import { redact } from './operator.js';
 import type { ChildOutcome, RunOptions } from './runner.js';
 import { runChild } from './runner.js';
 import type { ToolRegistration } from './schema.js';
@@ -59,16 +60,18 @@ const success = (text: string): CallToolResult => ({ content: [{ type: 'text', t
  */
 export function toToolResult(reg: ToolRegistration, outcome: ChildOutcome): CallToolResult {
 	const finished = outcome.reports.find((report) => report.kind === 'result');
+	const stdout = redact(outcome.stdout, reg.redactions).trim();
+	const stderr = redact(outcome.stderr, reg.redactions).trim();
 
 	if (!finished) {
 		if (outcome.status === 0) return failure(`Command '${reg.name}' did not finish.`);
-		const reason = outcome.stderr.trim() || outcome.stdout.trim();
-		return failure(reason || `Command '${reg.name}' exited with code ${outcome.status}.`);
+		return failure(stderr || stdout || `Command '${reg.name}' exited with code ${outcome.status}.`);
 	}
 
+	// What run() returned is the author's choice, so it goes as it is.
 	const { value } = finished;
 	if (value === undefined || value === null) {
-		return success(outcome.stdout.trim() || `Command '${reg.name}' executed successfully.`);
+		return success(stdout || `Command '${reg.name}' executed successfully.`);
 	}
 
 	const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
@@ -114,8 +117,13 @@ export function createMcpServer(registrations: ToolRegistration[], options: Serv
 		const reg = registrations.find((candidate) => candidate.name === params.name);
 		if (!reg) return failure(`Unknown tool: ${params.name}`);
 
+		// A fixed option stays what the operator set, whatever the call says
+		const input = Object.fromEntries(
+			Object.entries(params.arguments ?? {}).filter(([key]) => !reg.fixed.has(key)),
+		);
+
 		const outcome = await runChild(
-			{ kind: 'call', path: reg.path, input: params.arguments ?? {} },
+			{ kind: 'call', path: reg.path, input },
 			{ ...options, signal: extra.signal },
 		);
 		return toToolResult(reg, outcome);

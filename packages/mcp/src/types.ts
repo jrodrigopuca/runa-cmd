@@ -4,6 +4,14 @@
  * Plugin options for mcpPlugin().
  */
 
+/** What one tool leaves to the model. */
+export interface ToolOptions {
+	/** Options the model can set, even if env or config give them a value */
+	expose?: string[];
+	/** Options that must come from env or config: without a value, the server won't start */
+	serverOnly?: string[];
+}
+
 /**
  * Options for mcpPlugin().
  */
@@ -21,4 +29,6 @@ export interface McpPluginOptions {
 	 * e.g. `[process.execPath]` for a binary.
 	 */
 	selfCommand?: string[];
+	/** Per-tool settings, by tool name, e.g. `{ deploy: { serverOnly: ['token'] } }` */
+	tools?: Record<string, ToolOptions>;
 }

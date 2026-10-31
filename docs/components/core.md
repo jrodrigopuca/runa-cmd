@@ -154,7 +154,7 @@ export const verbose = definePlugin({
 
 Solo `meta.name` es obligatorio. `meta.version` es informativo: Runa no lo lee, y la compatibilidad con `core` se declara en `peerDependencies`.
 
-`PluginAPI` ofrece `addCommand`, `addGlobalOption`, `addMiddleware`, `hook`, `getSchema` y `getCommands`. Ver [carga de plugins](../flows/plugin-setup.md).
+`PluginAPI` ofrece `addCommand`, `addGlobalOption`, `addMiddleware`, `hook`, `getSchema`, `getCommands` y `getConfigValues`. Ver [carga de plugins](../flows/plugin-setup.md).
 
 ## Tests
 

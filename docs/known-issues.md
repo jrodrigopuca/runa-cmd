@@ -16,7 +16,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
-| KI-032 | Una opción con `env` figura como parámetro de la tool, aunque ya tenga valor: un token queda a la vista del modelo, y el modelo puede pisarla | Leído | `inputShape` copia el schema crudo | [T-306](./backlog.md#t-306-valores-de-quien-opera-fuera-del-schema) |
 | KI-033 | Si `output` falla, un comando con efectos vuelve como error, y el modelo puede repetirlo | Leído | El informe `ran` llega al servidor, pero `toToolResult` todavía no lo usa | [T-304](./backlog.md#t-304-contrato-de-resultado-y-errores) |
 | KI-005 | Toda opción `z.array()` falla, incluso `--tag a` | Observado | No se usa `multiple` en `parseArgs` | [T-207](./backlog.md#t-207-opciones-repetidas-con-zarray) |
 | KI-006 | En `defineCLI` con un comando, `completionsPlugin` rompe el modo implícito: `tool hola` da 127. Con `runCLI` no pasa | Observado | El modo depende de contar comandos | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |

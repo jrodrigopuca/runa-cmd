@@ -41,7 +41,7 @@
 | 3. MCP utilizable | T-300 | Comprobar lo crítico en Windows | Requerido | Hecho |
 | | T-301 | Separar parseo y ejecución en `core` | Requerido | Hecho |
 | | T-303 | Ejecutar cada tool en un subproceso | Requerido | Hecho |
-| | T-306 | Valores de quien opera fuera del schema | Requerido | Pendiente |
+| | T-306 | Valores de quien opera fuera del schema | Requerido | Hecho |
 | | T-304 | Contrato de resultado y errores | Requerido | Pendiente |
 | | T-305 | Cancelación y límites | Requerido | Pendiente |
 | | T-302 | Excluir y anotar tools | Requerido | Pendiente |
@@ -305,17 +305,17 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-306 Valores de quien opera fuera del schema
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** T-303
+- **Estado:** Hecho
 - **Descripción:** como quien opera un servidor, quiero que lo que configuré no lo pueda cambiar el modelo, y que el modelo no vea secretos.
 - **Criterios de aceptación:**
-  - Una opción con valor de env, config o globales de arranque sale del `inputSchema`.
+  - Una opción con valor de env o config sale del `inputSchema`. Las globales de arranque nunca forman parte de él.
   - Enviar esa opción igualmente no cambia el valor.
   - Una opción requerida que ya viene de env no le exige nada al modelo.
   - Un `.default()` no pisa el valor de un archivo de config.
-  - `mcpPlugin` permite exponer una opción concreta, de forma explícita.
-  - Una opción marcada como de servidor y sin valor hace fallar el arranque.
-  - Los valores fijos nunca aparecen en un resultado o error devuelto al modelo.
+  - `mcpPlugin({ tools: { deploy: { expose: ['region'] } } })` deja una opción concreta en manos del modelo.
+  - `mcpPlugin({ tools: { deploy: { serverOnly: ['token'] } } })` hace fallar el arranque si esa opción no tiene valor.
+  - Un nombre de tool u opción inexistente en `tools` hace fallar el arranque.
+  - Los valores fijos de 8 caracteres o más no aparecen en el stdout ni el stderr devueltos al modelo. Lo que `run()` devuelve no se altera: es decisión del autor.
 
 ### T-304 Contrato de resultado y errores
 

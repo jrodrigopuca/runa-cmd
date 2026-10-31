@@ -402,6 +402,7 @@ async function runCLILifecycle(
 					),
 					root: rootName,
 				}),
+				getConfigValues: () => loadConfigValues(config),
 				globalOptionSources,
 			};
 

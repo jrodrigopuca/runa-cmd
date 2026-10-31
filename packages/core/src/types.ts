@@ -178,6 +178,8 @@ export interface PluginAPI {
 	hook(name: HookName, handler: HookHandler): void;
 	getSchema(): CLISchema;
 	getCommands(): CommandTree;
+	/** Values from the config file of the CLI, if it has one */
+	getConfigValues(): Promise<Record<string, unknown> | undefined>;
 }
 
 // ─── Lifecycle Hooks ────────────────────────────────────────

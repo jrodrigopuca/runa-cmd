@@ -97,12 +97,28 @@ Each key goes to its arg or option by name, so arrays, objects and numbers arriv
 
 A returned value wins over what the command printed.
 
+## What the Operator Decides
+
+Whoever starts the server beats the model. An option with a value from an env var or the config file leaves the tool's schema, and if a model sends it anyway, it's dropped.
+
+```ts
+mcpPlugin({
+  tools: {
+    deploy: {
+      expose: ['region'],    // The model can choose it, even if env gives it a value
+      serverOnly: ['token'], // Without a value, the server won't start
+    },
+  },
+});
+```
+
+Fixed values of 8 characters or more, and the global options the server started with, are redacted from the stdout and stderr returned to the model. What `run()` returns is left as it is, so don't return secrets.
+
 ## Current Limitations
 
 These matter when you expose a real CLI to an agent:
 
 - **Every command becomes a tool.** There's no way yet to exclude one or mark it as destructive, so don't enable `--mcp` on a CLI whose commands an agent shouldn't run.
-- **Options with an env var still show up in the tool.** An agent can see and override them. Don't declare secrets as options yet.
 - **Cancelling a call ends the process** without running `cleanup`, and a process the command started keeps running.
 - **Tool output has no size limit.**
 - **stdio is the only transport.**
@@ -134,6 +150,12 @@ interface McpPluginOptions {
   version?: string;       // Server version override
   instructions?: string;  // Workflow instructions for AI agents
   selfCommand?: string[]; // Executable and arguments to run this CLI again
+  tools?: Record<string, ToolOptions>; // Per-tool settings, by tool name
+}
+
+interface ToolOptions {
+  expose?: string[];     // Options the model can set, even if they have a value
+  serverOnly?: string[]; // Options that must come from env or config
 }
 ```
 

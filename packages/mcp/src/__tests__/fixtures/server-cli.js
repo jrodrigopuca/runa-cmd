@@ -35,15 +35,49 @@ const lifecycle = definePlugin({
 });
 
 const selfCommand = process.env.SELF_COMMAND ? JSON.parse(process.env.SELF_COMMAND) : undefined;
+const tools = process.env.TOOLS ? JSON.parse(process.env.TOOLS) : undefined;
 const command = (name, config) =>
 	defineCommand({ meta: { name, description: `The ${name} tool` }, ...config });
 
 await defineCLI({
 	meta: { name: 'server', version: '1.0.0' },
 	globalOptions: { profile: z.string().default('default') },
+	config: process.env.CONFIG_DIR
+		? { name: 'server', searchPaths: [process.env.CONFIG_DIR] }
+		: undefined,
 	middleware: [gate],
-	plugins: [lifecycle, mcpPlugin({ selfCommand })],
+	plugins: [lifecycle, mcpPlugin({ selfCommand, tools })],
 	commands: {
+		operated: command('operated', {
+			meta: {
+				name: 'operated',
+				description: 'Uses values the operator may fix',
+				options: {
+					region: { env: 'TEST_REGION' },
+					token: { env: 'TEST_TOKEN' },
+				},
+			},
+			args: { service: z.string() },
+			options: {
+				region: z.string().default('default-region'),
+				token: z.string(),
+				bucket: z.string().default('default-bucket'),
+				note: z.string().optional(),
+			},
+			run: ({ args, options }) => ({ service: args.service, ...options }),
+		}),
+		leaky: command('leaky', {
+			meta: {
+				name: 'leaky',
+				description: 'Prints and fails with its secret',
+				options: { token: { env: 'TEST_TOKEN' } },
+			},
+			options: { token: z.string() },
+			run({ options }) {
+				console.log(`using ${options.token}`);
+				if (process.env.LEAK_FAILS) throw new CommandError(`rejected ${options.token}`);
+			},
+		}),
 		deploy: command('deploy', {
 			args: { service: z.string().describe('Service to deploy') },
 			options: {
@@ -58,6 +92,9 @@ await defineCLI({
 					profile: globalOptions.profile,
 				};
 			},
+		}),
+		whoami: command('whoami', {
+			run: ({ globalOptions }) => console.log(`profile ${globalOptions.profile}`),
 		}),
 		greet: command('greet', {
 			args: { name: z.string() },

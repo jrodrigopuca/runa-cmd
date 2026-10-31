@@ -29,6 +29,10 @@ export interface ToolRegistration {
 	argKeys: Set<string>;
 	/** Keys that belong to options */
 	optionKeys: Set<string>;
+	/** Options the operator fixed: out of the schema, and dropped from any call */
+	fixed: Set<string>;
+	/** Text to hide from what the command writes */
+	redactions: string[];
 }
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -107,6 +111,8 @@ function walkTree(
 				command: entry,
 				argKeys,
 				optionKeys,
+				fixed: new Set(),
+				redactions: [],
 			});
 		} else {
 			// It's a subtree — recurse

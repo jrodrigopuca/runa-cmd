@@ -8,6 +8,7 @@
 import type { HookContext, PluginConfig } from '@runa-cmd/core';
 import { definePlugin } from '@runa-cmd/core';
 import { z } from 'zod';
+import { applyOperatorValues } from './operator.js';
 import { defaultSelfCommand } from './runner.js';
 import { buildToolRegistrations } from './schema.js';
 import type { McpPluginOptions } from './types.js';
@@ -41,11 +42,20 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 				if (!ctx.globalOptions?.mcp) return;
 
 				const schema = api.getSchema();
+				const registrations = applyOperatorValues(
+					buildToolRegistrations(api.getCommands(), schema),
+					opts.tools,
+					{
+						configValues: await api.getConfigValues(),
+						env: process.env,
+						globals: ctx.globalOptions,
+					},
+				);
 
 				// Loaded here so a plain CLI run doesn't pay for the MCP SDK
 				const { serve } = await import('./server.js');
 
-				await serve(buildToolRegistrations(api.getCommands(), schema), {
+				await serve(registrations, {
 					name: opts.name ?? schema.meta.name,
 					version: opts.version ?? schema.meta.version ?? '0.0.0',
 					instructions: opts.instructions,

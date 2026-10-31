@@ -253,6 +253,145 @@ describe('values', () => {
 	});
 });
 
+describe('values the operator fixed', () => {
+	const SECRET = 'sk-secret-123456';
+	let dir: string;
+
+	beforeAll(() => {
+		dir = mkdtempSync(join(tmpdir(), 'runa-operated-'));
+		writeFileSync(join(dir, 'server.config.json'), JSON.stringify({ bucket: 'config-bucket' }));
+	});
+
+	afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+	async function operatedTool(client: TestClient) {
+		const tools = await client.tools();
+		return tools.find((tool) => tool.name === 'operated') as Record<string, any>;
+	}
+
+	it('asks the model for every option when nothing is fixed', async () => {
+		const { inputSchema } = await operatedTool(await serve());
+		expect(Object.keys(inputSchema.properties)).toEqual([
+			'service',
+			'region',
+			'token',
+			'bucket',
+			'note',
+		]);
+		expect(inputSchema.required).toEqual(['service', 'token']);
+	});
+
+	it('hides what env and config provide', async () => {
+		const client = await serve({
+			TEST_REGION: 'eu-west-1',
+			TEST_TOKEN: SECRET,
+			CONFIG_DIR: dir,
+		});
+		const { inputSchema } = await operatedTool(client);
+
+		expect(Object.keys(inputSchema.properties)).toEqual(['service', 'note']);
+		expect(inputSchema.required).toEqual(['service']);
+	});
+
+	it('fills them in the child', async () => {
+		const client = await serve({ TEST_TOKEN: SECRET, CONFIG_DIR: dir });
+		const result = await client.call('operated', { service: 'api' });
+
+		expect(JSON.parse(text(result))).toMatchObject({ token: SECRET, bucket: 'config-bucket' });
+	});
+
+	it('does not let the model change them', async () => {
+		const client = await serve({ TEST_REGION: 'eu-west-1', TEST_TOKEN: SECRET, CONFIG_DIR: dir });
+		const result = await client.call('operated', {
+			service: 'api',
+			region: 'us-east-1',
+			token: 'stolen',
+			bucket: 'other',
+		});
+
+		expect(result.isError).toBeUndefined();
+		expect(JSON.parse(text(result))).toMatchObject({
+			region: 'eu-west-1',
+			token: SECRET,
+			bucket: 'config-bucket',
+		});
+	});
+
+	it('keeps an unknown key as an error', async () => {
+		const client = await serve({ TEST_TOKEN: SECRET });
+		const result = await client.call('operated', { service: 'api', regoin: 'x' });
+		expect(result.isError).toBe(true);
+		expect(text(result)).toContain('Unknown input: regoin');
+	});
+
+	it('leaves an option in the hands of the model when told to', async () => {
+		const client = await serve({
+			TEST_REGION: 'eu-west-1',
+			TEST_TOKEN: SECRET,
+			TOOLS: JSON.stringify({ operated: { expose: ['region'] } }),
+		});
+		const { inputSchema } = await operatedTool(client);
+		const result = await client.call('operated', { service: 'api', region: 'us-east-1' });
+
+		expect(Object.keys(inputSchema.properties)).toContain('region');
+		expect(JSON.parse(text(result)).region).toBe('us-east-1');
+	});
+
+	it('starts when a server-only option has its value', async () => {
+		const client = await serve({
+			TEST_TOKEN: SECRET,
+			TOOLS: JSON.stringify({ operated: { serverOnly: ['token'] } }),
+		});
+		expect(Object.keys((await operatedTool(client)).inputSchema.properties)).not.toContain('token');
+	});
+
+	it.each([
+		['a server-only option without a value', { operated: { serverOnly: ['token'] } }, '--token'],
+		['an unknown tool', { missing: { expose: ['a'] } }, "'missing'"],
+		['an unknown option', { operated: { expose: ['regoin'] } }, "'regoin'"],
+		[
+			'an option both exposed and server-only',
+			{ operated: { expose: ['note'], serverOnly: ['note'] } },
+			"'note'",
+		],
+	])('refuses to start with %s', async (_case, tools, mention) => {
+		const client = new TestClient(fixture, ['--mcp'], { TOOLS: JSON.stringify(tools) });
+		clients.push(client);
+
+		expect(await client.exit()).toBe(1);
+		expect(client.stderr).toContain(mention);
+	});
+
+	it('redacts a fixed value from what the command prints', async () => {
+		const client = await serve({ TEST_TOKEN: SECRET });
+		expect(text(await client.call('leaky'))).toBe('using [redacted]');
+	});
+
+	it('redacts a fixed value from an error', async () => {
+		const client = await serve({ TEST_TOKEN: SECRET, LEAK_FAILS: '1' });
+		const result = await client.call('leaky');
+		expect(result.isError).toBe(true);
+		expect(text(result)).toContain('rejected [redacted]');
+		expect(text(result)).not.toContain(SECRET);
+	});
+
+	it('does not touch a short value, which could be any word', async () => {
+		const client = await serve({ TEST_TOKEN: 'ing' });
+		expect(text(await client.call('leaky'))).toBe('using ing');
+	});
+
+	it('redacts a global the server started with', async () => {
+		const client = await serve({}, ['--mcp', '--profile', 'production-eu']);
+		expect(text(await client.call('whoami'))).toBe('profile [redacted]');
+	});
+
+	it('leaves what the command returns as it is', async () => {
+		const client = await serve({ TEST_TOKEN: SECRET });
+		const result = await client.call('operated', { service: 'api' });
+		expect(JSON.parse(text(result)).token).toBe(SECRET);
+	});
+});
+
 describe('starting the server', () => {
 	it('refuses to start when it cannot run itself', async () => {
 		const client = new TestClient(fixture, ['--mcp'], {

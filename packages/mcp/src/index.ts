@@ -4,4 +4,4 @@
  * Barrel re-exports for the MCP plugin package.
  */
 export { mcpPlugin } from './plugin.js';
-export type { McpPluginOptions } from './types.js';
+export type { McpPluginOptions, ToolOptions } from './types.js';

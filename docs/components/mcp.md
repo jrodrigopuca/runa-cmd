@@ -36,6 +36,28 @@ Las opciones globales que recibe el servidor al arrancar llegan a cada llamada.
 | `version` | Versión del servidor | `meta.version`, o `0.0.0` |
 | `instructions` | Instrucciones para el agente | Ninguna |
 | `selfCommand` | Cómo ejecutar la CLI de nuevo: ejecutable y argumentos | Repite cómo arrancó el proceso |
+| `tools` | Ajustes por tool, por nombre | Ninguno |
+
+## Lo que decide quien opera
+
+Quien lanza el servidor le gana al modelo ([ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md)). Una opción con valor de env o config sale del schema, y si el modelo la envía igual, se descarta.
+
+```ts
+mcpPlugin({
+  tools: {
+    deploy: {
+      expose: ['region'],    // El modelo puede elegirla, aunque env le dé un valor
+      serverOnly: ['token'], // Sin valor, el servidor no arranca
+    },
+  },
+});
+```
+
+Un nombre de tool u opción inexistente hace fallar el arranque con `MCP_INVALID_TOOLS`.
+
+Los valores fijos de 8 caracteres o más, y las globales de arranque, se redactan del stdout y el stderr devueltos. Lo que `run()` devuelve no se altera, así que un comando no debería devolver un secreto.
+
+## Comprobación al arrancar
 
 El servidor comprueba `selfCommand` al arrancar, y si no funciona falla con `MCP_SELF_CHECK_FAILED`. Se probó que un binario de `bun build --compile` funciona sin declararlo.
 
@@ -70,16 +92,16 @@ El valor devuelto gana sobre stdout. Para detectar una tool dentro de un hook, u
 | `packages/mcp/src/schema.ts` | Convierte comandos en registros de tools |
 | `packages/mcp/src/server.ts` | Define las tools, atiende llamadas y arma resultados. Carga el SDK, por eso se importa en diferido |
 | `packages/mcp/src/runner.ts` | Lanza el hijo y recoge su salida |
+| `packages/mcp/src/operator.ts` | Aplica lo que fijó quien opera: schema, descarte y redacción |
 | `packages/core/src/tool-channel.ts` | Canal interno con el hijo, compartido por `@runa-cmd/core/internal` |
 
 ## Límites actuales
 
 - **Cancelar mata al hijo sin correr `cleanup`,** y un proceso que él haya iniciado queda vivo ([T-305](../backlog.md#t-305-cancelación-y-límites)).
 - **No hay tope de salida** ([T-305](../backlog.md#t-305-cancelación-y-límites)).
-- **Los valores de quien opera siguen en el schema:** una opción con `env` figura como parámetro, y el modelo podría pisarla (KI-032).
 - **No hay control de exposición.** Todos los comandos son tools (KI-007).
 - **Un error no indica si se puede reintentar** ([T-304](../backlog.md#t-304-contrato-de-resultado-y-errores)).
 - **No hay estado entre llamadas.** Cada una es un proceso nuevo: un pool de conexiones no se comparte.
 - **Solo hay transporte stdio.**
 
-Flujo: [llamada a una tool](../flows/mcp-tool-call.md). Decisiones: [ADR-0017](../adr/0017-mapeo-de-comandos-a-tools-mcp.md), [ADR-0025](../adr/0025-control-de-mcp-en-el-plugin.md), [ADR-0030](../adr/0030-tools-mcp-en-subproceso.md).
+Flujo: [llamada a una tool](../flows/mcp-tool-call.md). Decisiones: [ADR-0017](../adr/0017-mapeo-de-comandos-a-tools-mcp.md), [ADR-0025](../adr/0025-control-de-mcp-en-el-plugin.md), [ADR-0030](../adr/0030-tools-mcp-en-subproceso.md), [ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md).

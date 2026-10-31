@@ -163,6 +163,7 @@ export interface PluginHostRefs {
 	middleware: Middleware[];
 	hookRegister: (name: HookName, handler: HookHandler) => void;
 	getSchema: () => CLISchema;
+	getConfigValues?: () => Promise<Record<string, unknown> | undefined>;
 	/**
 	 * Registrant(s) per global option name, for collision attribution
 	 * (ADR-0014). Statically-declared `config.globalOptions` are
@@ -239,6 +240,10 @@ export function createPluginAPI(
 
 		getCommands(): CommandTree {
 			return refs.commands;
+		},
+
+		async getConfigValues(): Promise<Record<string, unknown> | undefined> {
+			return refs.getConfigValues?.();
 		},
 	};
 }

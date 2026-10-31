@@ -33,7 +33,7 @@ sequenceDiagram
 
 ## Cada llamada
 
-- **Entrada:** viaja sin validar, como JSON por fd 3. La valida el hijo, así que un `.transform` corre una sola vez, y los errores son los de la CLI.
+- **Entrada:** se descartan las opciones que fijó quien opera ([ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md)), y el resto viaja sin validar, como JSON por fd 3. La valida el hijo, así que un `.transform` corre una sola vez, y los errores son los de la CLI.
 - **Comando:** se elige por su ruta, no por tokens. Un dato nunca puede ejecutar otro comando.
 - **Globales:** el hijo recibe el argv con que arrancó el servidor, sin `--mcp`.
 - **Entorno:** el hijo hereda el del servidor. La variable del canal se borra al leerla, así que una CLI que lance el comando es una CLI normal.
@@ -41,7 +41,7 @@ sequenceDiagram
 
 ## Cómo se arma el resultado
 
-`ran` indica que `run()` volvió, y `result` que todo el comando terminó y su `output` es válido.
+`ran` indica que `run()` volvió, y `result` que todo el comando terminó y su `output` es válido. Stdout y stderr pasan por la redacción de valores fijos; el valor devuelto, no.
 
 | Hijo | Resultado |
 |---|---|
@@ -65,4 +65,4 @@ Exit 0 no alcanza para considerar exitosa una llamada: un middleware puede salte
 
 ## Límites actuales
 
-Se resuelven en [T-304](../backlog.md#t-304-contrato-de-resultado-y-errores), [T-305](../backlog.md#t-305-cancelación-y-límites) y [T-306](../backlog.md#t-306-valores-de-quien-opera-fuera-del-schema): cancelar no corre `cleanup` del hijo, no hay tope de salida, y los valores de quien opera siguen en el schema.
+Se resuelven en [T-304](../backlog.md#t-304-contrato-de-resultado-y-errores) y [T-305](../backlog.md#t-305-cancelación-y-límites): un error no indica si se puede reintentar, cancelar no corre `cleanup` del hijo y no hay tope de salida.

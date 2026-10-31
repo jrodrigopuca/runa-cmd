@@ -233,6 +233,7 @@ The `setup(api)` function receives:
 | `api.hook(name, handler)` | Register a lifecycle hook handler |
 | `api.getSchema()` | Get the introspected CLI schema |
 | `api.getCommands()` | Get the live command tree reference |
+| `api.getConfigValues()` | Get the values of the CLI's config file, if it has one |
 
 ### `getSchema(config)`
 
