@@ -42,13 +42,7 @@ La 1.0 depende de que la API no necesite cambios incompatibles durante una venta
 
 ## Decisiones abiertas
 
-| Tarea | Pregunta |
-|---|---|
-| [T-220](./backlog.md#t-220-forma-del-archivo-de-config) | Dónde vive el valor de un comando en el config |
-| [T-221](./backlog.md#t-221-probar-una-cli-sin-subproceso) | Cómo se prueba una CLI sin subproceso |
-| [T-212](./backlog.md#t-212-lo-que-devuelve-un-comando-llega-a-la-terminal) | Cómo llega a la terminal lo que devuelve un comando |
-| [T-213](./backlog.md#t-213-nombre-de-los-comandos) | Qué define el nombre de un comando |
-| [T-309](./backlog.md#t-309-fallos-sin-efecto-por-mcp) | Cómo se declara un fallo sin efectos |
+No hay decisiones abiertas.
 
 ## Cómo actualizar este archivo
 

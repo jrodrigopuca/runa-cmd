@@ -1,0 +1,11 @@
+# ADR-0044: Runa informa lo que ocurrió, y no opina sobre reintentos
+
+- **Estado:** aceptada
+- **Reemplaza:** `safeToRetry` y los textos sobre reintentos de [T-304](../backlog.md#t-304-contrato-de-resultado-y-errores). `class` y `effect` siguen vigentes.
+- **Drivers:** un `CommandError` previsto responde "may have taken effect. Check before retrying" y `safeToRetry: false`, aun en una tool de solo lectura (F-06). Runa solo sabe hasta dónde llegó el comando, no lo que hizo adentro. Un booleano tampoco dice cuántas veces ni cuándo reintentar: un `safeToRetry: true` puede llevar a repetir algo sin límite. Además, seguro no significa útil: con el proxy apagado, reintentar no sirve hasta que cambie el estado, como distingue [gRPC](https://grpc.io/docs/guides/status-codes/) con `FAILED_PRECONDITION`.
+- **Decisión:** `_meta['runa/error']` tiene `class` y `effect`, sin `safeToRetry`. Los textos agregados informan hechos y no mencionan reintentos: "The command did not run." con `effect: "none"`, "The command already ran." con `effect: "completed"`, y "The command did not finish." ante un crash o una cancelación. Un `CommandError` llega con `effect: "unknown"` y solo el mensaje del autor. Si el autor quiere orientar al modelo, lo escribe en ese mensaje. Reintentar queda en manos del autor y de quien usa el cliente MCP.
+- **Alternativas descartadas:** dejar que `readOnlyHint` implique que reintentar es seguro da una garantía basada en una pista. Sumar una opción `safeToRetry` en `CommandError` conserva un booleano sin límite ni contexto. Mantener `safeToRetry` tal como está deja a Runa opinando por defecto.
+- **Costo aceptado:** rompe a un cliente que lea `safeToRetry`. Si un comando falla a mitad de camino, el modelo solo ve `effect: "unknown"` y puede repetirlo: ese riesgo queda a cargo del autor y de quien aprueba las llamadas. Se reduce lo que Runa protege por defecto frente a [T-304](../backlog.md#t-304-contrato-de-resultado-y-errores).
+- **Revisar si:** un agente real repite un efecto dañino por falta de esta señal, o varios autores piden una forma estructurada de orientar al modelo.
+- **Código:** [`packages/mcp/src/server.ts`](../../packages/mcp/src/server.ts)
+- **Implementación:** [T-309](../backlog.md#t-309-fallos-sin-efecto-por-mcp)

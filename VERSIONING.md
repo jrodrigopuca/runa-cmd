@@ -18,7 +18,7 @@ A change here needs a major version.
 | Values | The order CLI, env, config and default, and the accepted forms of booleans and lists |
 | Lifecycle | The order of hooks, and when each one runs |
 | `getSchema()` | The meaning of its fields |
-| MCP tools | Tool names, input keys, and the `class`, `effect` and `safeToRetry` keys of `_meta['runa/error']` |
+| MCP tools | Tool names, input keys, and the `class` and `effect` keys of `_meta['runa/error']` |
 | Platform | The minimum Node version, and the Zod major |
 
 ## Types

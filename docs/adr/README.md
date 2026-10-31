@@ -54,3 +54,8 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0037](./0037-politica-de-versiones.md) | Lo que es contrato se puede usar en un programa | Aceptada |
 | [0038](./0038-ventana-de-estabilidad.md) | La ventana de estabilidad mide uso sobre una versión publicada | Aceptada |
 | [0039](./0039-paquetes-independientes-desde-1-0.md) | Los paquetes se versionan juntos hasta la 1.0.0, y por separado después | Aceptada, pendiente de código |
+| [0040](./0040-forma-del-archivo-de-config.md) | La raíz del config tiene las globales y los comandos | Aceptada, pendiente de código |
+| [0041](./0041-funcion-de-pruebas.md) | Una función de pruebas envuelve la CLI | Aceptada, pendiente de código |
+| [0042](./0042-lo-devuelto-llega-a-la-terminal.md) | Lo que devuelve un comando llega a la terminal | Aceptada, pendiente de código |
+| [0043](./0043-nombre-unico-de-comando.md) | Un comando se escribe de una sola forma | Aceptada, pendiente de código |
+| [0044](./0044-runa-no-opina-sobre-reintentos.md) | Runa informa lo que ocurrió, y no opina sobre reintentos | Aceptada, pendiente de código |

@@ -16,7 +16,7 @@ Del lado de Runa se reprodujo cada caso bloqueante con una CLI real sobre `main`
 
 | ID | Hallazgo | Contraste | Tarea |
 |---|---|---|---|
-| H1 | Las globales ignoran el config, aun con un tipo inválido | Observado: `{"store":"fromcfg"}` y `{"store":5}` dan `dflt` con exit 0. Leído: `defineCLI` tampoco deja declarar `env` en una global | [T-219](../backlog.md#t-219-las-opciones-globales-leen-el-config) |
+| H1 | Las globales ignoran el config, aun con un tipo inválido | Observado: `{"store":"fromcfg"}` y `{"store":5}` dan `dflt` con exit 0. `env` funciona, con `globalMeta` | [T-219](../backlog.md#t-219-las-opciones-globales-leen-el-config) |
 | H2 | El config es un espacio plano entre comandos | Observado: `{"force":true}` activa `--force`, una clave rompe a otro comando con exit 2, y `{"clear":{...}}` se ignora sin aviso | [T-220](../backlog.md#t-220-forma-del-archivo-de-config) |
 | H3 | `z.number()` en un posicional falla por CLI y funciona por MCP | Observado: `num 5` da exit 2 | [T-222](../backlog.md#t-222-los-posicionales-convierten-como-las-opciones) |
 | H4 | `cli.run()` termina el proceso ante un error, y devuelve `undefined` | Observado: el código posterior a un `run()` fallido no corre | [T-221](../backlog.md#t-221-probar-una-cli-sin-subproceso) |
@@ -43,7 +43,7 @@ Estos también entran en T-227, sin contrastar: booleano con default `true` sin 
 ## Qué cambia
 
 - **La prioridad pasa al config:** H1 viola [ADR-0008](../adr/0008-config-merge-en-core.md), y H2 define un formato que después de la 1.0 solo cambia con una major.
-- **H2 también es una cuestión de seguridad a evaluar:** un archivo en el directorio puede apagar un guardarraíl como `--force`. Depende de los `searchPaths`, y no se midió.
+- **H2 también es una cuestión de seguridad:** la búsqueda por defecto es `['.', '~']`, y el primer archivo gana. Por eso, un archivo en el directorio actual puede activar una opción como `--force`, y reemplaza por completo al del home.
 - **`notes` no cuenta para [T-404](../backlog.md#t-404-usar-mcp-desde-un-agente-real) ni cierra [T-403](../backlog.md#t-403-migración-de-un-dev-externo):** no prueba un agente real por MCP, y no lo hizo un dev externo.
 
 ## Lo que funcionó

@@ -59,17 +59,17 @@
 | | T-210 | Nombre del valor en la ayuda | Requerido | Hecho |
 | | T-211 | Errores de uso desde un comando | Opcional | Pendiente |
 | | T-219 | Las opciones globales leen el config | Requerido | Pendiente |
-| | T-220 | Forma del archivo de config | Requerido | Decisión pendiente |
-| | T-221 | Probar una CLI sin subproceso | Requerido | Decisión pendiente |
-| | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Decisión pendiente |
+| | T-220 | Forma del archivo de config | Requerido | Pendiente |
+| | T-221 | Probar una CLI sin subproceso | Requerido | Pendiente |
+| | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Pendiente |
 | | T-222 | Los posicionales convierten como las opciones | Requerido | Pendiente |
 | | T-223 | Flag desconocida en la raíz | Requerido | Pendiente |
 | | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Pendiente |
 | | T-225 | Completions con eval y texto con símbolos | Requerido | Pendiente |
-| | T-213 | Nombre de los comandos | Requerido | Decisión pendiente |
+| | T-213 | Nombre de los comandos | Requerido | Pendiente |
 | | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Pendiente |
 | | T-215 | README y changelog en npm | Requerido | Pendiente |
-| | T-309 | Fallos sin efecto por MCP | Requerido | Decisión pendiente |
+| | T-309 | Fallos sin efecto por MCP | Requerido | Pendiente |
 | | T-216 | Opción faltante con su variable de entorno | Opcional | Pendiente |
 | | T-217 | Valor por defecto legible en la ayuda | Opcional | Pendiente |
 | | T-218 | Parada limpia de un servicio | Opcional | Pendiente |
@@ -504,7 +504,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Criterios de aceptación:**
   - El proyecto necesita MCP por sí mismo, y su agente lo adopta con el paquete publicado, sin acceso a este repo.
   - Un agente real llama tools de una CLI, por `--mcp`, y recibe el resultado completo.
-  - Un error de la tool llega al agente, y este no repite un efecto que ya ocurrió.
+  - Un error de la tool llega al agente con lo que ocurrió, y se registra qué hace el agente después.
   - Toda fricción nueva entra en este backlog.
 
 ### T-403 Migración de un dev externo
@@ -548,25 +548,31 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-212 Lo que devuelve un comando llega a la terminal
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
+- **Estado:** Pendiente
 - **Descripción:** como autor de una CLI, quiero que un mismo `run()` sirva a personas y agentes. Hoy lo devuelto llega a la tool pero no a la terminal, así que hay que imprimir y además devolver. Sin `output`, los tipos tampoco permiten devolver un valor, aunque el README de `mcp` lo documenta. Reúne F-01, F-02, F-11 y F-12 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
-- **Decisión:** cómo se muestra el resultado en la terminal, si el autor puede dar un formato para personas, y si existe un `--json` estándar. Puede ser un cambio incompatible, y necesita un ADR.
+- **Decisión:** [ADR-0042](./adr/0042-lo-devuelto-llega-a-la-terminal.md). Lo devuelto sale por stdout, con `format(result)` si existe; un comando con `format` recibe `--json`, y `format` no corre por MCP.
 - **Criterios de aceptación:**
-  - Un comando que devuelve un valor no deja la terminal vacía con exit 0, y la salida va por stdout.
+  - Un string sale tal cual, y otro valor como JSON, por stdout, con y sin `output`.
+  - Con `format`, stdout muestra su resultado, y `--json` muestra el dato como JSON.
+  - Un comando con `format` que devuelve `undefined` falla como error del autor.
   - Un comando que solo imprime se comporta igual que hoy.
-  - Devolver un valor sin `output` compila, o el README deja de documentarlo.
-  - Una opción que solo sirve en la terminal no le llega al modelo.
-  - Un formato para personas no corre en una llamada MCP.
+  - Devolver un valor sin `output` compila, y `format` recibe el tipo de lo devuelto.
+  - `format` no corre en una llamada MCP, y `--json` no aparece en la tool.
+  - Declarar la opción `json` junto con `format` falla al arrancar.
+  - La nota de migración muestra cómo pasar de imprimir y devolver a `format`.
 
 ### T-213 Nombre de los comandos
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
+- **Estado:** Pendiente
 - **Descripción:** como autor de una CLI, quiero que el nombre que declaro sea el que se ejecuta. `meta.name` es obligatorio, pero en `defineCLI` manda la clave: `withOutput` se ejecuta como `withOutput`, aunque `darkColor` sea `--dark-color`. Es F-03 de [`local-beacon`](./research/2026-10-local-beacon-friction.md), y va contra [ADR-0029](./adr/0029-cada-campo-tiene-efecto.md).
-- **Decisión:** si manda `meta.name`, si la clave pasa a kebab-case como las flags, o si `meta.name` deja de ser obligatorio. Cambia nombres de comandos y de tools, así que debe salir antes de la ventana.
+- **Decisión:** [ADR-0043](./adr/0043-nombre-unico-de-comando.md). La clave es el nombre, sin conversión, en minúsculas, números y guiones.
 - **Criterios de aceptación:**
-  - Una sola regla define el nombre en la terminal, en la ayuda, en completions y en la tool MCP.
-  - Ningún campo obligatorio queda sin efecto.
+  - `commands: { 'with-output': withOutput }` se ejecuta como `with-output`, con ese nombre en ayuda, completions, config y tool.
+  - `commands: { withOutput }` falla al arrancar, e indica la forma correcta.
+  - `meta.name` es opcional en un subcomando, y si no coincide con la clave, falla al arrancar.
+  - `runCLI` sigue exigiendo `meta.name`.
+  - Se comprueba una tool con guión con un cliente MCP real.
   - La nota de migración muestra el cambio.
 
 ### T-214 La ayuda de un subcomando muestra la CLI
@@ -592,13 +598,16 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-309 Fallos sin efecto por MCP
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
+- **Estado:** Pendiente
 - **Descripción:** como autor de una tool, quiero que un fallo previsto no le sugiera al modelo un efecto que no ocurrió. Hoy un `CommandError` devuelve `effect: "unknown"` y `safeToRetry: false`, aun en una tool con `readOnlyHint: true`. Es F-06 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
-- **Decisión:** si el autor declara el efecto al lanzar el error, si `readOnlyHint` alcanza para considerar seguro reintentar, o ambas. `annotations` son pistas y no límites, como dice [ADR-0031](./adr/0031-quien-opera-gana-al-modelo.md).
+- **Decisión:** [ADR-0044](./adr/0044-runa-no-opina-sobre-reintentos.md). Runa informa lo que ocurrió y no opina sobre reintentos: `safeToRetry` desaparece.
 - **Criterios de aceptación:**
-  - Un autor puede declarar que un fallo no tuvo efectos, y el modelo recibe `effect: "none"`.
-  - Sin esa declaración, un fallo sigue siendo `unknown`: la duda nunca se resuelve hacia reintentar.
-  - El texto que recibe el modelo coincide con `_meta['runa/error']`.
+  - `_meta['runa/error']` tiene `class` y `effect`, sin `safeToRetry`.
+  - Un `CommandError` llega con `effect: "unknown"` y solo el mensaje del autor.
+  - Input inválido da "The command did not run.", lo ya terminado "The command already ran.", y un crash o una cancelación "The command did not finish.".
+  - Ningún texto agregado por Runa menciona reintentos.
+  - `readOnlyHint` no cambia la respuesta de error.
+  - La nota de migración muestra el cambio para los clientes.
 
 ### T-216 Opción faltante con su variable de entorno
 
@@ -639,7 +648,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Descripción:** como persona que usa una CLI, quiero que un `store` en el config se respete, y no escribir en otro archivo sin enterarme. Hoy una global ignora el config sin aviso, aun con un tipo inválido, y `defineCLI` no deja declararle `env`. Es H1 de [la evaluación](./research/2026-10-first-use-evaluation.md), y va contra [ADR-0008](./adr/0008-config-merge-en-core.md).
+- **Descripción:** como persona que usa una CLI, quiero que un `store` en el config se respete, y no escribir en otro archivo sin enterarme. Hoy una global ignora el config sin aviso, aun con un tipo inválido, aunque `env` sí funciona. Es H1 de [la evaluación](./research/2026-10-first-use-evaluation.md), y va contra [ADR-0008](./adr/0008-config-merge-en-core.md).
 - **Criterios de aceptación:**
   - Una global respeta CLI, env, config y default, igual que una opción de comando.
   - Un valor inválido en el config da exit 2.
@@ -648,27 +657,33 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-220 Forma del archivo de config
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
+- **Estado:** Pendiente
 - **Descripción:** como autor de una CLI, quiero dar un valor a un solo comando. Hoy una clave se aplica a toda opción con ese nombre: `{"force":true}` activa `--force`, una clave de `add` rompe `list`, y `{"clear":{...}}` se ignora sin aviso. Es H2 de [la evaluación](./research/2026-10-first-use-evaluation.md).
-- **Decisión:** dónde vive el valor de un comando y qué pasa con una clave desconocida. El formato es contrato, así que necesita un ADR, y cambiarlo después de la 1.0 exige una major.
+- **Decisión:** [ADR-0040](./adr/0040-forma-del-archivo-de-config.md). La raíz tiene las globales y los comandos, anidados; lo desconocido es un error, y una global no puede llamarse como un comando.
 - **Criterios de aceptación:**
-  - Un valor se puede asignar a un solo comando, incluso anidado.
-  - Una clave del config no cambia en silencio el comportamiento de otro comando.
-  - Una clave desconocida no se ignora sin aviso.
-  - Un error de valor nombra el archivo y la clave, y un JSON roto es un error de uso del archivo, no `Unexpected error`.
-  - Se evalúa si un config del directorio puede apagar un guardarraíl o cambiar el schema de una tool, según [ADR-0031](./adr/0031-quien-opera-gana-al-modelo.md).
-  - `VERSIONING.md` y los README documentan la forma.
+  - `{"clear":{"force":true}}` afecta a `clear`, y `{"tag":{"add":{...}}}` a `tag add`.
+  - Una clave de un comando no cambia a otro comando.
+  - Una clave desconocida da exit 2, y nombra el archivo y la clave. `$schema` se acepta.
+  - Una global con el nombre de un comando falla al arrancar, si la CLI declara `config`.
+  - Un error de valor nombra el archivo y la clave, y un JSON roto es un error del archivo, no `Unexpected error`.
+  - Por MCP, un valor del config solo fija la opción de ese comando (H9).
+  - `VERSIONING.md` y los README documentan la forma, y una nota de migración muestra el cambio.
 
 ### T-221 Probar una CLI sin subproceso
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
+- **Estado:** Pendiente
 - **Descripción:** como autor de una CLI, quiero probar mis comandos sin que un error termine el runner. Hoy `cli.run()` llama a `process.exit`, devuelve `undefined`, y no se pueden capturar stdout, stderr ni el exit code. Son H4 y F-09.
-- **Decisión:** cambiar `run()`, o agregar un `testCLI()` que devuelva `{ code, stdout, stderr, result }`.
+- **Decisión:** [ADR-0041](./adr/0041-funcion-de-pruebas.md). Una función `testCLI()` envuelve la CLI y da más detalle que una ejecución normal.
 - **Criterios de aceptación:**
   - Una prueba ejecuta un comando que falla y sigue corriendo.
   - La prueba lee el exit code, stdout, stderr y lo devuelto.
-  - La guía de testing de T-503 lo usa.
+  - La prueba pasa variables y valores de config sin archivos ni parches.
+  - Ante un fallo, la prueba lee el error original, y un registro de lo ocurrido.
+  - `cleanup` corre igual que en una ejecución real.
+  - No se pierden los resultados de `node --test` ni de Vitest.
+  - Se comprueba si admite ejecuciones concurrentes, y el resultado queda documentado.
+  - La guía de testing de T-503 la usa.
 
 ### T-222 Los posicionales convierten como las opciones
 
