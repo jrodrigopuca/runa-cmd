@@ -56,7 +56,7 @@
 | | T-404 | Usar MCP desde un agente real | Requerido | Pendiente |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
 | | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Pendiente |
-| | T-210 | Nombre del valor en la ayuda | Opcional | Pendiente |
+| | T-210 | Nombre del valor en la ayuda | Requerido | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Pendiente |
 | | T-502 | Política de semver y deprecación | Requerido | Pendiente |
@@ -507,7 +507,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 ### T-210 Nombre del valor en la ayuda
 
-- **v1:** Opcional
+- **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como autor de una CLI, quiero mostrar `--dark-color <hex>` en vez de `--dark-color <string>`. qr-plus lo hacía con `hint`, que se eliminó.
 - **Criterios de aceptación:**

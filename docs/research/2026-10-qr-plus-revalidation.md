@@ -17,7 +17,8 @@ Se ejecutó el binario real de `@qr-plus/cli` con 35 invocaciones antes y despu�
 | Líneas de setup de la CLI | 165 | 82 |
 | Líneas del archivo | 439 | 348 |
 | Dependencias `@runa-cmd/*` | 2 | 1 |
-| Pruebas e2e de qr-plus | 41 pasan | 41 pasan |
+
+**Corrección:** una versión anterior de esta tabla citaba las 41 pruebas e2e de qr-plus como evidencia. Esas pruebas validan `@qr-plus/core` y nunca ejecutan el binario, así que no dicen nada de esta migración. La evidencia son las 35 invocaciones comparadas, que todavía no están en el repo de qr-plus.
 
 | Workaround | Estado |
 |---|---|
