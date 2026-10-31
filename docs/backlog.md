@@ -308,7 +308,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Estado:** Hecho
 - **Descripción:** como quien opera un servidor, quiero que lo que configuré no lo pueda cambiar el modelo, y que el modelo no vea secretos.
 - **Criterios de aceptación:**
-  - Una opción con valor de env o config sale del `inputSchema`. Las globales de arranque nunca forman parte de él.
+  - Una opción que declara `env` nunca entra en el `inputSchema`, tenga o no valor. Tampoco una con valor de config, ni las globales de arranque.
+  - Si a esa opción le falta un valor requerido, la llamada falla con el error normal de la CLI.
   - Enviar esa opción igualmente no cambia el valor.
   - Una opción requerida que ya viene de env no le exige nada al modelo.
   - Un `.default()` no pisa el valor de un archivo de config.

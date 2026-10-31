@@ -2,8 +2,10 @@
  * @runa-cmd/mcp — What the operator of the server decides, not the model
  *
  * At the CLI, a flag beats env because the same person sets both. With a tool,
- * whoever starts the server and whoever calls the tool are different: a value
- * the operator fixed leaves the schema and stays out of the model's reach.
+ * whoever starts the server and whoever calls the tool are different: an option
+ * that declares env, or that has a value, stays out of the model's reach. The
+ * rule doesn't depend on the value being set, or a forgotten API_TOKEN would
+ * turn into a parameter the model can ask a person for.
  */
 import { type OptionMeta, RunaError } from '@runa-cmd/core';
 import type { ToolRegistration } from './schema.js';
@@ -44,9 +46,13 @@ function assertValidTools(
 	}
 }
 
-function fixedValue(key: string, reg: ToolRegistration, values: OperatorValues): unknown {
+function envNameOf(key: string, reg: ToolRegistration): string | undefined {
 	const optionMeta = reg.command.meta.options as Record<string, OptionMeta> | undefined;
-	const envName = optionMeta?.[key]?.env;
+	return optionMeta?.[key]?.env;
+}
+
+function fixedValue(key: string, reg: ToolRegistration, values: OperatorValues): unknown {
+	const envName = envNameOf(key, reg);
 	const fromEnv = envName === undefined ? undefined : values.env[envName];
 	return fromEnv ?? values.configValues?.[key];
 }
@@ -73,18 +79,20 @@ function applyToTool(
 
 		const value = fixedValue(key, reg, values);
 		const isServerOnly = options.serverOnly?.includes(key) ?? false;
-		if (value === undefined && !isServerOnly) continue;
 
-		if (value === undefined) {
+		if (value === undefined && isServerOnly) {
 			throw invalidTools(
 				`option --${key} of tool '${reg.name}' is server-only and has no value. ` +
 					'Set it through its env var or the config file.',
 			);
 		}
 
+		const belongsToOperator = value !== undefined || envNameOf(key, reg) !== undefined;
+		if (!belongsToOperator) continue;
+
 		delete inputShape[key];
 		fixed.add(key);
-		fixedValues.push(value);
+		if (value !== undefined) fixedValues.push(value);
 	}
 
 	return {

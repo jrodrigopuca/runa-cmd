@@ -6,7 +6,7 @@
 
 /** What one tool leaves to the model. */
 export interface ToolOptions {
-	/** Options the model can set, even if env or config give them a value */
+	/** Options the model can set, even if they declare env or have a config value */
 	expose?: string[];
 	/** Options that must come from env or config: without a value, the server won't start */
 	serverOnly?: string[];

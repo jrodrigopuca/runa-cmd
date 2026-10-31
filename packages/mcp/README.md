@@ -99,7 +99,7 @@ A returned value wins over what the command printed.
 
 ## What the Operator Decides
 
-Whoever starts the server beats the model. An option with a value from an env var or the config file leaves the tool's schema, and if a model sends it anyway, it's dropped.
+Whoever starts the server beats the model. An option that declares `env`, or has a value in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call, so a model can't ask anyone for it.
 
 ```ts
 mcpPlugin({
@@ -113,6 +113,8 @@ mcpPlugin({
 ```
 
 Fixed values of 8 characters or more, and the global options the server started with, are redacted from the stdout and stderr returned to the model. What `run()` returns is left as it is, so don't return secrets.
+
+**Secrets belong in `env`.** Redaction is a safety net, not a barrier: it matches exact text, so it won't catch a value that was transformed, as with base64, and a command can always leak what it receives. Don't expose a command an agent shouldn't run.
 
 ## Current Limitations
 
@@ -154,7 +156,7 @@ interface McpPluginOptions {
 }
 
 interface ToolOptions {
-  expose?: string[];     // Options the model can set, even if they have a value
+  expose?: string[];     // Options the model can set, even if they declare env
   serverOnly?: string[]; // Options that must come from env or config
 }
 ```

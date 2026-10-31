@@ -269,16 +269,17 @@ describe('values the operator fixed', () => {
 		return tools.find((tool) => tool.name === 'operated') as Record<string, any>;
 	}
 
-	it('asks the model for every option when nothing is fixed', async () => {
+	it('never shows an option that declares env, even without a value', async () => {
 		const { inputSchema } = await operatedTool(await serve());
-		expect(Object.keys(inputSchema.properties)).toEqual([
-			'service',
-			'region',
-			'token',
-			'bucket',
-			'note',
-		]);
-		expect(inputSchema.required).toEqual(['service', 'token']);
+		expect(Object.keys(inputSchema.properties)).toEqual(['service', 'bucket', 'note']);
+		expect(inputSchema.required).toEqual(['service']);
+	});
+
+	it('does not let the model fill a missing secret: the call fails instead', async () => {
+		const client = await serve();
+		const result = await client.call('operated', { service: 'api', token: 'made-up' });
+		expect(result.isError).toBe(true);
+		expect(text(result)).toContain('Missing required option: --token');
 	});
 
 	it('hides what env and config provide', async () => {

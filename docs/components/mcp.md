@@ -40,7 +40,7 @@ Las opciones globales que recibe el servidor al arrancar llegan a cada llamada.
 
 ## Lo que decide quien opera
 
-Quien lanza el servidor le gana al modelo ([ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md)). Una opción con valor de env o config sale del schema, y si el modelo la envía igual, se descarta.
+Quien lanza el servidor le gana al modelo ([ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md)). Una opción que declara `env`, o que tiene valor de config, no entra en el schema, y si el modelo la envía igual, se descarta. La regla vale aunque la variable no esté definida: si falta un valor requerido, la llamada falla, y el modelo no puede pedírselo a nadie.
 
 ```ts
 mcpPlugin({
@@ -56,6 +56,16 @@ mcpPlugin({
 Un nombre de tool u opción inexistente hace fallar el arranque con `MCP_INVALID_TOOLS`.
 
 Los valores fijos de 8 caracteres o más, y las globales de arranque, se redactan del stdout y el stderr devueltos. Lo que `run()` devuelve no se altera, así que un comando no debería devolver un secreto.
+
+### Secretos
+
+Runa no tiene un concepto de secreto: un secreto va por `env` ([ADR-0032](../adr/0032-postura-sobre-secretos.md)).
+
+| Runa garantiza | Runa no garantiza |
+|---|---|
+| Lo que declara `env` o tiene valor de config no llega al schema | Que un comando no filtre un secreto por su cuenta |
+| El modelo no puede cambiar lo que fijó quien opera | Detectar valores transformados, como base64 |
+| Redacción exacta de stdout y stderr, como red de seguridad | Proteger lo que `run()` devuelve |
 
 ## Comprobación al arrancar
 
@@ -104,4 +114,4 @@ El valor devuelto gana sobre stdout. Para detectar una tool dentro de un hook, u
 - **No hay estado entre llamadas.** Cada una es un proceso nuevo: un pool de conexiones no se comparte.
 - **Solo hay transporte stdio.**
 
-Flujo: [llamada a una tool](../flows/mcp-tool-call.md). Decisiones: [ADR-0017](../adr/0017-mapeo-de-comandos-a-tools-mcp.md), [ADR-0025](../adr/0025-control-de-mcp-en-el-plugin.md), [ADR-0030](../adr/0030-tools-mcp-en-subproceso.md), [ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md).
+Flujo: [llamada a una tool](../flows/mcp-tool-call.md). Decisiones: [ADR-0017](../adr/0017-mapeo-de-comandos-a-tools-mcp.md), [ADR-0025](../adr/0025-control-de-mcp-en-el-plugin.md), [ADR-0030](../adr/0030-tools-mcp-en-subproceso.md), [ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md), [ADR-0032](../adr/0032-postura-sobre-secretos.md).
