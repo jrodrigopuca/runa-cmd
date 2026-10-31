@@ -52,7 +52,7 @@
 | | T-206 | Kebab-case por defecto | Requerido | Hecho |
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Hecho |
 | 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Hecho |
-| | T-402 | Revalidar qr-plus | Requerido | En curso |
+| | T-402 | Revalidar qr-plus | Requerido | Hecho |
 | | T-404 | Usar MCP desde un agente real | Requerido | Pendiente |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
 | | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Hecho |
@@ -468,8 +468,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-402 Revalidar qr-plus
 
 - **v1:** Requerido
-- **Estado:** En curso
-- **Descripción:** como mantenedor, quiero comprobar en un proyecto real que el trabajo resolvió el problema, antes de iniciar la ventana de estabilidad. El resultado está en [la revalidación](./research/2026-10-qr-plus-revalidation.md).
+- **Estado:** Hecho
+- **Descripción:** como mantenedor, quiero comprobar en un proyecto real que el trabajo resolvió el problema, antes de iniciar la ventana de estabilidad. El detalle está en [la revalidación](./research/2026-10-qr-plus-revalidation.md).
+- **Resultado:** con `0.2.0-beta.2`, qr-plus borró los cinco workarounds y el setup bajó de 165 a 77 líneas, con 48 pruebas de caja negra sobre su binario. Lo único que se perdió a propósito es `-V`, que el README de qr-plus no documentaba.
 - **Criterios de aceptación:**
   - qr-plus borra los cinco workarounds sin cambiar su comportamiento.
   - Se registra cuántas líneas de setup quedan respecto de las 170 actuales.

@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. La revalidación de qr-plus (T-402) borró casi todos sus workarounds, y sus pedidos, T-209 y T-210, salieron en `0.2.0-beta.2`. Falta que qr-plus repita sus casos con esa versión, y sigue pendiente T-404.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. qr-plus ya corre sobre `0.2.0-beta.2` sin workarounds (T-402), y no tiene pedidos pendientes para 1.0. Falta usar MCP desde un agente real (T-404) y retirar el modo implícito (T-208).
 
 ## Versiones
 
