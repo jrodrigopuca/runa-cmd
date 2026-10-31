@@ -48,7 +48,7 @@
 | | T-307 | Evento por llamada | Opcional | Pendiente |
 | | T-308 | Comandos de plugins fuera de las tools | Opcional | Pendiente |
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Hecho |
-| | T-205 | Ruteo único para la ayuda | Requerido | Pendiente |
+| | T-205 | Ruteo único para la ayuda | Requerido | Hecho |
 | | T-206 | Kebab-case por defecto | Requerido | Pendiente |
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Pendiente |
 | 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Pendiente |
@@ -408,14 +408,16 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-205 Ruteo único para la ayuda
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** T-204
+- **Estado:** Hecho
 - **Descripción:** como usuario de una CLI, quiero ver la ayuda de lo que pedí, sin que la ayuda resuelva comandos por su cuenta.
 - **Criterios de aceptación:**
   - `tool db migrate --help` muestra `db migrate`.
   - La ayuda de un comando único muestra su uso real, sus argumentos y las opciones globales.
-  - Un CLI multi-comando sin argumentos muestra la ayuda.
-  - `tool db` sin subcomando muestra la ayuda de `db`.
+  - Un CLI multi-comando sin argumentos muestra la ayuda por stderr y sale con 2.
+  - `tool db` sin subcomando muestra la ayuda de `db` por stderr y sale con 2.
+  - Un subcomando que no existe sigue siendo 127, con su sugerencia.
+  - `--help` y `--version` funcionan aunque falte una opción global obligatoria.
+  - Ejecutar un comando y mostrar su ayuda usan la misma función de ruteo.
   - `resolveTarget` desaparece de `@runa-cmd/help`.
 
 ### T-206 Kebab-case por defecto

@@ -76,27 +76,23 @@ function withGlobals(command: CommandSchema, globals: OptionSchema[]): CommandSc
 	return { ...command, options: [...command.options, ...inherited] };
 }
 
-function deepestCommand(schema: CLISchema, argv: string[]): CommandSchema | undefined {
+function commandAt(schema: CLISchema, path: string[]): CommandSchema | undefined {
 	let level = schema.commands;
 	let found: CommandSchema | undefined;
 
-	for (const token of argv) {
-		if (token.startsWith('-')) continue;
-		const match = level.find((command) => command.name === token);
-		if (!match) break;
-		found = match;
-		level = match.subcommands ?? [];
+	for (const name of path) {
+		found = level.find((command) => command.name === name);
+		level = found?.subcommands ?? [];
 	}
 	return found;
 }
 
 /**
- * What the help is about: the command named in argv, or the one that runs
- * without a subcommand, or else the whole CLI.
+ * What the help is about: where routing got to, or the whole CLI if it got
+ * nowhere. Routing is core's: this only finds that place in the schema.
  */
-export function findHelpTarget(schema: CLISchema, argv: string[]): HelpTarget {
-	const root = schema.commands.find((command) => command.name === schema.root);
-	const command = deepestCommand(schema, argv) ?? root;
+export function findHelpTarget(schema: CLISchema, path: string[]): HelpTarget {
+	const command = commandAt(schema, path);
 	return command ? withGlobals(command, schema.globalOptions) : schema;
 }
 

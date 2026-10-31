@@ -182,12 +182,16 @@ definePlugin({
   meta: { name: 'my-help' },
   capabilities: { replaceHelp: true },
   setup(api) {
-    api.replaceHelp((target) => console.log(render(target)));
+    api.replaceHelp((target, output) => output.write(`${render(target)}\n`));
   },
 });
 ```
 
-`target` is a `CLISchema` or a `CommandSchema`. Only one plugin can replace the help.
+`target` is a `CLISchema` or a `CommandSchema`. `output` is stdout, or stderr when there was nothing to run. Only one plugin can replace the help.
+
+With nothing to run, as in `tool` on a CLI with several commands or `tool db` on a group, help goes to stderr and the exit code is 2. A script with an empty command fails instead of passing. A name that doesn't exist is still a 127, with a suggestion.
+
+`--help` and `--version` work even if a required global option is missing.
 
 ### `--version`
 

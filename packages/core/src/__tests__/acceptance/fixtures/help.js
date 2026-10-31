@@ -14,8 +14,8 @@ const replacesHelp = (name) =>
 		meta: { name, version: '1.0.0' },
 		capabilities: { replaceHelp: true },
 		setup(api) {
-			api.replaceHelp((target) =>
-				console.log(`custom help for ${target.name ?? target.meta.name}`),
+			api.replaceHelp((target, output) =>
+				output.write(`custom help for ${target.name ?? target.meta.name}\n`),
 			);
 		},
 	});
@@ -26,7 +26,10 @@ if (process.env.TWO_HELPS) plugins.push(replacesHelp('custom-b'));
 
 await defineCLI({
 	meta: { name: 'app', version: '2.0.0', description: 'A sample app' },
-	globalOptions: { profile: z.string().default('dev').describe('Profile to use') },
+	globalOptions: {
+		profile: z.string().default('dev').describe('Profile to use'),
+		...(process.env.REQUIRED_GLOBAL ? { token: z.string() } : {}),
+	},
 	plugins,
 	commands: {
 		serve: defineCommand({

@@ -11,10 +11,11 @@ sequenceDiagram
     participant H as helpPlugin
     U->>C: tool deploy --help
     C->>C: Extrae las opciones globales
+    C->>C: findRoute(argv)
     C->>C: ¿El comando declara el token?
-    C->>C: findHelpTarget(schema, argv)
+    C->>C: findHelpTarget(schema, ruta)
     alt Con plugin
-        C->>H: show(target)
+        C->>H: show(target, output)
         H->>U: stdout, con tema
     else Sin plugin
         C->>U: stdout, texto plano
@@ -36,17 +37,24 @@ Lo que va después de `--` es dato, y nunca muestra la ayuda.
 
 ## Cómo se elige qué mostrar
 
-`findHelpTarget` recorre argv por el árbol de comandos, salteando flags, y se queda con el más profundo. Si no encuentra ninguno y la CLI tiene comando raíz, como con `runCLI`, usa ese. Si no, muestra la CLI entera.
+El ruteo es uno solo: `findRoute` usa la misma función que ejecuta un comando, y devuelve hasta dónde llegó. `findHelpTarget` solo busca ese punto en el schema. Si la ruta quedó vacía, muestra la CLI entera.
 
-| Entrada | Muestra | ¿Correcto? |
+| Entrada | Muestra | Stream y exit |
 |---|---|---|
-| `tool --help` | Ayuda raíz | Sí en multi-comando y con `runCLI`; no en modo implícito (KI-011) |
-| `tool deploy --help` | Ayuda de `deploy` | Sí |
-| `tool db --help` | Ayuda de `db`, con sus subcomandos | Sí |
-| `tool db migrate --help` | Ayuda de `db migrate` | Sí |
-| `tool --profile prod status --help` | Ayuda de `status` | Sí, porque las globales ya se extrajeron |
-| `tool nope --help` | Ayuda raíz | Sí |
-| `tool -- --help` | No hay ayuda; es dato | Sí |
+| `tool --help`, multi-comando | Ayuda raíz | stdout, 0 |
+| `tool --help`, un comando | Ayuda del comando | stdout, 0 |
+| `tool db --help` | Ayuda de `db`, con sus subcomandos | stdout, 0 |
+| `tool db migrate --help` | Ayuda de `db migrate` | stdout, 0 |
+| `tool --profile prod status --help` | Ayuda de `status`, porque las globales ya se extrajeron | stdout, 0 |
+| `tool nope --help` | Ayuda raíz | stdout, 0 |
+| `tool`, multi-comando | Ayuda raíz | stderr, 2 |
+| `tool db` | Ayuda de `db` | stderr, 2 |
+| `tool nope` | `Command not found`, con sugerencia | stderr, 127 |
+| `tool -- --help` | No hay ayuda; es dato | |
+
+Sin nada que correr, es un error de uso ([ADR-0034](../adr/0034-sin-nada-que-correr-es-un-error-de-uso.md)).
+
+`--help` y `--version` no fallan si falta una opción global obligatoria, porque preguntar cómo se usa una CLI no puede exigir ya saberlo. `tool` sin argumentos sí la exige: esa tolerancia solo aplica a una pregunta explícita, para que `--mcp` no pierda sus opciones.
 
 ## Qué renderiza
 
@@ -59,6 +67,6 @@ Lo que va después de `--` es dato, y nunca muestra la ayuda.
 
 `renderHelp` en `core` da texto plano, y `defaultRenderer` en `@runa-cmd/help` agrega tema y layout. `packages/help/src/__tests__/alignment.test.ts` exige las mismas secciones, en el mismo orden, y que el plugin muestre todo lo que muestra `core`.
 
-Un plugin reemplaza la ayuda con `api.replaceHelp(show)`, que requiere la capacidad `replaceHelp`. Solo un plugin puede hacerlo: un segundo falla al arrancar con `HELP_ALREADY_REPLACED`.
+Un plugin reemplaza la ayuda con `api.replaceHelp(show)`, que requiere la capacidad `replaceHelp`. `show` recibe el objetivo y el stream donde escribir. Solo un plugin puede hacerlo: un segundo falla al arrancar con `HELP_ALREADY_REPLACED`.
 
 Ver [known issues](../known-issues.md).

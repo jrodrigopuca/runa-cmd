@@ -190,8 +190,14 @@ export interface PluginAPI {
 /** What help is about. A command also lists the global options that work on it. */
 export type HelpTarget = CLISchema | CommandSchema;
 
-/** Shows the help of a target: where and how it's written is up to the plugin. */
-export type HelpHandler = (target: HelpTarget) => void | Promise<void>;
+/**
+ * Shows the help of a target, how the plugin wants. Write it to `output`:
+ * stdout if the person asked for it, stderr if there was nothing to run.
+ */
+export type HelpHandler = (
+	target: HelpTarget,
+	output: NodeJS.WritableStream,
+) => void | Promise<void>;
 
 // ─── Lifecycle Hooks ────────────────────────────────────────
 

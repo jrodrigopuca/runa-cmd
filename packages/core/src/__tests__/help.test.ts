@@ -37,31 +37,25 @@ const cli: CLISchema = {
 
 describe('findHelpTarget', () => {
 	it.each([
-		['nothing', ['--help'], 'app'],
-		['a command', ['deploy', '--help'], 'deploy'],
-		['a group', ['db', '--help'], 'db'],
-		['a nested command', ['db', 'migrate', '--help'], 'migrate'],
-		['flags before the command', ['-x', 'deploy', '--help'], 'deploy'],
-		['an unknown command', ['nope', '--help'], 'app'],
-	])('with %s', (_case, argv, expected) => {
-		const target = findHelpTarget(cli, argv);
+		['nothing', [], 'app'],
+		['a command', ['deploy'], 'deploy'],
+		['a group', ['db'], 'db'],
+		['a nested command', ['db', 'migrate'], 'migrate'],
+		['a path that is not in the schema', ['nope'], 'app'],
+	])('with %s', (_case, path, expected) => {
+		const target = findHelpTarget(cli, path);
 		expect('meta' in target ? target.meta.name : target.name).toBe(expected);
 	});
 
-	it('uses the root command when argv names none', () => {
-		const target = findHelpTarget({ ...cli, root: 'deploy' }, ['--help']);
-		expect(target).toMatchObject({ name: 'deploy' });
-	});
-
 	it('adds the global options to a command', () => {
-		const target = findHelpTarget(cli, ['deploy', '--help']) as CommandSchema;
+		const target = findHelpTarget(cli, ['deploy']) as CommandSchema;
 		expect(target.options.map((option) => option.name)).toEqual(['force', 'help']);
 	});
 
 	it('leaves out what the command took for itself', () => {
 		const host = { ...flag('host', ['-h']) };
 		const named = { ...cli, commands: [command('serve', { options: [host] })] };
-		const target = findHelpTarget(named, ['serve', '--help']) as CommandSchema;
+		const target = findHelpTarget(named, ['serve']) as CommandSchema;
 		expect(target.options.find((option) => option.name === 'help')?.alias).toEqual([]);
 	});
 });

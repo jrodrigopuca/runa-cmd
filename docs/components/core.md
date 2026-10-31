@@ -117,7 +117,7 @@ Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_L
 
 ### Ayuda
 
-`--help` y `-h` funcionan sin plugins, con un renderer de texto plano ([ADR-0021](../adr/0021-help-y-version-en-core.md)). Un comando que declara alguno se lo queda, y el otro sigue mostrando la ayuda. `api.replaceHelp(show)` reemplaza cómo se muestra. El detalle está en el [flujo](../flows/help-rendering.md).
+`--help` y `-h` funcionan sin plugins, con un renderer de texto plano ([ADR-0021](../adr/0021-help-y-version-en-core.md)). Un comando que declara alguno se lo queda, y el otro sigue mostrando la ayuda. `api.replaceHelp(show)` reemplaza cómo se muestra. Si argv termina antes de llegar a un comando, la ayuda sale por stderr con exit 2 ([ADR-0034](../adr/0034-sin-nada-que-correr-es-un-error-de-uso.md)). El detalle está en el [flujo](../flows/help-rendering.md).
 
 ### Cómo se detiene una ejecución
 

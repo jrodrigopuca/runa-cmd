@@ -5,7 +5,13 @@
  * acceptance tests. What's left here is how the plugin shows a target.
  */
 
-import type { CLISchema, CommandSchema, HelpHandler, PluginConfig } from '@runa-cmd/core';
+import type {
+	CLISchema,
+	CommandSchema,
+	HelpHandler,
+	HelpTarget,
+	PluginConfig,
+} from '@runa-cmd/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetRenderContext } from '../ansi/detect.js';
 import { helpPlugin } from '../plugin.js';
@@ -35,8 +41,8 @@ const serve: CommandSchema = {
 	hasOutput: false,
 };
 
-/** The way the plugin shows help, as core would receive it. */
-function showOf(plugin: PluginConfig): HelpHandler {
+/** The way the plugin shows help, called the way core calls it for --help. */
+function showOf(plugin: PluginConfig) {
 	let show: HelpHandler | undefined;
 	plugin.setup({
 		replaceHelp: (handler: HelpHandler) => {
@@ -44,7 +50,9 @@ function showOf(plugin: PluginConfig): HelpHandler {
 		},
 	} as never);
 	if (!show) throw new Error('The plugin did not replace the help');
-	return show;
+	const handler = show;
+	return (target: HelpTarget, output: NodeJS.WritableStream = process.stdout) =>
+		handler(target, output);
 }
 
 // ─── Setup / Teardown ───────────────────────────────────────
@@ -88,6 +96,15 @@ describe('helpPlugin — showing help', () => {
 		showOf(helpPlugin())(serve);
 		expect(written()).toContain('serve');
 		expect(written()).toContain('Start dev server');
+	});
+
+	it('writes where core says', () => {
+		const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+		showOf(helpPlugin())(cli, process.stderr);
+
+		expect(stderr).toHaveBeenCalledTimes(1);
+		expect(writeSpy).not.toHaveBeenCalled();
+		stderr.mockRestore();
 	});
 
 	it('leaves the process to core by default', () => {

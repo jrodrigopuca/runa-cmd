@@ -20,6 +20,7 @@ import {
 	isDebugEnabled,
 	isUsageError,
 	RunaError,
+	ValidationError,
 } from './errors.js';
 import { commandClaims, findHelpTarget, HELP_TOKENS, renderHelp } from './help.js';
 import { getSchema } from './introspect.js';
@@ -64,7 +65,29 @@ import type {
 
 interface ResolvedCommand {
 	command: Command;
+	/** Command names from the root, as written in the tree */
+	path: string[];
 	remainingArgv: string[];
+}
+
+/** Routing stopped before a command: `path` is how far it got. */
+class RouteNotFoundError extends CommandNotFoundError {
+	constructor(
+		name: string,
+		suggestion: string | undefined,
+		readonly path: string[],
+		/** Nothing was wrong, only unfinished: argv ended before reaching a command */
+		readonly isIncomplete: boolean,
+	) {
+		super(name, suggestion);
+	}
+}
+
+/** Where argv leads. Running a command and showing its help both start here. */
+interface Route {
+	command?: Command;
+	path: string[];
+	isIncomplete: boolean;
 }
 
 /**
@@ -97,6 +120,7 @@ function resolveCommand(commands: CommandTree, tokens: string[]): ResolvedComman
 		if (isCommand(entry)) {
 			return {
 				command: entry,
+				path: tokens.slice(0, consumed),
 				remainingArgv: tokens.slice(consumed),
 			};
 		}
@@ -105,18 +129,14 @@ function resolveCommand(commands: CommandTree, tokens: string[]): ResolvedComman
 		current = entry;
 	}
 
-	// If we're in a subtree and haven't found a command, check for a default/index command
-	// For now, throw CommandNotFoundError
-
-	const commandName = tokens[consumed] ?? tokens[consumed - 1] ?? '';
-	const candidates = Object.keys(current);
-	const suggestion = commandName ? findSuggestion(commandName, candidates) : undefined;
-
-	if (!commandName && consumed === 0) {
-		throw new CommandNotFoundError('(no command specified)', undefined);
+	const path = tokens.slice(0, consumed);
+	const next = tokens[consumed];
+	if (next === undefined) {
+		throw new RouteNotFoundError(path.join(' ') || '(no command specified)', undefined, path, true);
 	}
 
-	throw new CommandNotFoundError(tokens.slice(0, consumed + 1).join(' '), suggestion);
+	const suggestion = findSuggestion(next, Object.keys(current));
+	throw new RouteNotFoundError([...path, next].join(' '), suggestion, path, false);
 }
 
 // ─── Output Validation ──────────────────────────────────────
@@ -200,6 +220,7 @@ interface SelectionScope {
 	hookCtx: HookContext;
 	help: HelpSlot;
 	schema: () => CLISchema;
+	exitWith: (code: number) => void;
 }
 
 function loadConfigValues(config: CLIConfig): Promise<Record<string, unknown> | undefined> {
@@ -212,6 +233,23 @@ function reportDeprecations(input: Parameters<typeof deprecationWarnings>[0]): v
 	}
 }
 
+/** The exit code of a usage error (ADR-0009). */
+const USAGE_EXIT_CODE = 2;
+
+/** What core answers by itself, instead of running a command. */
+function findBuiltInAnswer(
+	config: CLIConfig,
+	route: Route,
+	argv: string[],
+): 'version' | 'help' | 'usage' | undefined {
+	const isFree = (token: string) =>
+		argv.includes(token) && !(route.command && commandClaims(route.command, token));
+
+	if (config.meta.version !== undefined && isFree('--version')) return 'version';
+	if (HELP_TOKENS.some(isFree)) return 'help';
+	return route.isIncomplete ? 'usage' : undefined;
+}
+
 /** Select from argv. Undefined means the run ended here, as with --version. */
 async function selectFromArgv(
 	scope: SelectionScope,
@@ -220,20 +258,25 @@ async function selectFromArgv(
 ): Promise<Selection | undefined> {
 	const { config, commands, globalOptions, globalMeta, hookCtx, help } = scope;
 	const commandArgv = hookCtx.rawArgs;
-	const isBuiltIn = (token: string) =>
-		commandArgv.includes(token) && !routedCommandClaims(commands, commandArgv, rootName, token);
 
 	// ─── Built-in --version and --help (ADR-0021) ─────
 	// Globals were extracted above, so an option of the CLI never gets here.
-	if (config.meta.version !== undefined && isBuiltIn('--version')) {
+	const route = findRoute(commands, commandArgv, rootName);
+	const answer = findBuiltInAnswer(config, route, commandArgv);
+
+	if (answer === 'version') {
 		console.log(config.meta.version);
 		return undefined;
 	}
 
-	if (HELP_TOKENS.some(isBuiltIn)) {
-		const target = findHelpTarget(scope.schema(), commandArgv);
-		if (help.show) await help.show(target);
-		else console.log(renderHelp(target));
+	if (answer) {
+		// Asking for help is a success. Reaching it with nothing to run is a usage
+		// error: stdout stays clean, and a script with an empty command fails.
+		const output = answer === 'help' ? process.stdout : process.stderr;
+		const target = findHelpTarget(scope.schema(), route.path);
+		if (help.show) await help.show(target, output);
+		else output.write(`${renderHelp(target)}\n`);
+		if (answer === 'usage') scope.exitWith(USAGE_EXIT_CODE);
 		return undefined;
 	}
 
@@ -565,13 +608,23 @@ async function runCLILifecycle(
 				optionMeta: mutableGlobalMeta.options,
 			});
 
-			const { parsedOptions } = resolveValues({
-				parseArgsResult: { values: globalValues, positionals: [] },
-				longAliasMap,
-				schemas: { options: mutableGlobalOptions },
-				meta: { options: mutableGlobalMeta.options },
-			});
-			parsedGlobalOptions = parsedOptions;
+			// Asking how to use a CLI can't require already knowing its options.
+			const answer = findBuiltInAnswer(
+				config,
+				findRoute(mutableCommands, commandArgv, rootName),
+				commandArgv,
+			);
+			try {
+				parsedGlobalOptions = resolveValues({
+					parseArgsResult: { values: globalValues, positionals: [] },
+					longAliasMap,
+					schemas: { options: mutableGlobalOptions },
+					meta: { options: mutableGlobalMeta.options },
+				}).parsedOptions;
+			} catch (err) {
+				const isQuestion = answer === 'help' || answer === 'version';
+				if (!isQuestion || !(err instanceof ValidationError)) throw err;
+			}
 
 			reportDeprecations({
 				provided: Object.keys(globalValues),
@@ -601,6 +654,9 @@ async function runCLILifecycle(
 			hookCtx,
 			help,
 			schema: currentSchema,
+			exitWith: (code) => {
+				failureExitCode = code;
+			},
 		};
 		const selection = toolCall
 			? await selectFromInput(scope, toolCall)
@@ -698,18 +754,18 @@ async function runCLILifecycle(
 		}
 
 		stop.finish();
-	}
 
-	failureExitCode = stop.exitCode ?? failureExitCode;
-
-	// Exit only after cleanup: process.exit inside catch would skip the finally.
-	if (failureExitCode === undefined) return;
-
-	if (hookCtx.handled) {
-		// A plugin that truly recovered keeps control by setting process.exitCode.
-		process.exitCode ??= failureExitCode;
-	} else {
-		process.exit(failureExitCode);
+		// Exit only after cleanup: process.exit inside catch would skip the rest of
+		// this block. It can't go after it either: a return in the try never gets there.
+		const exitCode = stop.exitCode ?? failureExitCode;
+		if (exitCode !== undefined) {
+			if (hookCtx.handled) {
+				// A plugin that truly recovered keeps control by setting process.exitCode.
+				process.exitCode ??= exitCode;
+			} else {
+				process.exit(exitCode);
+			}
+		}
 	}
 }
 
@@ -730,7 +786,7 @@ function resolveCommandFromTree(
 		const first = argv[0] ?? '';
 		const isSubcommand = first !== rootName && Object.hasOwn(commands, first);
 		if (root && isCommand(root) && !isSubcommand) {
-			return { command: root, remainingArgv: argv };
+			return { command: root, path: [rootName], remainingArgv: argv };
 		}
 		return resolveCommand(commands, argv);
 	}
@@ -740,9 +796,10 @@ function resolveCommandFromTree(
 	const entries = Object.entries(commands);
 	const [name, entry] = entries[0] ?? [];
 	if (entries.length === 1 && entry && isCommand(entry)) {
-		if (argv[0] === name) return { command: entry, remainingArgv: argv.slice(1) };
+		const path = [name as string];
+		if (argv[0] === name) return { command: entry, path, remainingArgv: argv.slice(1) };
 		warnImplicitMode();
-		return { command: entry, remainingArgv: argv };
+		return { command: entry, path, remainingArgv: argv };
 	}
 
 	return resolveCommand(commands, argv);
@@ -759,18 +816,13 @@ function warnImplicitMode(): void {
 	});
 }
 
-/** Whether the command argv routes to declares this token as its own. */
-function routedCommandClaims(
-	commands: CommandTree,
-	argv: string[],
-	rootName: string | undefined,
-	token: string,
-): boolean {
+function findRoute(commands: CommandTree, argv: string[], rootName?: string): Route {
 	try {
-		return commandClaims(resolveCommandFromTree(commands, argv, rootName).command, token);
+		const { command, path } = resolveCommandFromTree(commands, argv, rootName);
+		return { command, path, isIncomplete: false };
 	} catch (err) {
-		if (err instanceof CommandNotFoundError) return false;
-		throw err;
+		if (!(err instanceof RouteNotFoundError)) throw err;
+		return { path: err.path, isIncomplete: err.isIncomplete };
 	}
 }
 

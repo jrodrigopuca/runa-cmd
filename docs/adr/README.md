@@ -48,3 +48,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0031](./0031-quien-opera-gana-al-modelo.md) | Quien opera el servidor le gana al modelo | Aceptada |
 | [0032](./0032-postura-sobre-secretos.md) | Postura sobre secretos | Aceptada |
 | [0033](./0033-parar-recorre-el-arbol-de-procesos.md) | Parar recorre el árbol de procesos | Aceptada |
+| [0034](./0034-sin-nada-que-correr-es-un-error-de-uso.md) | Sin nada que correr, la ayuda sale por stderr con exit 2 | Aceptada |

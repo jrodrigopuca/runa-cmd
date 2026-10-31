@@ -55,6 +55,72 @@ describe('help of a command', () => {
 	});
 });
 
+describe('nothing to run', () => {
+	it.each([
+		['the CLI', [], 'Start the server'],
+		['a group', ['db'], 'Run migrations'],
+	])('%s with no command shows help on stderr and exits with 2', (_case, argv, expected) => {
+		const result = app(argv);
+
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain(expected);
+		expect(result.stdout).not.toContain('USAGE');
+	});
+
+	it('runs cleanup', () => {
+		expect(app([]).stdout).toContain('cleanup-ran');
+	});
+
+	it('hands a replaced help the stream to write to', () => {
+		const result = app(['db'], { CUSTOM_HELP: '1' });
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain('custom help for db');
+	});
+
+	it('still treats a typo as a command that does not exist', () => {
+		const top = app(['serv']);
+		expect(top.status).toBe(127);
+		expect(top.stderr).toContain("Did you mean 'serve'?");
+
+		const nested = app(['db', 'migrat']);
+		expect(nested.status).toBe(127);
+		expect(nested.stderr).toContain("Did you mean 'migrate'?");
+	});
+});
+
+describe('a required global option', () => {
+	const env = { REQUIRED_GLOBAL: '1' };
+
+	it.each([
+		['--help'],
+		['-h'],
+		['serve', '--help'],
+		['--version'],
+	])('does not get in the way of %s', (...argv) => {
+		expect(
+			app(
+				argv.filter((token) => typeof token === 'string'),
+				env,
+			).status,
+		).toBe(0);
+	});
+
+	it('is still required to run a command', () => {
+		const result = app(['serve'], env);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain('--token');
+	});
+});
+
+describe('a single command through defineCLI', () => {
+	it.each([[['--help']], [['tool', '--help']]])('shows the command for %j', (argv) => {
+		const { stdout, status } = runFixture('implicit.js', argv);
+		expect(status).toBe(0);
+		expect(stdout).toContain('tool <content> [options]');
+		expect(stdout).not.toContain('<command>');
+	});
+});
+
 describe('a command that declares the flag', () => {
 	it('keeps -h, and --help still shows help', () => {
 		expect(app(['serve', '-h', '0.0.0.0']).stdout).toContain('serving on 0.0.0.0');

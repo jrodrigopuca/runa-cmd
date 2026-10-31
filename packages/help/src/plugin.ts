@@ -28,20 +28,20 @@ export function helpPlugin(opts: HelpPluginOptions = {}): PluginConfig {
 		setup(api) {
 			// Core decides when help runs and what it's about, and yields if a
 			// command declares --help or -h: only the rendering is left here.
-			api.replaceHelp((target) => {
+			api.replaceHelp((target, output) => {
 				const renderCtx = getRenderContext();
 				const renderer = opts.render ?? defaultRenderer;
-				const output = renderer({
+				const rendered = renderer({
 					schema: target,
 					theme: resolveTheme(opts.theme, renderCtx),
 					colorDepth: renderCtx.colorDepth,
 					termWidth: renderCtx.termWidth,
 				});
 
-				process.stdout.write(`${output}\n`);
+				output.write(`${rendered}\n`);
 
-				// Returning lets cleanup run, and the process exits naturally with
-				// code 0. Exiting here is the opt-in v0.1.0 behavior.
+				// Returning lets cleanup run, and core picks the exit code. Exiting
+				// here is the opt-in v0.1.0 behavior.
 				if (opts.exitOnHelp) process.exit(0);
 			});
 		},

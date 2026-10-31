@@ -55,7 +55,10 @@ describe('integration — defineCLI + helpPlugin', () => {
 
 		const cli = defineCLI({
 			meta: { name: 'myapp', version: '2.0.0', description: 'My awesome app' },
-			commands: { serve },
+			commands: {
+				serve,
+				build: defineCommand({ meta: { name: 'build', description: 'Build' }, run: () => {} }),
+			},
 			plugins: [helpPlugin()],
 		});
 
@@ -225,6 +228,7 @@ describe('integration — help lifecycle without process.exit', () => {
 					meta: { name: 'serve', description: 'Start server' },
 					run: () => {},
 				}),
+				build: defineCommand({ meta: { name: 'build', description: 'Build' }, run: () => {} }),
 			},
 			plugins: [helpPlugin()],
 		});

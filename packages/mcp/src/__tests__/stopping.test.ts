@@ -111,6 +111,24 @@ describe('stopping the server', () => {
 		expect(trace()).toContain('cleanup');
 	});
 
+	it.skipIf(process.platform === 'win32')('exits with the code of the signal', async () => {
+		const client = await serve();
+		const exited = client.exit();
+
+		client.signal('SIGTERM');
+
+		expect(await exited).toBe(143);
+	});
+
+	it('exits with 0 when the client leaves', async () => {
+		const client = await serve();
+		const exited = client.exit();
+
+		client.closeInput();
+
+		expect(await exited).toBe(0);
+	});
+
 	it('leaves nothing running if the server is killed', async () => {
 		const client = await serve();
 		client.start('waits');
