@@ -32,9 +32,12 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 		capabilities: { addGlobalOptions: true },
 		setup(api) {
 			// Add --mcp as a global boolean option
+			// Only the terminal asks for a server: a file in the current directory
+			// must not turn `tool list` into something else.
 			api.addGlobalOption(
 				'mcp',
 				z.boolean().optional().default(false).describe('Start MCP server'),
+				{ configurable: false },
 			);
 
 			// Intercept via onGlobalFlags hook
@@ -42,15 +45,15 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 				if (!ctx.globalOptions?.mcp) return;
 
 				const schema = api.getSchema();
-				const registrations = applyOperatorValues(
-					buildToolRegistrations(api.getCommands(), schema),
-					opts,
-					{
-						configValues: await api.getConfigValues(),
-						env: process.env,
-						globals: ctx.globalOptions,
-					},
+				const tools = buildToolRegistrations(api.getCommands(), schema);
+				const configValues = await Promise.all(
+					tools.map(async (tool) => [tool.name, await api.getConfigValues(tool.path)] as const),
 				);
+				const registrations = applyOperatorValues(tools, opts, {
+					configValues: Object.fromEntries(configValues),
+					env: process.env,
+					globals: ctx.globalOptions,
+				});
 
 				// Loaded here so a plain CLI run doesn't pay for the MCP SDK
 				const { serve } = await import('./server.js');

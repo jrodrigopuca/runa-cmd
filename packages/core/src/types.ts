@@ -19,6 +19,8 @@ export interface OptionMeta {
 	deprecated?: string;
 	/** What help calls the value, e.g. 'hex' for `--color <hex>`. Default: its type */
 	valueName?: string;
+	/** False if a config file can't set it, as with a guardrail. Default: true */
+	configurable?: boolean;
 }
 
 // ─── Command Metadata ───────────────────────────────────────
@@ -186,8 +188,8 @@ export interface PluginAPI {
 	hook(name: HookName, handler: HookHandler): void;
 	getSchema(): CLISchema;
 	getCommands(): CommandTree;
-	/** Values from the config file of the CLI, if it has one */
-	getConfigValues(): Promise<Record<string, unknown> | undefined>;
+	/** The config file of the CLI, if it has one. With a path, only that command's values */
+	getConfigValues(commandPath?: string[]): Promise<Record<string, unknown> | undefined>;
 	/** Show help your way, instead of the built-in plain text. Only one plugin can */
 	replaceHelp(show: HelpHandler): void;
 }

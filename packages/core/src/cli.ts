@@ -12,7 +12,13 @@
  */
 import { parseArgs } from 'node:util';
 import type { ZodType } from 'zod';
-import { loadAndMergeConfig } from './config/merge.js';
+import { loadConfigFile } from './config/merge.js';
+import {
+	assertConfigNames,
+	assertValidConfig,
+	type ConfigSource,
+	commandValues,
+} from './config/scope.js';
 import {
 	CommandNotFoundError,
 	describeFailure,
@@ -223,10 +229,12 @@ interface SelectionScope {
 	help: HelpSlot;
 	schema: () => CLISchema;
 	exitWith: (code: number) => void;
+	loadConfig: (path: string[]) => Promise<CommandConfig>;
 }
 
-function loadConfigValues(config: CLIConfig): Promise<Record<string, unknown> | undefined> {
-	return config.config ? loadAndMergeConfig(config.config) : Promise.resolve(undefined);
+interface CommandConfig {
+	configValues?: Record<string, unknown>;
+	configSource?: ConfigSource;
 }
 
 function reportDeprecations(input: Parameters<typeof deprecationWarnings>[0]): void {
@@ -283,7 +291,7 @@ async function selectFromArgv(
 	}
 
 	// ─── Resolve command ──────────────────────────────
-	const { command, remainingArgv } = resolveCommandFromTree(commands, commandArgv, rootName);
+	const { command, path, remainingArgv } = resolveCommandFromTree(commands, commandArgv, rootName);
 
 	hookCtx.command = command.meta;
 
@@ -346,7 +354,7 @@ async function selectFromArgv(
 		optionMeta: commandOptionMeta,
 	});
 
-	const configValues = await loadConfigValues(config);
+	const { configValues, configSource } = await scope.loadConfig(path);
 	const operands = distributeRest(cmdParseResult.positionals, rest, command.args ?? {});
 
 	// Nothing reads what's left unless the command asked for it, so it can't stay
@@ -365,6 +373,7 @@ async function selectFromArgv(
 		},
 		meta: { options: commandOptionMeta },
 		configValues,
+		configSource,
 	});
 
 	reportDeprecations({
@@ -392,18 +401,19 @@ function commandAtPath(commands: CommandTree, path: string[]): Command {
 
 /** Select from a tool call: the path names the command, the input carries its values. */
 async function selectFromInput(scope: SelectionScope, call: ToolCall): Promise<Selection> {
-	const { config, commands, hookCtx } = scope;
+	const { commands, hookCtx } = scope;
 	const command = commandAtPath(commands, call.path);
 	hookCtx.command = command.meta;
 
 	const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
-	const configValues = await loadConfigValues(config);
+	const { configValues, configSource } = await scope.loadConfig(call.path);
 
 	const { parsedArgs, parsedOptions } = resolveToolInput({
 		input: call.input,
 		schemas: { args: command.args, options: command.options },
 		meta: { options: commandOptionMeta },
 		configValues,
+		configSource,
 	});
 
 	reportDeprecations({
@@ -477,6 +487,27 @@ async function runCLILifecycle(
 	let failureExitCode: number | undefined;
 	let commandResult: unknown;
 
+	const configTarget = {
+		commands: mutableCommands,
+		globalOptions: mutableGlobalOptions,
+		globalMeta: mutableGlobalMeta,
+		rootName,
+	};
+
+	/** Read when a run needs it: a broken file must not get in the way of --help. */
+	const loadCheckedConfig = async () => {
+		const file = config.config && (await loadConfigFile(config.config));
+		if (file) assertValidConfig(file, configTarget);
+		return file;
+	};
+
+	const loadConfig = async (path: string[]): Promise<CommandConfig> => {
+		const file = await loadCheckedConfig();
+		if (!file) return {};
+		const { values, source } = commandValues(file, path, rootName);
+		return { configValues: values, configSource: source };
+	};
+
 	try {
 		// ─── Plugin resolution ────────────────────────────
 		if (config.plugins && config.plugins.length > 0) {
@@ -491,7 +522,8 @@ async function runCLILifecycle(
 				middleware: mutableMiddleware,
 				hookRegister: (name, handler) => hookRegistry.register(name, handler),
 				getSchema: currentSchema,
-				getConfigValues: () => loadConfigValues(config),
+				getConfigValues: async (path) =>
+					path ? (await loadConfig(path)).configValues : (await loadCheckedConfig())?.values,
 				help,
 				globalOptionSources,
 			};
@@ -510,6 +542,7 @@ async function runCLILifecycle(
 			mutableGlobalMeta,
 			globalOptionSources,
 		);
+		if (config.config) assertConfigNames(configTarget);
 
 		// ─── beforeParse ──────────────────────────────────
 		await hookRegistry.emit('beforeParse', hookCtx);
@@ -626,12 +659,17 @@ async function runCLILifecycle(
 				findRoute(mutableCommands, commandArgv, rootName),
 				commandArgv,
 			);
+			// With a tool call, the command comes from the call, not from argv.
+			const { configValues, configSource } =
+				answer && !toolCall ? ({} as CommandConfig) : await loadConfig([]);
 			try {
 				parsedGlobalOptions = resolveValues({
 					parseArgsResult: { values: globalValues, positionals: [] },
 					longAliasMap,
 					schemas: { options: mutableGlobalOptions },
 					meta: { options: mutableGlobalMeta.options },
+					configValues,
+					configSource,
 				}).parsedOptions;
 			} catch (err) {
 				const isQuestion = answer === 'help' || answer === 'version';
@@ -642,6 +680,7 @@ async function runCLILifecycle(
 				provided: Object.keys(globalValues),
 				longAliasMap,
 				optionMeta: mutableGlobalMeta.options,
+				configValues,
 			});
 
 			// Pass remaining argv (command tokens only) to command parsing
@@ -669,6 +708,7 @@ async function runCLILifecycle(
 			exitWith: (code) => {
 				failureExitCode = code;
 			},
+			loadConfig,
 		};
 		const selection = toolCall
 			? await selectFromInput(scope, toolCall)

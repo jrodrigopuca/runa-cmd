@@ -58,8 +58,8 @@
 | | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Hecho |
 | | T-210 | Nombre del valor en la ayuda | Requerido | Hecho |
 | | T-211 | Errores de uso desde un comando | Opcional | Pendiente |
-| | T-219 | Las opciones globales leen el config | Requerido | Pendiente |
-| | T-220 | Forma del archivo de config | Requerido | Pendiente |
+| | T-219 | Las opciones globales leen el config | Requerido | Hecho |
+| | T-220 | Forma del archivo de config | Requerido | Hecho |
 | | T-221 | Probar una CLI sin subproceso | Requerido | Pendiente |
 | | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Pendiente |
 | | T-222 | Los posicionales convierten como las opciones | Requerido | Pendiente |
@@ -500,7 +500,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Requerido
 - **Estado:** En curso
 - **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio. La prueba la hace otro proyecto, y su agente solo ve lo publicado, para que no lo sesgue conocer Runa por dentro.
-- **Avance:** `local-beacon` adoptó `0.2.0-beta.2` y reportó 14 fricciones, [contrastadas](./research/2026-10-local-beacon-friction.md) y ya en este backlog. Falta comprobar que un modelo llame sus tools y qué hace ante un error.
+- **Avance:** `local-beacon` vigila la comunicación con un LLM externo, e informa si responde, si está bloqueado o si la máquina está sin conexión, para usar modelos locales desde dispositivos que no pueden correrlos. Adoptó `0.2.0-beta.2` y reportó 14 fricciones, [contrastadas](./research/2026-10-local-beacon-friction.md) y ya en este backlog. Falta comprobar que un modelo llame sus tools y qué hace ante un error.
 - **Criterios de aceptación:**
   - El proyecto necesita MCP por sí mismo, y su agente lo adopta con el paquete publicado, sin acceso a este repo.
   - Un agente real llama tools de una CLI, por `--mcp`, y recibe el resultado completo.
@@ -591,7 +591,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Estado:** Pendiente
 - **Descripción:** como persona que evalúa Runa, quiero leer la documentación en npm y ver qué cambió. El campo `readme` del registro está vacío, y `CHANGELOG.md` no viaja en el paquete, aunque [`VERSIONING.md`](../VERSIONING.md) manda a leerlo. Son F-05 y F-10 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Criterios de aceptación:**
-  - Se confirma si la página de npm muestra el README, y por qué el registro lo tiene vacío.
+  - Se confirma por qué el registro tiene `readme` vacío. La página de npm sí muestra el README, confirmado por el mantenedor.
   - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cuatro paquetes.
   - Cada paquete publicado incluye su `CHANGELOG.md`.
 
@@ -647,17 +647,18 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-219 Las opciones globales leen el config
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que usa una CLI, quiero que un `store` en el config se respete, y no escribir en otro archivo sin enterarme. Hoy una global ignora el config sin aviso, aun con un tipo inválido, aunque `env` sí funciona. Es H1 de [la evaluación](./research/2026-10-first-use-evaluation.md), y va contra [ADR-0008](./adr/0008-config-merge-en-core.md).
 - **Criterios de aceptación:**
   - Una global respeta CLI, env, config y default, igual que una opción de comando.
   - Un valor inválido en el config da exit 2.
-  - Las globales de un plugin siguen la misma regla.
+  - Las globales de un plugin siguen la misma regla, salvo que declaren `configurable: false`.
+  - Un archivo no puede iniciar el servidor MCP.
 
 ### T-220 Forma del archivo de config
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero dar un valor a un solo comando. Hoy una clave se aplica a toda opción con ese nombre: `{"force":true}` activa `--force`, una clave de `add` rompe `list`, y `{"clear":{...}}` se ignora sin aviso. Es H2 de [la evaluación](./research/2026-10-first-use-evaluation.md).
 - **Decisión:** [ADR-0040](./adr/0040-forma-del-archivo-de-config.md). La raíz tiene las globales y los comandos, anidados; lo desconocido es un error, y una global no puede llamarse como un comando.
 - **Criterios de aceptación:**

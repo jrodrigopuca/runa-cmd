@@ -109,15 +109,15 @@ describe('from the config file', () => {
 	}
 
 	it('takes a JSON array', () => {
-		const { stdout, status } = withConfig({ tag: ['a', 'b,c'] }, ['tag']);
+		const { stdout, status } = withConfig({ tag: { tag: ['a', 'b,c'] } }, ['tag']);
 		expect(status).toBe(0);
 		expect(JSON.parse(stdout).options.tag).toEqual(['a', 'b,c']);
 	});
 
 	it('does not read a string as a list: JSON already has arrays', () => {
-		const { status, stderr } = withConfig({ tag: 'a,b' }, ['tag']);
+		const { status, stderr } = withConfig({ tag: { tag: 'a,b' } }, ['tag']);
 		expect(status).toBe(2);
-		expect(stderr).toContain('--tag');
+		expect(stderr).toContain("'tag.tag'");
 	});
 });
 

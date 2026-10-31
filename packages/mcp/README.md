@@ -147,7 +147,7 @@ An unknown name in `exclude`, an excluded tool with settings, or a tool both rea
 
 ## What the Operator Decides
 
-Whoever starts the server beats the model. An option that declares `env`, or has a value in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call, so a model can't ask anyone for it.
+Whoever starts the server beats the model. An option that declares `env`, or has a value for that command in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call, so a model can't ask anyone for it.
 
 ```ts
 mcpPlugin({

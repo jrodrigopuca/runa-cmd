@@ -16,6 +16,7 @@ flowchart TD
 
 ## Reglas
 
+- La próxima beta debe subir el peer de `core` en `@runa-cmd/mcp`, porque usa `configurable` y `api.getConfigValues(path)`.
 - Los cuatro paquetes se versionan juntos, como grupo `fixed`, hasta publicar la 1.0.0. Después cada uno tiene su versión ([ADR-0039](../adr/0039-paquetes-independientes-desde-1-0.md)).
 - Mientras dure el modo pre-release, las versiones son `0.2.0-beta.N`, y `latest` no cambia.
 - CI no publica: no hay `NPM_TOKEN`.

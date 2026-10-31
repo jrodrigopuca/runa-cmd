@@ -18,7 +18,8 @@ const REDACTION = '[redacted]';
 const MIN_REDACTED_LENGTH = 8;
 
 export interface OperatorValues {
-	configValues?: Record<string, unknown>;
+	/** The config file's values of each tool, by tool name */
+	configValues?: Record<string, Record<string, unknown> | undefined>;
 	env: Record<string, string | undefined>;
 	/** Global options the server started with */
 	globals: Record<string, unknown>;
@@ -79,7 +80,7 @@ function envNameOf(key: string, reg: ToolRegistration): string | undefined {
 function fixedValue(key: string, reg: ToolRegistration, values: OperatorValues): unknown {
 	const envName = envNameOf(key, reg);
 	const fromEnv = envName === undefined ? undefined : values.env[envName];
-	return fromEnv ?? values.configValues?.[key];
+	return fromEnv ?? values.configValues?.[reg.name]?.[key];
 }
 
 function redactable(values: unknown[]): string[] {

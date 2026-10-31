@@ -16,6 +16,7 @@ A change here needs a major version.
 | Error codes | The `code` of each `RunaError`: use it, not the message, to tell errors apart |
 | Flags | How a key becomes a flag: `darkColor` is `--dark-color` |
 | Values | The order CLI, env, config and default, and the accepted forms of booleans and lists |
+| Config file | Its shape: where a global and a command's option go, and that an unknown key is an error |
 | Lifecycle | The order of hooks, and when each one runs |
 | `getSchema()` | The meaning of its fields |
 | MCP tools | Tool names, input keys, and the `class` and `effect` keys of `_meta['runa/error']` |

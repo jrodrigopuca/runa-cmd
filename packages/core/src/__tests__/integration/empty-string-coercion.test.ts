@@ -36,7 +36,7 @@ describe('empty-string number coercion integration', () => {
 
 	/** Write {name}.config.json into the per-suite temp dir. */
 	async function writeConfig(values: Record<string, unknown>): Promise<void> {
-		await writeFile(join(configDir, 'myapp.config.json'), JSON.stringify(values));
+		await writeFile(join(configDir, 'myapp.config.json'), JSON.stringify({ serve: values }));
 	}
 
 	function makeCLI(opts: { withEnv?: boolean; withConfig?: boolean } = {}) {
@@ -135,14 +135,14 @@ describe('empty-string number coercion integration', () => {
 
 	it.each(
 		sourceCases,
-	)('$source: empty string → ValidationError naming --port, exit 2, never 0', async ({
+	)('$source: empty string → ValidationError naming the source, exit 2, never 0', async ({
 		emptyValue,
 		run,
 	}) => {
 		const { capture } = await run(emptyValue);
 
 		expect(spies.exitSpy).toHaveBeenCalledWith(2);
-		expect(stderrOutput(spies.errorSpy)).toContain('--port');
+		expect(stderrOutput(spies.errorSpy)).toMatch(/--port|'serve\.port'/);
 		expect(capture.ran).toBe(false);
 		expect(capture.port).not.toBe(0);
 	});

@@ -6,6 +6,7 @@
  * Pre-coerces number and boolean strings before Zod .parse().
  */
 import { ZodError, type ZodType, z } from 'zod';
+import type { ConfigSource } from '../config/scope.js';
 import { ValidationError } from '../errors.js';
 import { longFlag } from '../flag-name.js';
 import type { OptionMeta, ParamMetadata } from '../types.js';
@@ -33,6 +34,8 @@ export interface ResolveInput {
 	meta?: { options?: Record<string, OptionMeta> };
 	/** Config file values */
 	configValues?: Record<string, unknown>;
+	/** Where they came from, to name the file in an error */
+	configSource?: ConfigSource;
 	/** Environment variables (defaults to process.env, injectable for testing) */
 	env?: Record<string, string | undefined>;
 }
@@ -187,6 +190,7 @@ function resolveOptionValues(
 	configValues: Record<string, unknown> | undefined,
 	env: Record<string, string | undefined>,
 	optionsMetadata: ParamMetadata[],
+	fromConfig: Set<string>,
 ): Record<string, unknown> {
 	const resolved: Record<string, unknown> = {};
 
@@ -227,6 +231,7 @@ function resolveOptionValues(
 		// Priority 3: Config file value
 		if (configValues && key in configValues && configValues[key] !== undefined) {
 			resolved[key] = coerceField(configValues[key], field);
+			fromConfig.add(key);
 		}
 
 		// Priority 4: Omit — let Zod .default() handle it
@@ -318,6 +323,16 @@ function humanizeOptionIssues(
 	});
 }
 
+/** No flag was typed: the person has to find the value in the file, by its key. */
+function configIssue(issue: ZodIssue, { filePath, path }: ConfigSource): ZodIssue {
+	const key = [...path, String(issue.path[0])].join('.');
+	return {
+		code: 'custom' as const,
+		message: `${filePath}: invalid value for '${key}': ${issue.message}`,
+		path: [],
+	};
+}
+
 // ─── Public API ─────────────────────────────────────────────
 
 /**
@@ -337,6 +352,7 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 		schemas,
 		meta,
 		configValues,
+		configSource,
 		env = process.env as Record<string, string | undefined>,
 	} = input;
 
@@ -353,6 +369,7 @@ export function resolveValues(input: ResolveInput): ResolveOutput {
 			meta?.options,
 			configValues,
 			env,
+			configSource,
 		),
 	};
 }
@@ -363,6 +380,7 @@ export interface ResolveToolInput {
 	schemas: ResolveInput['schemas'];
 	meta?: ResolveInput['meta'];
 	configValues?: Record<string, unknown>;
+	configSource?: ConfigSource;
 	env?: Record<string, string | undefined>;
 }
 
@@ -377,6 +395,7 @@ export function resolveToolInput(toolInput: ResolveToolInput): ResolveOutput {
 		schemas,
 		meta,
 		configValues,
+		configSource,
 		env = process.env as Record<string, string | undefined>,
 	} = toolInput;
 
@@ -402,6 +421,7 @@ export function resolveToolInput(toolInput: ResolveToolInput): ResolveOutput {
 			meta?.options,
 			configValues,
 			env,
+			configSource,
 		),
 	};
 }
@@ -429,9 +449,11 @@ function validateOptions(
 	optionsMeta: Record<string, OptionMeta> | undefined,
 	configValues: Record<string, unknown> | undefined,
 	env: Record<string, string | undefined>,
+	configSource: ConfigSource | undefined,
 ): Record<string, unknown> {
 	if (!optionSchemas || Object.keys(optionSchemas).length === 0) return {};
 
+	const fromConfig = new Set<string>();
 	const rawOptions = resolveOptionValues(
 		values,
 		longAliasMap,
@@ -440,13 +462,21 @@ function validateOptions(
 		configValues,
 		env,
 		walkSchema(optionSchemas),
+		fromConfig,
 	);
 
 	try {
 		return z.object(optionSchemas).parse(rawOptions) as Record<string, unknown>;
 	} catch (err) {
 		if (err instanceof ZodError) {
-			throw new ValidationError(humanizeOptionIssues(err.issues, optionSchemas));
+			const humanized = humanizeOptionIssues(err.issues, optionSchemas);
+			throw new ValidationError(
+				err.issues.map((issue, index) =>
+					configSource && fromConfig.has(String(issue.path[0]))
+						? configIssue(issue, configSource)
+						: (humanized[index] as ZodIssue),
+				),
+			);
 		}
 		throw err;
 	}

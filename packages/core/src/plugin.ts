@@ -171,7 +171,7 @@ export interface PluginHostRefs {
 	middleware: Middleware[];
 	hookRegister: (name: HookName, handler: HookHandler) => void;
 	getSchema: () => CLISchema;
-	getConfigValues?: () => Promise<Record<string, unknown> | undefined>;
+	getConfigValues?: (commandPath?: string[]) => Promise<Record<string, unknown> | undefined>;
 	/** Who replaced the built-in help, and how it's shown now */
 	help: HelpSlot;
 	/**
@@ -252,8 +252,8 @@ export function createPluginAPI(
 			return refs.commands;
 		},
 
-		async getConfigValues(): Promise<Record<string, unknown> | undefined> {
-			return refs.getConfigValues?.();
+		async getConfigValues(commandPath?: string[]): Promise<Record<string, unknown> | undefined> {
+			return refs.getConfigValues?.(commandPath);
 		},
 
 		replaceHelp(show: HelpHandler): void {

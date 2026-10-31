@@ -85,6 +85,14 @@ await defineCLI({
 			},
 			run: ({ args, options }) => ({ service: args.service, ...options }),
 		}),
+		profiled: command('profiled', {
+			output: z.object({ profile: z.string() }),
+			run: ({ globalOptions }) => ({ profile: globalOptions.profile }),
+		}),
+		sibling: command('sibling', {
+			options: { bucket: z.string().default('sibling-bucket') },
+			run: ({ options }) => options,
+		}),
 		leaky: command('leaky', {
 			meta: {
 				name: 'leaky',

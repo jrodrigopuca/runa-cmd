@@ -94,6 +94,7 @@ Operational metadata lives in `meta.options`, separate from the Zod schema:
 |---|---|---|
 | `alias` | `string[]` | Short flags, e.g. `['-e']` (must include dash prefix) |
 | `env` | `string` | Environment variable name, e.g. `'DEPLOY_ENV'` |
+| `configurable` | `boolean` | `false` if a config file can't set it, as with a guardrail. Default: `true` |
 | `group` | `string` | Group name for help display, e.g. `'Scaling'` |
 | `valueName` | `string` | What help calls the value, e.g. `'hex'` for `--color <hex>`. Defaults to its type |
 | `deprecated` | `string` | Deprecation notice, shown in help and as a stderr warning when the option is used |
@@ -181,7 +182,7 @@ A `z.array()` option repeats, and each element is converted to its type: `--port
 | Terminal | `--tag a --tag b` | `['a', 'b']` |
 | Terminal | `--tag a,b` | `['a,b']` |
 | Env | `TAGS=a, b` | `['a', 'b']` |
-| Config | `{ "tag": ["a", "b"] }` | `['a', 'b']` |
+| Config | `{ "add": { "tag": ["a", "b"] } }` | `['a', 'b']` |
 
 Each source replaces the ones below it, without adding up. A value with a comma can't go through env: use the config file.
 
@@ -323,12 +324,32 @@ const cli = defineCLI({
 });
 ```
 
+A key at the root is a global option, or a command. Groups nest, and an option uses its key, as in `run()`:
+
+```json
+{
+  "$schema": "./my-tool.schema.json",
+  "store": "./data",
+  "clear": { "force": true },
+  "tag": {
+    "add": { "darkColor": "#222" }
+  }
+}
+```
+
+A value only reaches the command it's under. With `runCLI` there's no command to name, so its options go at the root.
+
+Nothing is ignored. An unknown key exits with 2, naming the file and the key, and `$schema` is the only exception. A global option can't share a name with a command when the CLI has a config file: that fails at startup, for you to rename one.
+
+**The current directory comes first:** a file in `.` can set options, like `force` above, for anyone who runs your CLI there. To protect one option, set `meta.options.force.configurable` to `false`: only the terminal can set it, and the file gets an error. To protect them all, use `searchPaths: ['~']`.
+
 ### Error Classes
 
 ```ts
 import {
   RunaError,            // Base: exit code 1
   ValidationError,      // Exit code 2 (POSIX usage error), has .issues
+  ConfigError,          // Exit code 2: the config file can't be used
   CommandNotFoundError,  // Exit code 127, has .suggestion
   CommandError,          // Configurable exit code, for user-thrown errors
 } from '@runa-cmd/core';

@@ -117,7 +117,7 @@ describe('other sources keep the key', () => {
 
 	it('the config file uses the camelCase key', () => {
 		const dir = mkdtempSync(join(tmpdir(), 'runa-names-'));
-		writeFileSync(join(dir, 'names.config.json'), JSON.stringify({ darkColor: '#222' }));
+		writeFileSync(join(dir, 'names.config.json'), JSON.stringify({ paint: { darkColor: '#222' } }));
 
 		const result = names(['paint'], { CONFIG_DIR: dir });
 		rmSync(dir, { recursive: true, force: true });

@@ -24,7 +24,7 @@ beforeAll(() => {
 	configDir = mkdtempSync(join(tmpdir(), 'runa-values-'));
 	writeFileSync(
 		join(configDir, 'values.config.json'),
-		JSON.stringify({ minify: true, cache: false, watch: true }),
+		JSON.stringify({ show: { minify: true, cache: false, watch: true } }),
 	);
 });
 

@@ -35,7 +35,7 @@ flowchart TD
 4. **Configurar `parseArgs`.** `buildParseArgsConfig` declara booleanos como `boolean` y todo lo demás como `string`, con `strict: false` y `allowNegative: true`.
 5. **Rechazar desconocidas.** `assertKnownOptions` compara las claves producidas con las registradas, salvo que `strictOptions` sea `false`.
 6. **Detectar valores faltantes.** `assertOptionValues` revisa los tokens de `parseArgs`. Una opción sin valor, o seguida de una flag registrada, es un error de uso. `--tag=--force` y `--tag -texto` son valores válidos.
-7. **Cargar config**, si `config` está definido.
+7. **Cargar config**, si `config` está definido. Se valida el archivo entero, y el comando recibe solo sus valores ([ADR-0040](../adr/0040-forma-del-archivo-de-config.md)).
 8. **Resolver y validar.** `resolveValues` mapea, mezcla y llama a Zod.
 9. **Avisar deprecaciones.** `deprecationWarnings` escribe en stderr por cada opción deprecada que se haya usado, desde cualquier fuente.
 

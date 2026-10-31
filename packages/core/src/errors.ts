@@ -58,6 +58,23 @@ export class ValidationError extends RunaError {
 	}
 }
 
+// ─── ConfigError ────────────────────────────────────────────
+
+/**
+ * The config file can't be used. Whoever wrote it can fix it, as with a bad
+ * flag, but the hint to read --help wouldn't help: the message names the file.
+ */
+export class ConfigError extends RunaError {
+	constructor(message: string) {
+		super(message, { code: 'CONFIG_INVALID', exitCode: 2 });
+		this.name = 'ConfigError';
+
+		if (captureStackTrace) {
+			captureStackTrace(this, this.constructor);
+		}
+	}
+}
+
 // ─── CommandNotFoundError ───────────────────────────────────
 
 export class CommandNotFoundError extends RunaError {

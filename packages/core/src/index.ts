@@ -14,6 +14,7 @@ export { jsonLoader } from './config/loader.js';
 export {
 	CommandError,
 	CommandNotFoundError,
+	ConfigError,
 	RunaError,
 	ValidationError,
 } from './errors.js';

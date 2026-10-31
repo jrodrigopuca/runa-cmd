@@ -2,6 +2,7 @@
  * Tools as subprocesses of the CLI (ADR-0030), end to end: a real server, a
  * real child per call, and real JSON-RPC. No mocks.
  */
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -356,7 +357,10 @@ describe('values the operator fixed', () => {
 
 	beforeAll(() => {
 		dir = mkdtempSync(join(tmpdir(), 'runa-operated-'));
-		writeFileSync(join(dir, 'server.config.json'), JSON.stringify({ bucket: 'config-bucket' }));
+		writeFileSync(
+			join(dir, 'server.config.json'),
+			JSON.stringify({ operated: { bucket: 'config-bucket' } }),
+		);
 	});
 
 	afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -370,6 +374,40 @@ describe('values the operator fixed', () => {
 		const { inputSchema } = await operatedTool(await serve());
 		expect(Object.keys(inputSchema.properties)).toEqual(['service', 'bucket', 'note']);
 		expect(inputSchema.required).toEqual(['service']);
+	});
+
+	it('fixes the option of one command, not of another with the same name', async () => {
+		const client = await serve({ CONFIG_DIR: dir });
+		const tools = await client.tools();
+		const inputOf = (name: string) =>
+			Object.keys(tools.find((tool) => tool.name === name)?.inputSchema.properties ?? {});
+
+		expect(inputOf('operated')).not.toContain('bucket');
+		expect(inputOf('sibling')).toContain('bucket');
+	});
+
+	it('reads global options from the file in every tool call', async () => {
+		const file = mkdtempSync(join(tmpdir(), 'runa-global-'));
+		writeFileSync(join(file, 'server.config.json'), JSON.stringify({ profile: 'from-file' }));
+
+		const result = await (await serve({ CONFIG_DIR: file })).call('profiled', {});
+		rmSync(file, { recursive: true, force: true });
+
+		expect(result.structuredContent).toEqual({ profile: 'from-file' });
+	});
+
+	it('does not start from a file: only the terminal asks for a server', () => {
+		const file = mkdtempSync(join(tmpdir(), 'runa-start-'));
+		writeFileSync(join(file, 'server.config.json'), JSON.stringify({ mcp: true }));
+
+		const { status, stderr } = spawnSync(process.execPath, [fixture, 'sibling'], {
+			encoding: 'utf8',
+			env: { ...process.env, CONFIG_DIR: file },
+		});
+		rmSync(file, { recursive: true, force: true });
+
+		expect(status).toBe(2);
+		expect(stderr).toContain("'mcp'");
 	});
 
 	it('does not let the model fill a missing secret: the call fails instead', async () => {

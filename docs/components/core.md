@@ -17,7 +17,7 @@ Entradas: `@runa-cmd/core` y `@runa-cmd/core/zod`, que reexporta `z`. `@runa-cmd
 | `definePlugin(config)` | Valida y devuelve un plugin |
 | `getSchema(config, ...)` | Devuelve la introspección de la CLI |
 | `jsonLoader()` | Loader de config JSON |
-| `RunaError`, `ValidationError`, `CommandNotFoundError`, `CommandError` | Errores |
+| `RunaError`, `ValidationError`, `ConfigError`, `CommandNotFoundError`, `CommandError` | Errores |
 | `HOOK_NAMES`, `PARAM_TYPES` | Constantes |
 
 Los tipos públicos están en `packages/core/src/index.ts`.
@@ -106,11 +106,20 @@ La prioridad es **CLI, env, config y default de Zod**. El detalle está en [pars
 
 `config: { name: 'mycli' }` busca `mycli.config.json` en `.` y `~`; gana el primero que encuentra. `loaders` agrega formatos, y `searchPaths` cambia dónde busca. El archivo debe contener un objeto plano.
 
+Una clave de la raíz es una global, o un comando o grupo, que se anidan: `{"store":"x","tag":{"add":{"priority":"high"}}}`. Un valor solo llega al comando bajo el que está. Con `runCLI`, las opciones van en la raíz. Las claves son las del código ([ADR-0040](../adr/0040-forma-del-archivo-de-config.md)).
+
+Las globales respetan CLI, env, config y default, igual que las opciones de un comando, incluidas las de un plugin.
+
+Una clave desconocida, un valor inválido o un JSON roto dan exit 2 y nombran el archivo. `$schema` se acepta. El archivo se lee cuando hace falta un valor, así que uno roto no impide `--help` ni `--version`. Una global con el nombre de un comando falla al arrancar con `CONFIG_COLLISION`, si la CLI declara `config`. Una opción con `configurable: false` solo se fija desde la terminal: el archivo recibe un error, y es lo que usa `--mcp`.
+
+`api.getConfigValues()` devuelve el archivo, y `api.getConfigValues(path)` los valores de un comando. `@runa-cmd/mcp` usa la segunda forma para fijar opciones por tool.
+
 ## Errores y salida
 
 | Error | Código | Exit |
 |---|---|---|
 | `ValidationError` | `VALIDATION_ERROR` | 2 |
+| `ConfigError` | `CONFIG_INVALID` | 2 |
 | `CommandNotFoundError` | `COMMAND_NOT_FOUND` | 127 |
 | `CommandError` | Configurable | Configurable, 1 por defecto |
 | `RunaError` | Configurable | 1 por defecto |
