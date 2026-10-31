@@ -57,6 +57,7 @@
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
 | | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Hecho |
 | | T-210 | Nombre del valor en la ayuda | Requerido | Hecho |
+| | T-211 | Errores de uso desde un comando | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Pendiente |
 | | T-502 | Política de semver y deprecación | Requerido | Pendiente |
@@ -480,8 +481,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio.
+- **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio. La prueba la hace un proyecto independiente que necesite MCP, y no quien mantiene Runa, para que no la sesgue la herramienta.
 - **Criterios de aceptación:**
+  - El proyecto necesita MCP por sí mismo, y lo adopta sin ayuda del mantenedor.
   - Un agente real llama tools de una CLI, por `--mcp`, y recibe el resultado completo.
   - Un error de la tool llega al agente, y este no repite un efecto que ya ocurrió.
   - Toda fricción nueva entra en este backlog.
@@ -515,11 +517,20 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - `meta.options` acepta el nombre del valor, y la ayuda de `core` y del plugin lo muestran.
   - Sin declararlo, la ayuda sigue mostrando el tipo.
 
+### T-211 Errores de uso desde un comando
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor de una CLI, quiero rechazar una combinación de opciones desde `run()` con un error de uso. `CommandError` con exit 2 no agrega `Run '<cli> --help' for usage.`, y `ValidationError` pide issues de Zod. qr-plus lo necesitó para `-f terminal -o x.svg`.
+- **Criterios de aceptación:**
+  - Un comando lanza un error de uso con un mensaje, sin armar issues de Zod.
+  - El error sale con exit 2 y la misma pista que los demás errores de uso.
+
 ### T-208 Retirar el modo implícito
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Bloqueada por:** T-402
+- **Bloqueada por:** T-404, porque cerrar T-208 abre la ventana de estabilidad, y un cambio incompatible en MCP la reiniciaría
 - **Descripción:** como mantenedor, quiero que 1.0 no incluya el modo que depende de contar comandos y falla al sumar un plugin. El retiro cierra la etapa de cambios incompatibles previstos, antes de abrir la ventana de estabilidad.
 - **Criterios de aceptación:**
   - `defineCLI` deja de saltear el nombre del comando cuando hay uno solo.

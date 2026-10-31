@@ -22,6 +22,10 @@ Si se construye, conviene considerarlo junto con la guía de testing de [T-503](
 
 El spec preveía que un comando con `output` imprimiera su resultado de forma legible al usarse como CLI. Hoy `core` valida el retorno y no lo imprime. Una flag `--json` lo cerraría, y le daría a los agentes la misma salida tipada que MCP.
 
+## Contenido binario en tools
+
+Una tool de MCP solo devuelve texto. Stdout se decodifica como UTF-8, así que un PNG se corrompería, y además un PNG de qr-plus pesa 161 KB, por encima del tope de 100 KiB. MCP define contenido de tipo imagen, pero ningún proyecto lo pidió: qr-plus no usa MCP. Si aparece el caso, conviene resolverlo con un valor devuelto, no con stdout.
+
 ## Otros paquetes
 
 | Paquete | Idea |
