@@ -1,6 +1,6 @@
 # ADR-0016: Changesets en pre-release, publicación local y grupo `fixed`
 
-- **Estado:** aceptada
+- **Estado:** aceptada; el grupo `fixed` termina con la 1.0.0, según [ADR-0039](./0039-paquetes-independientes-desde-1-0.md)
 - **Drivers:** publicar sin olvidar dist-tags ni builds. Un token de automatización en CI saltea 2FA, y los tokens granulares vencen cada 90 días.
 - **Decisión:** Changesets maneja versiones y changelogs. El workflow solo mantiene el PR "Version Packages". Se publica localmente con `pnpm release` y 2FA. Los cuatro paquetes forman un grupo `fixed`. Los peer ranges de `@runa-cmd/core` son explícitos, no `workspace:*`, y `onlyUpdatePeerDependentsWhenOutOfRange` está activo, porque si no, Changesets escala cada release a mayor.
 - **Alternativas descartadas:** publicar con checklist manual olvida pasos. Versionar cada paquete por separado multiplica los peer ranges durante la beta. `NPM_TOKEN` en secretos es peor que publicar con 2FA.

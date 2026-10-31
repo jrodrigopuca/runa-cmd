@@ -1,0 +1,11 @@
+# ADR-0039: Los paquetes se versionan juntos hasta la 1.0.0, y por separado después
+
+- **Estado:** aceptada
+- **Reemplaza:** el grupo `fixed` de [ADR-0016](./0016-release-con-changesets.md), solo para después de la 1.0.0. El resto de ese ADR sigue vigente.
+- **Drivers:** con `fixed`, un cambio en un paquete publica los cuatro. Según [`VERSIONING.md`](../../VERSIONING.md), una major avisa que algo puede romperse, y una major de `@runa-cmd/mcp` le pondría ese aviso a `@runa-cmd/core` sin que haya cambiado. `mcp` es el paquete con menos uso real, así que es el más expuesto a un cambio incompatible. ADR-0016 eligió `fixed` porque separar multiplica los peer ranges durante la beta, y ese motivo termina con la 1.0: `^1.0.0` no cambia en cada versión.
+- **Decisión:** el grupo `fixed` sigue hasta publicar la 1.0.0, y los cuatro paquetes llegan juntos a esa versión. Justo después se vacía `fixed` en `.changeset/config.json`, y cada paquete sigue su propia versión. Cada plugin declara en su peer range el `@runa-cmd/core` mínimo con el que funciona. `onlyUpdatePeerDependentsWhenOutOfRange` sigue activo, para que un `core` nuevo dentro del rango no obligue a publicar los plugins.
+- **Alternativas descartadas:** mantener `fixed` publica versiones sin cambios y da majors falsas. `linked` publica solo lo que cambió, pero mantiene atada la numeración y puede llevar a `core` a una major si sale junto a un cambio propio: lo sé de memoria, no lo probé. Separar ahora multiplica los peer ranges en plena beta, justo el motivo de ADR-0016.
+- **Costo aceptado:** cuando un plugin empiece a usar algo nuevo de `core`, hay que subir su peer range a mano. Si se olvida, npm permite instalar un `core` viejo, y el fallo aparece al ejecutar y no al instalar. Hoy ninguna prueba lo detecta. Quien use varios paquetes verá números distintos, y la compatibilidad entre ellos la dicen los peer ranges.
+- **Revisar si:** un peer range desactualizado llega a una versión publicada, o publicar por separado resulta más caro que las versiones sin cambios que evita.
+- **Código:** [`.changeset/config.json`](../../.changeset/config.json)
+- **Implementación:** [T-506](../backlog.md#t-506-salir-de-pre-release-y-publicar-100)

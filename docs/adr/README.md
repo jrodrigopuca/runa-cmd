@@ -30,7 +30,7 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0013](./0013-coercion-numerica.md) | Un solo punto de coerción numérica, sin inventar valores | Aceptada |
 | [0014](./0014-colision-de-opciones.md) | Detectar colisiones al arrancar | Aceptada |
 | [0015](./0015-plataforma-y-ci.md) | ESM, Node 24+ y CI en Linux y Windows | Aceptada |
-| [0016](./0016-release-con-changesets.md) | Changesets en pre-release, publicación local y grupo `fixed` | Aceptada |
+| [0016](./0016-release-con-changesets.md) | Changesets en pre-release, publicación local y grupo `fixed` | Aceptada; el grupo termina con ADR-0039 |
 | [0017](./0017-mapeo-de-comandos-a-tools-mcp.md) | Cada comando es una tool MCP | Aceptada |
 | [0018](./0018-bloques-y-primitivas-de-layout.md) | `Block` es un string, y las primitivas son independientes | Aceptada |
 | [0019](./0019-completions-como-comando.md) | Completions como comando, con generadores puros | Aceptada |
@@ -53,3 +53,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0036](./0036-rest-se-declara.md) | `--` llena posicionales, y lo que sobra es un error si el comando no pidió `rest` | Aceptada |
 | [0037](./0037-politica-de-versiones.md) | Lo que es contrato se puede usar en un programa | Aceptada |
 | [0038](./0038-ventana-de-estabilidad.md) | La ventana de estabilidad mide uso sobre una versión publicada | Aceptada |
+| [0039](./0039-paquetes-independientes-desde-1-0.md) | Los paquetes se versionan juntos hasta la 1.0.0, y por separado después | Aceptada, pendiente de código |

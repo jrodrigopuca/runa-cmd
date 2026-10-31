@@ -16,7 +16,7 @@ flowchart TD
 
 ## Reglas
 
-- Los cuatro paquetes se versionan juntos, como grupo `fixed`.
+- Los cuatro paquetes se versionan juntos, como grupo `fixed`, hasta publicar la 1.0.0. Después cada uno tiene su versión ([ADR-0039](../adr/0039-paquetes-independientes-desde-1-0.md)).
 - Mientras dure el modo pre-release, las versiones son `0.2.0-beta.N`, y `latest` no cambia.
 - CI no publica: no hay `NPM_TOKEN`.
 - Los peer ranges de `core` son explícitos. Si empieza una serie minor nueva y no se amplían, Changesets escala el release a mayor.
@@ -25,4 +25,4 @@ Pasos detallados en `CONTRIBUTING.md`. Decisión en [ADR-0016](../adr/0016-relea
 
 ## Camino a 1.0.0
 
-[T-506](../backlog.md#t-506-salir-de-pre-release-y-publicar-100) define la salida de pre-release, y [T-505](../backlog.md#t-505-trusted-publishing) la publicación desde CI.
+[T-506](../backlog.md#t-506-salir-de-pre-release-y-publicar-100) define la salida de pre-release, y [T-505](../backlog.md#t-505-trusted-publishing), opcional, la publicación desde CI.

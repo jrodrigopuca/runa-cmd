@@ -53,17 +53,35 @@
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Hecho |
 | 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Hecho |
 | | T-402 | Revalidar qr-plus | Requerido | Hecho |
-| | T-404 | Usar MCP desde un agente real | Requerido | Pendiente |
+| | T-404 | Usar MCP desde un agente real | Requerido | En curso |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
 | | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Hecho |
 | | T-210 | Nombre del valor en la ayuda | Requerido | Hecho |
 | | T-211 | Errores de uso desde un comando | Opcional | Pendiente |
+| | T-219 | Las opciones globales leen el config | Requerido | Pendiente |
+| | T-220 | Forma del archivo de config | Requerido | Decisión pendiente |
+| | T-221 | Probar una CLI sin subproceso | Requerido | Decisión pendiente |
+| | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Decisión pendiente |
+| | T-222 | Los posicionales convierten como las opciones | Requerido | Pendiente |
+| | T-223 | Flag desconocida en la raíz | Requerido | Pendiente |
+| | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Pendiente |
+| | T-225 | Completions con eval y texto con símbolos | Requerido | Pendiente |
+| | T-213 | Nombre de los comandos | Requerido | Decisión pendiente |
+| | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Pendiente |
+| | T-215 | README y changelog en npm | Requerido | Pendiente |
+| | T-309 | Fallos sin efecto por MCP | Requerido | Decisión pendiente |
+| | T-216 | Opción faltante con su variable de entorno | Opcional | Pendiente |
+| | T-217 | Valor por defecto legible en la ayuda | Opcional | Pendiente |
+| | T-218 | Parada limpia de un servicio | Opcional | Pendiente |
+| | T-310 | Valores fijos que no son secretos | Opcional | Pendiente |
+| | T-226 | Ruta completa en hooks y middleware | Opcional | Pendiente |
+| | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
 | | T-503 | Documentación de v1 | Requerido | Pendiente |
-| | T-504 | Grupo de versiones de los paquetes | Requerido | Decisión pendiente |
-| | T-505 | Trusted Publishing | Requerido | Pendiente |
+| | T-504 | Grupo de versiones de los paquetes | Requerido | Hecho |
+| | T-505 | Trusted Publishing | Opcional | Pendiente |
 | | T-506 | Salir de pre-release y publicar 1.0.0 | Requerido | Pendiente |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
@@ -480,8 +498,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-404 Usar MCP desde un agente real
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** En curso
 - **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio. La prueba la hace otro proyecto, y su agente solo ve lo publicado, para que no lo sesgue conocer Runa por dentro.
+- **Avance:** `local-beacon` adoptó `0.2.0-beta.2` y reportó 14 fricciones, [contrastadas](./research/2026-10-local-beacon-friction.md) y ya en este backlog. Falta comprobar que un modelo llame sus tools y qué hace ante un error.
 - **Criterios de aceptación:**
   - El proyecto necesita MCP por sí mismo, y su agente lo adopta con el paquete publicado, sin acceso a este repo.
   - Un agente real llama tools de una CLI, por `--mcp`, y recibe el resultado completo.
@@ -526,11 +545,192 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Un comando lanza un error de uso con un mensaje, sin armar issues de Zod.
   - El error sale con exit 2 y la misma pista que los demás errores de uso.
 
+### T-212 Lo que devuelve un comando llega a la terminal
+
+- **v1:** Requerido
+- **Estado:** Decisión pendiente
+- **Descripción:** como autor de una CLI, quiero que un mismo `run()` sirva a personas y agentes. Hoy lo devuelto llega a la tool pero no a la terminal, así que hay que imprimir y además devolver. Sin `output`, los tipos tampoco permiten devolver un valor, aunque el README de `mcp` lo documenta. Reúne F-01, F-02, F-11 y F-12 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Decisión:** cómo se muestra el resultado en la terminal, si el autor puede dar un formato para personas, y si existe un `--json` estándar. Puede ser un cambio incompatible, y necesita un ADR.
+- **Criterios de aceptación:**
+  - Un comando que devuelve un valor no deja la terminal vacía con exit 0, y la salida va por stdout.
+  - Un comando que solo imprime se comporta igual que hoy.
+  - Devolver un valor sin `output` compila, o el README deja de documentarlo.
+  - Una opción que solo sirve en la terminal no le llega al modelo.
+  - Un formato para personas no corre en una llamada MCP.
+
+### T-213 Nombre de los comandos
+
+- **v1:** Requerido
+- **Estado:** Decisión pendiente
+- **Descripción:** como autor de una CLI, quiero que el nombre que declaro sea el que se ejecuta. `meta.name` es obligatorio, pero en `defineCLI` manda la clave: `withOutput` se ejecuta como `withOutput`, aunque `darkColor` sea `--dark-color`. Es F-03 de [`local-beacon`](./research/2026-10-local-beacon-friction.md), y va contra [ADR-0029](./adr/0029-cada-campo-tiene-efecto.md).
+- **Decisión:** si manda `meta.name`, si la clave pasa a kebab-case como las flags, o si `meta.name` deja de ser obligatorio. Cambia nombres de comandos y de tools, así que debe salir antes de la ventana.
+- **Criterios de aceptación:**
+  - Una sola regla define el nombre en la terminal, en la ayuda, en completions y en la tool MCP.
+  - Ningún campo obligatorio queda sin efecto.
+  - La nota de migración muestra el cambio.
+
+### T-214 La ayuda de un subcomando muestra la CLI
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero copiar el uso que muestra la ayuda. Hoy `USAGE  envOption [options]` no se puede ejecutar. Es F-04 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Criterios de aceptación:**
+  - En `defineCLI`, el uso de un subcomando empieza con el nombre de la CLI, en `core` y en el plugin.
+  - Un subcomando anidado muestra la ruta completa.
+  - `fullPath` en `getSchema()` no cambia de significado.
+
+### T-215 README y changelog en npm
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que evalúa Runa, quiero leer la documentación en npm y ver qué cambió. El campo `readme` del registro está vacío, y `CHANGELOG.md` no viaja en el paquete, aunque [`VERSIONING.md`](../VERSIONING.md) manda a leerlo. Son F-05 y F-10 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Criterios de aceptación:**
+  - Se confirma si la página de npm muestra el README, y por qué el registro lo tiene vacío.
+  - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cuatro paquetes.
+  - Cada paquete publicado incluye su `CHANGELOG.md`.
+
+### T-309 Fallos sin efecto por MCP
+
+- **v1:** Requerido
+- **Estado:** Decisión pendiente
+- **Descripción:** como autor de una tool, quiero que un fallo previsto no le sugiera al modelo un efecto que no ocurrió. Hoy un `CommandError` devuelve `effect: "unknown"` y `safeToRetry: false`, aun en una tool con `readOnlyHint: true`. Es F-06 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Decisión:** si el autor declara el efecto al lanzar el error, si `readOnlyHint` alcanza para considerar seguro reintentar, o ambas. `annotations` son pistas y no límites, como dice [ADR-0031](./adr/0031-quien-opera-gana-al-modelo.md).
+- **Criterios de aceptación:**
+  - Un autor puede declarar que un fallo no tuvo efectos, y el modelo recibe `effect: "none"`.
+  - Sin esa declaración, un fallo sigue siendo `unknown`: la duda nunca se resuelve hacia reintentar.
+  - El texto que recibe el modelo coincide con `_meta['runa/error']`.
+
+### T-216 Opción faltante con su variable de entorno
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero saber que una opción obligatoria también se puede dar por env. Es F-08 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Criterios de aceptación:**
+  - El error nombra la variable declarada, sin mostrar ningún valor.
+
+### T-217 Valor por defecto legible en la ayuda
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor de una CLI, quiero mostrar `~/.tool/control.sock` y no la ruta de mi home cuando el valor por defecto es calculado. Es F-13 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Criterios de aceptación:**
+  - `meta.options` acepta el texto del valor por defecto, y las dos ayudas lo muestran.
+  - El valor real no cambia.
+
+### T-218 Parada limpia de un servicio
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor de un servicio, quiero que Ctrl+C no parezca un error si el comando terminó ordenadamente. Es F-07 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Criterios de aceptación:**
+  - Un comando que terminó bien tras la señal no imprime `Interrupted.`.
+  - El exit code sigue siendo 130 o 143, porque es contrato.
+
+### T-310 Valores fijos que no son secretos
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como quien opera un servidor, quiero que el modelo vea una ruta que no es secreta, y no `[redacted]`. Es F-14 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Criterios de aceptación:**
+  - Quien opera puede marcar una opción como no secreta.
+  - Por defecto, nada cambia: redactar sigue siendo lo normal, como dice [ADR-0032](./adr/0032-postura-sobre-secretos.md).
+
+### T-219 Las opciones globales leen el config
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero que un `store` en el config se respete, y no escribir en otro archivo sin enterarme. Hoy una global ignora el config sin aviso, aun con un tipo inválido, y `defineCLI` no deja declararle `env`. Es H1 de [la evaluación](./research/2026-10-first-use-evaluation.md), y va contra [ADR-0008](./adr/0008-config-merge-en-core.md).
+- **Criterios de aceptación:**
+  - Una global respeta CLI, env, config y default, igual que una opción de comando.
+  - Un valor inválido en el config da exit 2.
+  - Las globales de un plugin siguen la misma regla.
+
+### T-220 Forma del archivo de config
+
+- **v1:** Requerido
+- **Estado:** Decisión pendiente
+- **Descripción:** como autor de una CLI, quiero dar un valor a un solo comando. Hoy una clave se aplica a toda opción con ese nombre: `{"force":true}` activa `--force`, una clave de `add` rompe `list`, y `{"clear":{...}}` se ignora sin aviso. Es H2 de [la evaluación](./research/2026-10-first-use-evaluation.md).
+- **Decisión:** dónde vive el valor de un comando y qué pasa con una clave desconocida. El formato es contrato, así que necesita un ADR, y cambiarlo después de la 1.0 exige una major.
+- **Criterios de aceptación:**
+  - Un valor se puede asignar a un solo comando, incluso anidado.
+  - Una clave del config no cambia en silencio el comportamiento de otro comando.
+  - Una clave desconocida no se ignora sin aviso.
+  - Un error de valor nombra el archivo y la clave, y un JSON roto es un error de uso del archivo, no `Unexpected error`.
+  - Se evalúa si un config del directorio puede apagar un guardarraíl o cambiar el schema de una tool, según [ADR-0031](./adr/0031-quien-opera-gana-al-modelo.md).
+  - `VERSIONING.md` y los README documentan la forma.
+
+### T-221 Probar una CLI sin subproceso
+
+- **v1:** Requerido
+- **Estado:** Decisión pendiente
+- **Descripción:** como autor de una CLI, quiero probar mis comandos sin que un error termine el runner. Hoy `cli.run()` llama a `process.exit`, devuelve `undefined`, y no se pueden capturar stdout, stderr ni el exit code. Son H4 y F-09.
+- **Decisión:** cambiar `run()`, o agregar un `testCLI()` que devuelva `{ code, stdout, stderr, result }`.
+- **Criterios de aceptación:**
+  - Una prueba ejecuta un comando que falla y sigue corriendo.
+  - La prueba lee el exit code, stdout, stderr y lo devuelto.
+  - La guía de testing de T-503 lo usa.
+
+### T-222 Los posicionales convierten como las opciones
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como autor de una CLI, quiero que un schema se comporte igual en opciones, argumentos y MCP. Hoy `args: { id: z.number() }` falla por CLI, y los tipos dicen `number`. Es H3 de [la evaluación](./research/2026-10-first-use-evaluation.md).
+- **Criterios de aceptación:**
+  - `z.number()` y `z.boolean()` en posicionales usan la coerción de [ADR-0013](./adr/0013-coercion-numerica.md).
+  - Un variádico convierte cada elemento.
+  - Un valor inválido da exit 2 con un mensaje como el de las opciones.
+
+### T-223 Flag desconocida en la raíz
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero que `tool --bogus` diga que la opción no existe. Hoy da `Command not found` y 127. Como los exit codes son contrato, hay que corregirlo antes de la 1.0.
+- **Criterios de aceptación:**
+  - Una flag desconocida antes del comando da exit 2 y `Unknown option`.
+  - Un comando desconocido sigue dando 127.
+
+### T-224 Salida de ayuda sin estilos fuera de una terminal
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero que la ayuda en un pipe o con `NO_COLOR` no traiga códigos ANSI. Es H10 de [la evaluación](./research/2026-10-first-use-evaluation.md).
+- **Criterios de aceptación:**
+  - Hacia un pipe o con `NO_COLOR=1`, la ayuda del plugin no contiene secuencias ANSI, ni en negrita ni en tenue.
+  - En una terminal, el estilo no cambia.
+
+### T-225 Completions con eval y texto con símbolos
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero que el completado funcione como se sugiere. `eval "$(cli completions zsh)"` falla, y según el reporte un `]` en una descripción o un enum con espacio lo rompen. Son H7 y H8 de [la evaluación](./research/2026-10-first-use-evaluation.md).
+- **Criterios de aceptación:**
+  - La instalación que sugiere la CLI funciona en zsh, o deja de sugerirse.
+  - Se reproduce H8, y los valores quedan escapados como promete el README.
+
+### T-226 Ruta completa en hooks y middleware
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor de un plugin, quiero distinguir `tag add` de `add`. Hoy `ctx.command.name` es solo la hoja, y el middleware no recibe el comando. Es H6 de [la evaluación](./research/2026-10-first-use-evaluation.md). Es aditivo, así que puede salir en 1.x.
+- **Criterios de aceptación:**
+  - Hooks y middleware reciben la ruta completa del comando.
+  - `command.name` no cambia de significado.
+
+### T-227 Detalles de ayuda y errores
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero mensajes uniformes y una ayuda sin ruido. Reúne los menores de [la evaluación](./research/2026-10-first-use-evaluation.md).
+- **Criterios de aceptación:**
+  - Se contrasta cada menor, y lo confirmado se corrige o se descarta con motivo.
+  - Un error de validación no expone a Zod ni la clave interna.
+  - El ejemplo de Layer 3 de `help` compila (H5).
+
 ### T-208 Retirar el modo implícito
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Bloqueada por:** T-404, porque cerrar T-208 abre la ventana de estabilidad, y un cambio incompatible en MCP la reiniciaría
+- **Bloqueada por:** T-404, porque cerrar T-208 abre la ventana de estabilidad, y un cambio incompatible la reiniciaría. Por el mismo motivo, también T-212, T-213, T-220, T-221, T-223 y T-309
 - **Descripción:** como mantenedor, quiero que 1.0 no incluya el modo que depende de contar comandos y falla al sumar un plugin. El retiro cierra la etapa de cambios incompatibles previstos, antes de abrir la ventana de estabilidad.
 - **Criterios de aceptación:**
   - `defineCLI` deja de saltear el nombre del comando cuando hay uno solo.
@@ -568,23 +768,25 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Criterios de aceptación:**
   - Hay guías de inicio, plugins, middleware, testing y MCP, además de referencia de API.
   - Hay una guía de migración desde commander, basada en qr-plus.
+  - Se resuelven las contradicciones de [la evaluación](./research/2026-10-first-use-evaluation.md): `-h` propio, `db migrate --help`, `rawArgs`, y se documentan los variádicos y `ctx.invocation`.
   - Los ejemplos corren en CI o se verifican en cada release.
 
 ### T-504 Grupo de versiones de los paquetes
 
 - **v1:** Requerido
-- **Estado:** Decisión pendiente
+- **Estado:** Hecho
 - **Descripción:** como mantenedor, quiero decidir si los cuatro paquetes siguen versionándose juntos después de la 1.0.
-- **Decisión:** mantener el grupo `fixed` o separarlo.
+- **Decisión:** [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md). Siguen en el grupo `fixed` hasta publicar la 1.0.0, y después cada paquete tiene su versión. Así, un cambio en un plugin no publica un `core` sin cambios, ni le da una major falsa.
 - **Criterios de aceptación:**
   - La decisión queda registrada con su condición de revisión.
-  - La configuración de changesets la refleja.
+  - La configuración de changesets la refleja: hasta la 1.0.0 no cambia, y T-506 vacía `fixed`.
 
 ### T-505 Trusted Publishing
 
-- **v1:** Requerido
+- **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como mantenedor, quiero publicar desde CI sin tokens guardados, usando OIDC, la autenticación sin secretos de npm.
+- **Decisión:** por ahora la publicación sigue siendo local, como dice [ADR-0016](./adr/0016-release-con-changesets.md). Publicar no se puede deshacer, y el mantenedor prefiere ejecutarlo a mano antes que arriesgar que un automatismo lleve algo que no corresponde.
 - **Criterios de aceptación:**
   - Los cuatro paquetes tienen el publicador confiable configurado.
   - El workflow publica con `id-token: write`, sin `NPM_TOKEN`.
@@ -601,6 +803,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Se ejecuta `changeset pre exit` y se amplían los peer ranges de help, MCP y completions.
   - Un dry-run de `changeset version` da las versiones esperadas antes de publicar.
   - Los cuatro paquetes quedan en `1.0.0` bajo `latest`, y la tabla del README dice `Stable`.
+  - Después de publicar, `fixed` queda vacío en `.changeset/config.json`, como pide [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md).
 
 ## Después de v1 o si llega a tiempo
 

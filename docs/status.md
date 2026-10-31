@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. qr-plus ya migró a `0.2.0-beta.2` sin workarounds (T-402), pero esa versión no está publicada: su versión en npm sigue con commander, y migra después de la estable. Falta que otro proyecto, cuyo agente solo ve lo publicado, use MCP (T-404), y después retirar el modo implícito (T-208).
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. qr-plus ya migró a `0.2.0-beta.2` sin workarounds (T-402), pero esa versión no está publicada: su versión en npm sigue con commander, y migra después de la estable. `local-beacon`, cuyo agente solo ve lo publicado, adoptó Runa y MCP (T-404, en curso). Su [reporte](./research/2026-10-local-beacon-friction.md) y una [evaluación de primer uso](./research/2026-10-first-use-evaluation.md) abrieron 12 tareas requeridas, y lo más urgente es el archivo de config (T-219, T-220). Después de resolverlas se retira el modo implícito (T-208).
 
 ## Versiones
 
@@ -34,17 +34,21 @@ Changesets está en modo pre-release con el tag `beta`.
 - **Beta publicada:** `0.2.0-beta.1` incluye `--help` sin plugins, kebab-case, opciones repetidas, y tools MCP en subprocesos con cancelación y límites.
 - **Primera migración:** pasar `@qr-plus/cli` desde commander dejó cinco workarounds, ya eliminados. Es evidencia de migración, no de uso, porque esa versión no se publicó. Está en [research](./research/2026-10-qr-plus-migration.md).
 - **Investigación:** el comportamiento de librerías y el uso público están en [research](./research/2026-10-cli-usage.md).
-- **Problemas abiertos:** se listan en [known-issues.md](./known-issues.md). Quedan el modo implícito de `defineCLI` (T-208), que se retira después de T-402, y `completions` como tool (T-308).
+- **Problemas abiertos:** se listan en [known-issues.md](./known-issues.md). Los más graves son el archivo de config (T-219, T-220), que lo devuelto por un comando no llega a la terminal (T-212) y el modo implícito de `defineCLI` (T-208).
 
 ## Camino a v1
 
-La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([ADR-0038](./adr/0038-ventana-de-estabilidad.md)). El camino es: proyecto de MCP (T-404), retiro del modo implícito (T-208), 4 semanas de uso sobre la beta publicada, 1.0, y después qr-plus estable. Esa ventana no empezó, porque todavía hay cambios incompatibles planificados.
+La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([ADR-0038](./adr/0038-ventana-de-estabilidad.md)). El camino es: proyecto de MCP (T-404), una beta con las tareas requeridas de T-212 a T-225 y T-309, retiro del modo implícito (T-208), 4 semanas de uso sobre la beta publicada, 1.0, y después qr-plus estable. Esa ventana no empezó, porque todavía hay cambios incompatibles planificados.
 
 ## Decisiones abiertas
 
 | Tarea | Pregunta |
 |---|---|
-| [T-504](./backlog.md#t-504-grupo-de-versiones-de-los-paquetes) | Si los paquetes siguen versionándose juntos |
+| [T-220](./backlog.md#t-220-forma-del-archivo-de-config) | Dónde vive el valor de un comando en el config |
+| [T-221](./backlog.md#t-221-probar-una-cli-sin-subproceso) | Cómo se prueba una CLI sin subproceso |
+| [T-212](./backlog.md#t-212-lo-que-devuelve-un-comando-llega-a-la-terminal) | Cómo llega a la terminal lo que devuelve un comando |
+| [T-213](./backlog.md#t-213-nombre-de-los-comandos) | Qué define el nombre de un comando |
+| [T-309](./backlog.md#t-309-fallos-sin-efecto-por-mcp) | Cómo se declara un fallo sin efectos |
 
 ## Cómo actualizar este archivo
 
