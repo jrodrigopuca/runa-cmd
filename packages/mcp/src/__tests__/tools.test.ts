@@ -344,7 +344,7 @@ describe('values', () => {
 	});
 
 	it('passes a large input', async () => {
-		const client = await serve();
+		const client = await serve({ MAX_OUTPUT: String(3 * 1024 * 1024) });
 		const word = 'x'.repeat(2 * 1024 * 1024);
 		expect(text(await client.call('shout', { word }))).toHaveLength(word.length + 1);
 	});

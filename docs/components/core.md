@@ -81,6 +81,7 @@ interface CLIConfig {
 | `packages/core/src/plugin.ts` | Host de plugins, orden topológico, capacidades y colisiones |
 | `packages/core/src/introspect.ts` | `getSchema()` |
 | `packages/core/src/errors.ts` | Jerarquía de errores |
+| `packages/core/src/stop.ts` | Parada de una ejecución: señales, canal con el servidor y plazos |
 | `packages/core/src/tool-channel.ts` | Canal con un servidor MCP cuando la CLI corre como tool |
 | `packages/core/src/suggest.ts` | Levenshtein y sugerencias |
 | `packages/core/src/parse/parseargs-bridge.ts` | Traduce schema a configuración de `parseArgs` |
@@ -112,6 +113,29 @@ La prioridad es **CLI, env, config y default de Zod**. El detalle está en [pars
 | Otro error | No aplica | 1 |
 
 Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION` e `INVALID_OUTPUT`.
+
+### Cómo se detiene una ejecución
+
+La parada de [ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md) entra por un solo camino: `SIGINT`, `SIGTERM` o el corte del canal con el servidor. Dispara `ctx.signal`, disponible en `run()` y en los hooks, y termina como un error más, con `onError` y `cleanup`.
+
+```ts
+defineCommand({
+  async run({ signal }) {
+    await fetch(url, { signal });
+    spawn('tar', args, { signal }); // el aviso sigue bajando
+  },
+});
+```
+
+| Etapa | Desde el aviso | Origen del valor |
+|---|---|---|
+| `run()` deja de esperarse | 2 s | Criterio propio. Un comando que usa `ctx.signal` paró en 3 ms de máximo, en 30 corridas |
+| Salida forzada, con `cleanup` o sin él | 5 s | Default de `forceKillAfterDelay` en execa. Docker usa 10 s, sin una persona esperando |
+| Segunda señal, en la CLI | Al instante | |
+
+Sale con 130 tras `SIGINT` y con 143 tras `SIGTERM`, por la convención 128 + señal, e imprime `Interrupted.`.
+
+**Límite de la plataforma:** Node atiende las señales desde el event loop, así que un comando que lo bloquea no responde hasta liberarlo. Medido con un bucle síncrono de 1,5 s, Ctrl+C tardó 1.607 ms con handler y 304 ms sin él. `Ctrl+\` corta igual, porque Runa no captura `SIGQUIT`.
 
 ### Cómo termina una ejecución fallida
 

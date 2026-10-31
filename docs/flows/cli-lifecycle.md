@@ -47,14 +47,14 @@ El motivo se imprime antes de `cleanup`, para que siga visible aunque `cleanup` 
 | `beforeRun` | Antes del middleware | Igual | Último punto para abortar |
 | `afterRun` | Tras una ejecución exitosa | Igual | Telemetría |
 | `onError` | Ante un error del ciclo | `error`, `handled` | Formatear o reportar |
-| `cleanup` | Al salir del `try` | Lo acumulado | Liberar recursos |
+| `cleanup` | Al salir del `try`, también tras una parada | Lo acumulado | Liberar recursos |
 
 ## Reglas
 
 - Los handlers corren en orden de registro.
 - Si un handler de `onGlobalFlags` llama a `shortCircuit()`, no corren los siguientes y el ciclo pasa a `cleanup`.
 - Si `onError` falla, se registra en stderr y decide el error original.
-- Cada handler de `cleanup` corre aunque otro falle.
+- Cada handler de `cleanup` corre aunque otro falle. Si el proceso recibe una señal, `cleanup` corre salvo que el plazo se agote antes, o que el event loop esté bloqueado.
 - `cleanup()` de los plugins corre en orden topológico inverso.
 - Marcar `ctx.handled = true` evita la salida por defecto, y `cli.run()` resuelve sin forzar la salida, pero el exit code sigue siendo de falla.
 - `hookCtx.rawArgs` se reduce durante el parseo, mientras `run()` recibe el argv original en `ctx.rawArgs`.

@@ -5,7 +5,7 @@
  * assertFreshBuild() must run first: `pending` cases also "pass" when a
  * fixture cannot start, and that must stop the suite instead of hiding.
  */
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +32,42 @@ export function runFixture(
 		{ encoding: 'utf8', env: { ...parentEnv, NO_COLOR: '1', ...env } },
 	);
 	return { status, stdout, stderr };
+}
+
+/** A fixture still running, to act on it from outside. */
+export function startFixture(fixture: string, argv: string[], env: Record<string, string> = {}) {
+	const { RUNA_DEBUG: _ignored, ...parentEnv } = process.env;
+	const child = spawn(process.execPath, [join(here, 'fixtures', fixture), ...argv], {
+		stdio: ['ignore', 'pipe', 'pipe'],
+		env: { ...parentEnv, NO_COLOR: '1', ...env },
+	});
+
+	let stdout = '';
+	let stderr = '';
+	child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
+		stdout += chunk;
+		child.stdout.emit('wrote');
+	});
+	child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
+		stderr += chunk;
+	});
+
+	const exited = new Promise<Result>((resolve) => {
+		child.on('close', (status) => resolve({ status, stdout, stderr }));
+	});
+
+	const written = (text: string) =>
+		new Promise<void>((resolve) => {
+			const check = () => {
+				if (!stdout.includes(text)) return;
+				child.stdout.off('wrote', check);
+				resolve();
+			};
+			child.stdout.on('wrote', check);
+			check();
+		});
+
+	return { child, exited, written };
 }
 
 /** Newest modification time among non-test sources. */

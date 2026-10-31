@@ -45,6 +45,8 @@ El hijo informa hasta dónde llegó: `running` antes de `run()`, `ran` cuando vu
 
 | Hijo | Clase | Efecto |
 |---|---|---|
+| Se pidió detenerlo | `cancelled` | `unknown` |
+| `oversized` | `output_too_large` | `completed` |
 | `result`, exit 0, sin `failed` | Éxito: el valor como texto, o stdout, más `structuredContent` si `output` es un objeto | |
 | `result` con `failed` o exit distinto de 0 | `after_run_failed` | `completed` |
 | `ran` y `failed` por `output` | `invalid_output` | `completed` |
@@ -71,6 +73,22 @@ El texto lleva el motivo que escribió el comando y una frase sobre el efecto, p
 | `ctx.invocation` | `{ surface: 'cli' }` | `{ surface: 'tool', tool }` |
 | Latencia | Directa | Medida: 138 ms de mediana por llamada, en una CLI mínima |
 
-## Límites actuales
+## Cómo se detiene
 
-Se resuelven en [T-305](../backlog.md#t-305-cancelación-y-límites): cancelar no corre `cleanup` del hijo y no hay tope de salida.
+Sigue [ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md). Cada hijo lidera su grupo de procesos y mantiene un canal IPC con el servidor.
+
+| Qué pasa | Hijo | Servidor |
+|---|---|---|
+| El cliente cancela | Se corta el canal: `ctx.signal`, `cleanup`, y termina su grupo | Fuerza el árbol a los 5 s si sigue vivo |
+| El servidor se cierra | Igual, por cada llamada en curso | Responde esas llamadas y recién ahí sigue su ciclo de vida |
+| El servidor muere con `SIGKILL` | El canal se corta igual, y se detiene solo | |
+| Sale por otro camino | | Al salir, termina el árbol de cada hijo en curso |
+
+La llamada termina cuando sale el hijo, más 250 ms para recibir lo que escribió. Si terminó bien, un proceso que el comando dejó corriendo sigue vivo: pudo lanzarlo a propósito. Esos 250 ms son criterio propio: lo medido en macOS fue 0,05 ms de máximo, y el margen es para una máquina cargada.
+
+## Tope de salida
+
+- **Stdout y stderr:** se guarda el inicio y el final, y en el medio un aviso con los bytes omitidos. La memoria queda acotada aunque el comando escriba 600 MB.
+- **Redacción:** cada extremo guarda bytes de más, que se descartan después de redactar. Así, un valor fijo cortado por la mitad no queda visible.
+- **Valor devuelto:** no se trunca, porque un JSON cortado no sirve. Lo mide el hijo, que informa `oversized` en lugar del valor.
+- **Origen de los 100 KiB:** unos 25.000 tokens, a razón de 4 caracteres por token. Es el límite por defecto de Claude Code, el único cliente que revisamos.

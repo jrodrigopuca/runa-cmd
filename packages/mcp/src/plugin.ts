@@ -49,6 +49,7 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 						configValues: await api.getConfigValues(),
 						env: process.env,
 						globals: ctx.globalOptions,
+						maxOutput: opts.maxOutput,
 					},
 				);
 

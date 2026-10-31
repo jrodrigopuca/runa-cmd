@@ -10,6 +10,8 @@ export interface ToolOptions {
 	expose?: string[];
 	/** Options that must come from env or config: without a value, the server won't start */
 	serverOnly?: string[];
+	/** Most bytes of output for this tool, instead of the plugin's `maxOutput` */
+	maxOutput?: number;
 }
 
 /**
@@ -29,6 +31,12 @@ export interface McpPluginOptions {
 	 * e.g. `[process.execPath]` for a binary.
 	 */
 	selfCommand?: string[];
+	/**
+	 * Most bytes a tool can answer with. Longer output keeps its start and end,
+	 * with a notice. A returned value isn't cut: over this limit, the call fails.
+	 * Default: 100 KiB.
+	 */
+	maxOutput?: number;
 	/** Per-tool settings, by tool name, e.g. `{ deploy: { serverOnly: ['token'] } }` */
 	tools?: Record<string, ToolOptions>;
 }

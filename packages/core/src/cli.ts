@@ -37,6 +37,7 @@ import {
 	topologicalSort,
 	validateOptionCollisions,
 } from './plugin.js';
+import { watchForStop } from './stop.js';
 import { findSuggestion } from './suggest.js';
 import {
 	sendToolReport,
@@ -389,11 +390,14 @@ async function runCLILifecycle(
 		globalOptionSources.set(name, [STATIC_GLOBAL_OPTION_SOURCE]);
 	}
 
+	const stop = watchForStop(report !== undefined);
+
 	// Hook context that grows as we progress through the lifecycle
 	const hookCtx: HookContext = {
 		cli: config.meta,
 		invocation: toolCall ? { surface: 'tool', tool: toolCall.path.join('_') } : { surface: 'cli' },
 		rawArgs: argv,
+		signal: stop.signal,
 	};
 
 	let lifecycleError: Error | undefined;
@@ -607,6 +611,7 @@ async function runCLILifecycle(
 			command: command.meta,
 			rawArgs: argv,
 			rest: selection.rest,
+			signal: stop.signal,
 		};
 
 		const innerFn = async () => {
@@ -623,7 +628,7 @@ async function runCLILifecycle(
 
 		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, innerFn);
 
-		await chain();
+		await stop.guard(chain);
 
 		// ─── afterRun ─────────────────────────────────────
 		await hookRegistry.emit('afterRun', hookCtx);
@@ -676,7 +681,11 @@ async function runCLILifecycle(
 				}
 			}
 		}
+
+		stop.finish();
 	}
+
+	failureExitCode = stop.exitCode ?? failureExitCode;
 
 	// Exit only after cleanup: process.exit inside catch would skip the finally.
 	if (failureExitCode === undefined) return;
@@ -795,7 +804,7 @@ async function enter(config: CLIConfig, argv: string[], rootName?: string): Prom
 	await runCLILifecycle(config, argv, {
 		rootName,
 		toolCall: request,
-		report: request ? sendToolReport : undefined,
+		report: request && ((report) => sendToolReport(report, request.maxResultBytes)),
 	});
 }
 

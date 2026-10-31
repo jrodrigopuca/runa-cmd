@@ -43,7 +43,7 @@
 | | T-303 | Ejecutar cada tool en un subproceso | Requerido | Hecho |
 | | T-306 | Valores de quien opera fuera del schema | Requerido | Hecho |
 | | T-304 | Contrato de resultado y errores | Requerido | Hecho |
-| | T-305 | Cancelación y límites | Requerido | Pendiente |
+| | T-305 | Cancelación y límites | Requerido | En curso |
 | | T-302 | Excluir y anotar tools | Requerido | Pendiente |
 | | T-307 | Evento por llamada | Opcional | Pendiente |
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Pendiente |
@@ -336,8 +336,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-305 Cancelación y límites
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** T-303
+- **Estado:** En curso
 - **Descripción:** como persona o quien opera un servidor, quiero que parar libere recursos en todo el árbol de procesos, y que un comando no pueda tumbar el servidor con su salida. Sigue [ADR-0033](./adr/0033-parar-recorre-el-arbol-de-procesos.md).
 - **Criterios de aceptación:**
   - `SIGINT` y `SIGTERM` en la CLI disparan `ctx.signal` y corren `cleanup`, con exit 130 y 143.
@@ -350,7 +349,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Si el servidor muere, aun con `SIGKILL`, sus hijos no quedan corriendo.
   - Cerrar el servidor cancela las llamadas en curso antes de correr su `cleanup`.
   - La llamada termina aunque un proceso nieto retenga stdio.
-  - Hay un tope de salida total y por tool, con inicio y final, y un aviso de truncado.
+  - Hay un tope de salida global y por tool, de 100 KiB por defecto, con inicio y final, y un aviso de truncado.
+  - Un valor devuelto que supera el tope no se trunca: es `output_too_large` con efecto `completed`.
   - 600 MB en stdout no tumban el servidor.
 
 ### T-302 Excluir y anotar tools

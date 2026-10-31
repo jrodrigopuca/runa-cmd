@@ -95,6 +95,18 @@ describe('subprocess gate', () => {
 		rmSync(dir, { recursive: true, force: true });
 	});
 
+	it('tells a child that its parent died abruptly', async () => {
+		const dir = mkdtempSync(join(tmpdir(), 'runa-gate-'));
+		const marker = join(dir, 'cleanup');
+		const parent = start('parent', { MARKER: marker });
+
+		await firstMessage(parent);
+		parent.kill('SIGKILL');
+
+		expect(await waitUntil(() => existsSync(marker))).toBe(true);
+		rmSync(dir, { recursive: true, force: true });
+	});
+
 	it('ends a process together with the ones it started', async () => {
 		const child = start('tree');
 		const grandchild = await firstMessage<number>(child);

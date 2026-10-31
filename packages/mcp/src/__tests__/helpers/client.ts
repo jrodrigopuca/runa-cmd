@@ -81,6 +81,19 @@ export class TestClient {
 		return response.result as ToolResult;
 	}
 
+	/** A call in flight, with the way to cancel it as a client would. */
+	start(name: string, args: Record<string, unknown> = {}) {
+		const requestId = this.nextId;
+		const result = this.call(name, args);
+		const cancel = () =>
+			this.write({ method: 'notifications/cancelled', params: { requestId, reason: 'test' } });
+		return { result, cancel };
+	}
+
+	signal(signal: NodeJS.Signals): void {
+		this.server.kill(signal);
+	}
+
 	/** Resolves with the exit code, for a server that must refuse to start. */
 	exit(): Promise<number | null> {
 		return new Promise((resolve) => this.server.once('close', resolve));

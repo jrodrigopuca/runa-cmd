@@ -113,6 +113,14 @@ function debugDetails(error: Error): string[] {
 	return details;
 }
 
+/** The run was stopped from outside. Its exit code comes from what stopped it. */
+export class InterruptedError extends RunaError {
+	constructor(message: string) {
+		super(message, { code: 'INTERRUPTED' });
+		this.name = 'InterruptedError';
+	}
+}
+
 const isExpectedFailure = (error: Error): boolean =>
 	error instanceof RunaError && error.message.trim() !== '';
 

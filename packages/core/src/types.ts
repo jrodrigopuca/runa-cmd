@@ -63,6 +63,8 @@ export interface RunContext<
 	rawArgs: string[];
 	/** Tokens after the first `--` separator, verbatim and unvalidated. `[]` when absent. */
 	rest: string[];
+	/** Aborted when the run must stop. Pass it on to whatever the command starts. */
+	signal: AbortSignal;
 }
 
 // ─── Conditional Return Type ────────────────────────────────
@@ -203,6 +205,8 @@ export interface HookContext {
 	cli: CLIMeta;
 	invocation: Invocation;
 	rawArgs: string[];
+	/** Aborted when the run must stop */
+	signal: AbortSignal;
 	globalOptions?: Record<string, unknown>;
 	command?: CommandMeta;
 	args?: Record<string, unknown>;

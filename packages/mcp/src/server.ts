@@ -6,6 +6,7 @@
  * applies again. The child owns validation, as in any run of the CLI.
  */
 
+import { setImmediate } from 'node:timers/promises';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -17,9 +18,8 @@ import {
 import { RunaError } from '@runa-cmd/core';
 import type { ToolReport } from '@runa-cmd/core/internal';
 import { type ZodType, z } from 'zod';
-import { redact } from './operator.js';
 import type { ChildOutcome, RunOptions } from './runner.js';
-import { runChild } from './runner.js';
+import { childrenFinished, runChild } from './runner.js';
 import type { ToolRegistration } from './schema.js';
 
 const SELF_CHECK_TIMEOUT_MS = 10_000;
@@ -62,7 +62,9 @@ interface ToolFailure {
 		| 'command_failed'
 		| 'crashed'
 		| 'invalid_output'
-		| 'after_run_failed';
+		| 'output_too_large'
+		| 'after_run_failed'
+		| 'cancelled';
 	effect: Effect;
 }
 
@@ -77,10 +79,12 @@ const EFFECT_TEXT: Record<Effect, string> = {
  * retry can repeat its effects. Without one, a command may have done anything:
  * the safe reading of the unknown is never that nothing happened.
  */
-function findFailure({ reports, status }: ChildOutcome): ToolFailure | undefined {
+function findFailure({ reports, status, cancelled }: ChildOutcome): ToolFailure | undefined {
 	const reached = (kind: ToolReport['kind']) => reports.some((report) => report.kind === kind);
 	const failed = reports.find((report) => report.kind === 'failed');
 
+	if (cancelled) return { class: 'cancelled', effect: 'unknown' };
+	if (reached('oversized')) return { class: 'output_too_large', effect: 'completed' };
 	if (reached('result')) {
 		if (!failed && status === 0) return undefined;
 		return { class: 'after_run_failed', effect: 'completed' };
@@ -110,14 +114,23 @@ function failedChild(
 	outcome: ChildOutcome,
 	found: ToolFailure,
 ): CallToolResult {
-	const written = redact(outcome.stderr, reg.redactions).trim();
-	const printed = redact(outcome.stdout, reg.redactions).trim();
-	const silent =
-		outcome.status === 0
-			? `Command '${reg.name}' did not ${found.effect === 'none' ? 'run' : 'finish'}.`
-			: `Command '${reg.name}' exited with code ${outcome.status}.`;
+	const oversized = outcome.reports.find((report) => report.kind === 'oversized');
+	if (oversized) {
+		return failure(
+			`Command '${reg.name}' returned ${oversized.bytes} bytes, over the limit of ${reg.maxOutput}.`,
+			found,
+		);
+	}
 
-	return failure(written || printed || silent, found);
+	const written = outcome.stderr.trim();
+	const printed = outcome.stdout.trim();
+	return failure(written || printed || silentFailure(reg, outcome, found), found);
+}
+
+function silentFailure(reg: ToolRegistration, outcome: ChildOutcome, found: ToolFailure): string {
+	if (found.class === 'cancelled') return `Command '${reg.name}' was cancelled.`;
+	if (outcome.status !== 0) return `Command '${reg.name}' exited with code ${outcome.status}.`;
+	return `Command '${reg.name}' did not ${found.effect === 'none' ? 'run' : 'finish'}.`;
 }
 
 /**
@@ -129,7 +142,7 @@ export function toToolResult(reg: ToolRegistration, outcome: ChildOutcome): Call
 	if (found) return failedChild(reg, outcome, found);
 
 	const finished = outcome.reports.find((report) => report.kind === 'result');
-	const stdout = redact(outcome.stdout, reg.redactions).trim();
+	const stdout = outcome.stdout.trim();
 
 	// What run() returned is the author's choice, so it goes as it is.
 	const value = finished?.value;
@@ -188,8 +201,13 @@ export function createMcpServer(registrations: ToolRegistration[], options: Serv
 		);
 
 		const outcome = await runChild(
-			{ kind: 'call', path: reg.path, input },
-			{ ...options, signal: extra.signal },
+			{ kind: 'call', path: reg.path, input, maxResultBytes: reg.maxOutput },
+			{
+				...options,
+				signal: options.signal ? AbortSignal.any([extra.signal, options.signal]) : extra.signal,
+				maxOutput: reg.maxOutput,
+				redactions: reg.redactions,
+			},
 		);
 		return toToolResult(reg, outcome);
 	});
@@ -207,15 +225,23 @@ export async function serve(
 ): Promise<void> {
 	await assertCanRunItself(options);
 
-	const server = createMcpServer(registrations, options);
+	const stopping = new AbortController();
+	const server = createMcpServer(registrations, { ...options, signal: stopping.signal });
 	const closed = new Promise<void>((resolve) => {
 		server.onclose = resolve;
 	});
 
-	const close = () => void server.close();
+	// Calls in flight end first: closing would leave their answers with no way out
+	const close = async () => {
+		stopping.abort();
+		await childrenFinished();
+		await setImmediate(); // Each answer is a few promises away from the child's end
+		await server.close();
+	};
 	process.once('SIGINT', close);
 	process.once('SIGTERM', close);
 	process.stdin.once('end', close);
+	process.stdout.on('error', () => {}); // A client that left can't be answered, and that's fine
 
 	await server.connect(new StdioServerTransport());
 	await closed;

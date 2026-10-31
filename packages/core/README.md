@@ -109,6 +109,7 @@ interface RunContext {
   command: CommandMeta;            // Current command metadata
   rawArgs: string[];               // Original argv
   rest: string[];                  // After `--`, what didn't fill a positional. Unvalidated
+  signal: AbortSignal;             // Aborted when the run must stop
 }
 ```
 
@@ -291,6 +292,20 @@ No failure exits silently. The reason goes to stderr, `cleanup` runs, and then t
 - Set `RUNA_DEBUG=1` to add the stack trace, error code and cause.
 - `ctx.handled` only stops the default output. If a plugin truly recovered, it sets `process.exitCode = 0` in `onError`.
 
+#### How a run stops
+
+On `SIGINT` or `SIGTERM`, Runa aborts `ctx.signal` and runs `cleanup`, and the process exits with 130 or 143. A command that ignores the signal stops being waited for after 2 seconds, and the process ends after 5 at most. A second signal leaves at once.
+
+Pass `signal` to whatever the command starts, so the stop reaches it too:
+
+```ts
+async run({ signal }) {
+  await fetch(url, { signal });
+}
+```
+
+A command that blocks the event loop can't react to a signal until it yields. Use `Ctrl+\` to end it at once.
+
 ### Constants
 
 ```ts
@@ -345,7 +360,7 @@ beforeRun
     ↓
 afterRun
     ↓
-cleanup  ← (ALWAYS runs, even on error)
+cleanup  ← (Runs on errors and on signals, within the stop deadline)
 
 On error → onError hook fires before cleanup
 ```

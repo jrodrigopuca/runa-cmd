@@ -98,8 +98,8 @@ Un error nunca afirma que no pasó nada si el comando llegó a empezar:
 | `effect` | Significa | `safeToRetry` | Clases |
 |---|---|---|---|
 | `none` | `run()` no empezó | `true` | `unknown_tool`, `invalid_input`, `rejected`, `not_run`, `crashed` |
-| `unknown` | `run()` empezó y no volvió | `false` | `command_failed`, `crashed` |
-| `completed` | `run()` volvió | `false` | `invalid_output`, `after_run_failed` |
+| `unknown` | `run()` empezó y no volvió, o se pidió detenerlo | `false` | `command_failed`, `crashed`, `cancelled` |
+| `completed` | `run()` volvió | `false` | `invalid_output`, `output_too_large`, `after_run_failed` |
 
 `safeToRetry: true` habla del comando: un middleware o un hook pudo haber hecho algo antes de que `run()` empezara. La tabla completa está en el [flujo](../flows/mcp-tool-call.md#cómo-se-arma-el-resultado).
 
@@ -116,8 +116,8 @@ Un error nunca afirma que no pasó nada si el comando llegó a empezar:
 
 ## Límites actuales
 
-- **Cancelar mata al hijo sin correr `cleanup`,** y un proceso que él haya iniciado queda vivo ([T-305](../backlog.md#t-305-cancelación-y-límites)).
-- **No hay tope de salida** ([T-305](../backlog.md#t-305-cancelación-y-límites)).
+- **Terminar procesos es best-effort.** Uno que creó su propio grupo o sesión se escapa ([ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md)).
+- **Un `selfCommand` que no sea Node directo pierde el canal de vida.** Un binario o un envoltorio como `npx` no recibe el aviso: lo termina el plazo, y si el servidor muere con `SIGKILL`, nadie.
 - **No hay control de exposición.** Todos los comandos son tools (KI-007).
 - **No hay estado entre llamadas.** Cada una es un proceso nuevo: un pool de conexiones no se comparte.
 - **Solo hay transporte stdio.**

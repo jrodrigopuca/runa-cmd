@@ -6,6 +6,7 @@
  */
 import type { CLISchema, Command, CommandSchema, CommandTree } from '@runa-cmd/core';
 import type { ZodType } from 'zod';
+import { DEFAULT_MAX_OUTPUT } from './runner.js';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -33,6 +34,8 @@ export interface ToolRegistration {
 	fixed: Set<string>;
 	/** Text to hide from what the command writes */
 	redactions: string[];
+	/** Most bytes of output this tool can answer with */
+	maxOutput: number;
 }
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -113,6 +116,7 @@ function walkTree(
 				optionKeys,
 				fixed: new Set(),
 				redactions: [],
+				maxOutput: DEFAULT_MAX_OUTPUT,
 			});
 		} else {
 			// It's a subtree — recurse

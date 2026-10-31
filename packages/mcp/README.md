@@ -108,6 +108,20 @@ A failed call says whether repeating it can repeat its effects. The text says it
 
 `safeToRetry` is about the command: a middleware or hook may have acted before `run()` started.
 
+### Cancellation
+
+Cancelling a call, or closing the server, aborts `ctx.signal` in the command and runs `cleanup`. A command that ignores it stops being waited for after 2 seconds, and its whole process tree ends after 5. Pass `signal` to whatever the command starts:
+
+```ts
+async run({ signal }) {
+  await fetch(url, { signal });
+}
+```
+
+### Output Limit
+
+A tool answers with up to 100 KiB, or what `maxOutput` says. Longer output keeps its start and its end, with a notice in between. A returned value isn't cut: a broken JSON helps nobody, so the call fails with `output_too_large` and reports that the command already ran.
+
 ## What the Operator Decides
 
 Whoever starts the server beats the model. An option that declares `env`, or has a value in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call, so a model can't ask anyone for it.
@@ -132,8 +146,8 @@ Fixed values of 8 characters or more, and the global options the server started 
 These matter when you expose a real CLI to an agent:
 
 - **Every command becomes a tool.** There's no way yet to exclude one or mark it as destructive, so don't enable `--mcp` on a CLI whose commands an agent shouldn't run.
-- **Cancelling a call ends the process** without running `cleanup`, and a process the command started keeps running.
-- **Tool output has no size limit.**
+- **Ending processes is best-effort.** One that created its own process group or session escapes.
+- **Only a direct Node `selfCommand` gets the stop notice.** A compiled binary or a wrapper like `npx` is ended by the deadline, and not at all if the server is killed with `SIGKILL`.
 - **stdio is the only transport.**
 
 The [backlog](https://github.com/jrodrigopuca/runa-cmd/blob/main/docs/backlog.md) tracks the fixes.
@@ -163,12 +177,14 @@ interface McpPluginOptions {
   version?: string;       // Server version override
   instructions?: string;  // Workflow instructions for AI agents
   selfCommand?: string[]; // Executable and arguments to run this CLI again
+  maxOutput?: number;     // Most bytes a tool can answer with. Default: 100 KiB
   tools?: Record<string, ToolOptions>; // Per-tool settings, by tool name
 }
 
 interface ToolOptions {
   expose?: string[];     // Options the model can set, even if they declare env
   serverOnly?: string[]; // Options that must come from env or config
+  maxOutput?: number;    // This tool's limit, instead of the plugin's
 }
 ```
 

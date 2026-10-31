@@ -30,6 +30,16 @@ const modes = {
 		process.send?.('ready');
 	},
 
+	// Plays a server that dies abruptly: its child must still find out.
+	parent() {
+		const child = spawn(process.execPath, [process.argv[1], 'cancellable'], {
+			stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+			detached: process.platform !== 'win32',
+			windowsHide: true,
+		});
+		child.once('message', () => process.send?.('ready'));
+	},
+
 	// Starts a process of its own, which must die with this one.
 	tree() {
 		const grandchild = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {

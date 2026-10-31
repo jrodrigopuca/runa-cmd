@@ -21,10 +21,17 @@ export interface OperatorValues {
 	env: Record<string, string | undefined>;
 	/** Global options the server started with */
 	globals: Record<string, unknown>;
+	/** The output limit of every tool without its own */
+	maxOutput?: number;
 }
 
 function invalidTools(message: string): RunaError {
 	return new RunaError(`mcpPlugin: ${message}`, { code: 'MCP_INVALID_TOOLS' });
+}
+
+function assertValidLimit(limit: number | undefined, owner: string): void {
+	if (limit === undefined || (Number.isInteger(limit) && limit > 0)) return;
+	throw invalidTools(`maxOutput of ${owner} must be a positive number of bytes.`);
 }
 
 function assertValidTools(
@@ -34,6 +41,7 @@ function assertValidTools(
 	for (const [name, options] of Object.entries(tools)) {
 		const reg = registrations.find((candidate) => candidate.name === name);
 		if (!reg) throw invalidTools(`no tool named '${name}'.`);
+		assertValidLimit(options.maxOutput, `tool '${name}'`);
 
 		for (const key of [...(options.expose ?? []), ...(options.serverOnly ?? [])]) {
 			if (!reg.optionKeys.has(key)) {
@@ -100,6 +108,7 @@ function applyToTool(
 		inputShape,
 		fixed,
 		redactions: redactable([...fixedValues, ...Object.values(values.globals)]),
+		maxOutput: options.maxOutput ?? values.maxOutput ?? reg.maxOutput,
 	};
 }
 
@@ -109,6 +118,7 @@ export function applyOperatorValues(
 	tools: McpPluginOptions['tools'],
 	values: OperatorValues,
 ): ToolRegistration[] {
+	assertValidLimit(values.maxOutput, 'mcpPlugin');
 	assertValidTools(tools ?? {}, registrations);
 	return registrations.map((reg) => applyToTool(reg, tools?.[reg.name] ?? {}, values));
 }

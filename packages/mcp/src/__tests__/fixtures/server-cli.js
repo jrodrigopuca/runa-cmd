@@ -1,4 +1,6 @@
 // A real CLI served over MCP, whose commands exercise each promise of ADR-0030.
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { appendFileSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
@@ -37,8 +39,18 @@ const lifecycle = definePlugin({
 	},
 });
 
+const WAIT_MS = 30_000;
+
+/** A process the command starts: its pid goes to the trace, to look for it from outside. */
+function startGrandchild(stdio) {
+	const grandchild = spawn(process.execPath, ['-e', `setTimeout(() => {}, ${WAIT_MS})`], { stdio });
+	grandchild.unref();
+	trace(`grandchild:${grandchild.pid}`);
+}
+
 const selfCommand = process.env.SELF_COMMAND ? JSON.parse(process.env.SELF_COMMAND) : undefined;
 const tools = process.env.TOOLS ? JSON.parse(process.env.TOOLS) : undefined;
+const maxOutput = process.env.MAX_OUTPUT ? Number(process.env.MAX_OUTPUT) : undefined;
 const command = (name, config) =>
 	defineCommand({ meta: { name, description: `The ${name} tool` }, ...config });
 
@@ -49,7 +61,7 @@ await defineCLI({
 		? { name: 'server', searchPaths: [process.env.CONFIG_DIR] }
 		: undefined,
 	middleware: [gate],
-	plugins: [lifecycle, mcpPlugin({ selfCommand, tools })],
+	plugins: [lifecycle, mcpPlugin({ selfCommand, tools, maxOutput })],
 	commands: {
 		operated: command('operated', {
 			meta: {
@@ -127,6 +139,65 @@ await defineCLI({
 				trace('charged the card');
 				return { receipt: 42 };
 			},
+		}),
+		waits: command('waits', {
+			async run({ signal }) {
+				startGrandchild('ignore');
+				trace('waiting');
+				await delay(WAIT_MS, undefined, { signal });
+			},
+		}),
+		stubborn: command('stubborn', {
+			async run() {
+				startGrandchild('ignore');
+				trace('waiting');
+				await delay(WAIT_MS);
+			},
+		}),
+		talkative: command('talkative', {
+			async run({ signal }) {
+				process.on('disconnect', () => trace('disconnected'));
+				trace('waiting');
+				while (!signal.aborted) {
+					console.log('still working');
+					await delay(5);
+				}
+				console.log('one last line');
+				trace('survived the closed pipes');
+			},
+		}),
+		daemon: command('daemon', {
+			run() {
+				startGrandchild('inherit');
+				return 'started';
+			},
+		}),
+		loud: command('loud', {
+			args: { megabytes: z.number() },
+			async run({ args }) {
+				const chunk = Buffer.alloc(1024 * 1024, 'x');
+				process.stdout.write('START');
+				for (let sent = 0; sent < args.megabytes; sent++) {
+					if (!process.stdout.write(chunk)) await once(process.stdout, 'drain');
+				}
+				process.stdout.write('END');
+			},
+		}),
+		echoes: command('echoes', {
+			args: { before: z.number(), after: z.number() },
+			options: { secret: z.string() },
+			meta: {
+				name: 'echoes',
+				description: 'Prints a value the operator fixed at any position',
+				options: { secret: { env: 'TEST_TOKEN' } },
+			},
+			run({ args, options }) {
+				console.log(`${'x'.repeat(args.before)}${options.secret}${'y'.repeat(args.after)}`);
+			},
+		}),
+		big: command('big', {
+			args: { size: z.number() },
+			run: ({ args }) => 'x'.repeat(args.size),
 		}),
 		crash: command('crash', { run: () => process.exit(9) }),
 		leave: command('leave', { run: () => process.exit(0) }),

@@ -16,7 +16,14 @@ export const TOOL_REPORT_FD = 4;
 
 export type ToolRequest =
 	/** Proves the server can re-run itself, without touching any command */
-	{ kind: 'ping' } | { kind: 'call'; path: string[]; input: Record<string, unknown> };
+	| { kind: 'ping' }
+	| {
+			kind: 'call';
+			path: string[];
+			input: Record<string, unknown>;
+			/** A larger result is not sent: holding it would be the server's problem */
+			maxResultBytes: number;
+	  };
 
 export type ToolReport =
 	| { kind: 'pong' }
@@ -26,6 +33,8 @@ export type ToolReport =
 	| { kind: 'ran' }
 	/** The whole command finished, output validated */
 	| { kind: 'result'; value: unknown }
+	/** The command finished, but what it returned is over the limit */
+	| { kind: 'oversized'; bytes: number }
 	/** The run ended on an error; the reason is on stderr, for the same text a person reads */
 	| { kind: 'failed'; reason: ToolFailureReason };
 
@@ -41,10 +50,27 @@ export function takeToolRequest(): ToolRequest | undefined {
 	return JSON.parse(readFileSync(TOOL_INPUT_FD, 'utf8')) as ToolRequest;
 }
 
-export function sendToolReport(report: ToolReport): void {
+function writeLine(report: ToolReport, maxBytes: number): void {
 	const line = Buffer.from(`${JSON.stringify(report)}\n`);
+	if (report.kind === 'result' && line.length > maxBytes) {
+		writeLine({ kind: 'oversized', bytes: line.length }, maxBytes);
+		return;
+	}
+
 	let written = 0;
 	while (written < line.length) {
 		written += writeSync(TOOL_REPORT_FD, line, written);
+	}
+}
+
+export function sendToolReport(
+	report: ToolReport,
+	maxResultBytes = Number.POSITIVE_INFINITY,
+): void {
+	try {
+		writeLine(report, maxResultBytes);
+	} catch (error) {
+		// A server that died can't read this, and that must not stop the cleanup
+		if ((error as NodeJS.ErrnoException).code !== 'EPIPE') throw error;
 	}
 }
