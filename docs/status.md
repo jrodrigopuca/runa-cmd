@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-30, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. La fase 3 empezó con la comprobación en Windows (T-300), que condiciona el resto.
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las fases 1 y 2 del [backlog](./backlog.md) están cerradas, y sus cambios están en `main`, pendientes de la siguiente beta. La fase 3 empezó: la comprobación en Windows (T-300) pasó en CI, y sigue T-301.
 
 ## Versiones
 
@@ -14,6 +14,8 @@
 | `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.0 | 0.2.0-beta.0 |
 
 Changesets está en modo pre-release con el tag `beta`.
+
+**CI:** en verde en Ubuntu y Windows con Node 24. El [PR de versiones](https://github.com/jrodrigopuca/runa-cmd/pull/1) queda abierto hasta T-401: mergearlo fijaría `0.2.0-beta.1`.
 
 ## Salud técnica
 

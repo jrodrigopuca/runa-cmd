@@ -38,7 +38,7 @@
 | 2. Comando único | T-201 | `--version` integrado | Requerido | Hecho |
 | | T-202 | `--` llena posicionales | Requerido | Hecho |
 | | T-203 | `runCLI` con plugins y modo raíz explícito | Requerido | Hecho |
-| 3. MCP utilizable | T-300 | Comprobar lo crítico en Windows | Requerido | En curso |
+| 3. MCP utilizable | T-300 | Comprobar lo crítico en Windows | Requerido | Hecho |
 | | T-301 | Separar parseo y ejecución en `core` | Requerido | Pendiente |
 | | T-303 | Ejecutar cada tool en un subproceso | Requerido | Pendiente |
 | | T-306 | Valores de quien opera fuera del schema | Requerido | Pendiente |
@@ -265,7 +265,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-300 Comprobar lo crítico en Windows
 
 - **v1:** Requerido
-- **Estado:** En curso
+- **Estado:** Hecho
 - **Descripción:** como mantenedor, quiero probar en Windows lo que sostiene el enfoque antes de construirlo, porque es la condición que más puede cambiar ADR-0030.
 - **Criterios de aceptación:**
   - Un test con procesos reales corre en la matriz de CI: entrada JSON grande por un canal, resultado de 5 MB por otro, aviso de cancelación que deja correr `cleanup`, y cierre de un proceso con sus hijos.
