@@ -27,6 +27,4 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 
 ## Severidad baja
 
-| ID | Problema | Evidencia | Causa | Tarea |
-|---|---|---|---|---|
-| KI-036 | Con `completionsPlugin`, `completions` aparece como tool MCP, aunque a un agente no le sirve | Observado | Los comandos de un plugin se exponen como los del autor | [T-308](./backlog.md#t-308-comandos-de-plugins-fuera-de-las-tools) |
+No hay problemas abiertos de esta severidad.

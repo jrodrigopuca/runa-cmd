@@ -85,6 +85,7 @@ const deploy = defineCommand({
 | `options` | `Record<string, ZodType>` | No | Named options (--flag style) |
 | `output` | `ZodType` | No | Output schema — if set, `run()` must return matching data |
 | `format` | `(result) => string` | No | What a person reads at the terminal, from what `run()` returned. Adds `--json` |
+| `tool` | `boolean` | No | `false` if it's only for people at a terminal: an MCP server won't offer it |
 | `run` | `(ctx: RunContext) => RunReturn` | Yes | Command handler |
 
 #### Option Metadata (`meta.options`)

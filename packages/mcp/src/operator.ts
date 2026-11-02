@@ -142,10 +142,13 @@ export function applyOperatorValues(
 	const { exclude = [], tools = {}, maxOutput } = options;
 
 	assertValidLimit(maxOutput, 'mcpPlugin');
+	// An exclude can still name a command that's out: it says the same thing
 	assertValidExclude(options, registrations);
-	assertValidTools(tools, registrations);
 
-	return registrations
+	const offered = registrations.filter((reg) => reg.command.tool !== false);
+	assertValidTools(tools, offered);
+
+	return offered
 		.filter((reg) => !exclude.includes(reg.name))
 		.map((reg) => applyToTool(reg, tools[reg.name] ?? {}, maxOutput, values));
 }

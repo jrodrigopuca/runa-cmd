@@ -366,6 +366,44 @@ describe('values', () => {
 	});
 });
 
+describe('a command with tool: false', () => {
+	it('is not offered to the model', async () => {
+		const client = await serve();
+		const names = (await client.tools()).map((tool) => tool.name);
+		expect(names).not.toContain('for-people');
+		expect(names).toContain('greet');
+	});
+
+	it('can not be called', async () => {
+		const client = await serve();
+		const result = await client.call('for-people', {});
+		expect(result.isError).toBe(true);
+		expect(result._meta?.['runa/error']?.class).toBe('unknown_tool');
+	});
+
+	it('still works at the terminal', () => {
+		const { status, stdout } = spawnSync(process.execPath, [fixture, 'for-people'], {
+			encoding: 'utf8',
+		});
+		expect(status).toBe(0);
+		expect(stdout).toBe('printed for a person\n');
+	});
+
+	it('keeps an exclude that names it working', async () => {
+		const client = await serve({ EXCLUDE: JSON.stringify(['for-people']) });
+		expect((await client.tools()).map((tool) => tool.name)).not.toContain('for-people');
+	});
+
+	it('rejects settings for it: they would have no effect', async () => {
+		const client = new TestClient(fixture, ['--mcp'], {
+			TOOLS: JSON.stringify({ 'for-people': { description: 'Never shown' } }),
+		});
+		clients.push(client);
+		expect(await client.exit()).not.toBe(0);
+		expect(client.stderr).toContain("'for-people'");
+	});
+});
+
 describe('a command with format', () => {
 	it('gives the tool the data, without running format', async () => {
 		const client = await serve();

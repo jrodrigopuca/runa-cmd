@@ -112,6 +112,8 @@ export interface CommandConfig<
 	 * the data instead, and the command gains `--json`.
 	 */
 	format?: (result: RunResult<TOutput, TResult>) => string;
+	/** False if this is only for people at a terminal: an MCP server won't offer it */
+	tool?: boolean;
 }
 
 // ─── Command (Branded Runtime Object) ──────────────────────
@@ -125,6 +127,7 @@ export interface Command {
 	readonly rest?: boolean;
 	readonly run: (ctx: RunContext) => unknown;
 	readonly format?: (result: unknown) => string;
+	readonly tool?: boolean;
 }
 
 // ─── Command Tree ───────────────────────────────────────────

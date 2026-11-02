@@ -5,7 +5,7 @@
  * that the completions command appears and generates valid scripts.
  */
 
-import type { CLIConfig, CLISchema } from '@runa-cmd/core';
+import type { CLIConfig, CLISchema, Command } from '@runa-cmd/core';
 import { defineCommand, getSchema } from '@runa-cmd/core';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -207,6 +207,20 @@ describe('integration: completionsPlugin with real CLI schema', () => {
 
 		expect(addedCommands.has('complete')).toBe(true);
 		expect(addedCommands.has('completions')).toBe(false);
+	});
+});
+
+describe('the command the plugin adds', () => {
+	it('is not a tool: a script for a shell means nothing to a model', () => {
+		const added = new Map<string, Command>();
+		const plugin = completionsPlugin();
+
+		plugin.setup({
+			addCommand: (name: string, cmd: Command) => added.set(name, cmd),
+			getSchema: vi.fn(),
+		} as never);
+
+		expect(added.get('completions')?.tool).toBe(false);
 	});
 });
 

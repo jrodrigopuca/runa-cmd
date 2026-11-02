@@ -63,6 +63,8 @@ export function completionsPlugin(opts: CompletionsPluginOptions = {}): PluginCo
 					name: commandName,
 					description: 'Generate shell completion script',
 				},
+				// A script for a person's shell means nothing to a model
+				tool: false,
 				args: {
 					shell: z.enum(['bash', 'zsh', 'fish']).describe('Target shell'),
 				},

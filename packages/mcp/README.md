@@ -143,6 +143,7 @@ mcpPlugin({
 ```
 
 - **`exclude`** removes the tool: it isn't listed and can't be called. This is the only real boundary.
+- **`tool: false`** on a command does the same from its definition, for commands that only make sense at a terminal. `completions` has it, so you don't need to exclude it.
 - **`annotations`** go to the client as the [MCP specification](https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations) defines them. **They are hints, not access control:** a client decides what to do with them, and may ignore them. Without them, clients assume a tool can be destructive.
 - **`description`** replaces what the model reads, without changing your CLI's help.
 

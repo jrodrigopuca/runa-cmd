@@ -94,5 +94,6 @@ export function defineCommand<
 		rest: config.rest,
 		run: config.run as (ctx: RunContext) => unknown,
 		format: config.format as Command['format'],
+		tool: config.tool,
 	};
 }

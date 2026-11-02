@@ -46,14 +46,14 @@
 | | T-305 | Cancelación y límites | Requerido | Hecho |
 | | T-302 | Excluir y anotar tools | Requerido | Hecho |
 | | T-307 | Evento por llamada | Opcional | Pendiente |
-| | T-308 | Comandos de plugins fuera de las tools | Opcional | Pendiente |
+| | T-308 | Comandos de plugins fuera de las tools | Requerido | Hecho |
 | 4. Primer uso | T-204 | `--help` en `core`, reemplazable | Requerido | Hecho |
 | | T-205 | Ruteo único para la ayuda | Requerido | Hecho |
 | | T-206 | Kebab-case por defecto | Requerido | Hecho |
 | | T-207 | Opciones repetidas con `z.array()` | Requerido | Hecho |
 | 5. Validación | T-401 | Publicar la siguiente beta | Requerido | Hecho |
 | | T-402 | Revalidar qr-plus | Requerido | Hecho |
-| | T-404 | Usar MCP desde un agente real | Requerido | En curso |
+| | T-404 | Usar MCP desde un agente real | Requerido | Hecho |
 | | T-403 | Migración de un dev externo | Opcional | Pendiente |
 | | T-209 | Lo que sobra después de `--` no se pierde | Requerido | Hecho |
 | | T-210 | Nombre del valor en la ayuda | Requerido | Hecho |
@@ -76,6 +76,7 @@
 | | T-310 | Valores fijos que no son secretos | Opcional | Pendiente |
 | | T-226 | Ruta completa en hooks y middleware | Opcional | Pendiente |
 | | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
+| | T-228 | `format` recibe las opciones | Opcional | Decisión pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
@@ -404,9 +405,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 ### T-308 Comandos de plugins fuera de las tools
 
-- **v1:** Opcional
-- **Estado:** Pendiente
-- **Descripción:** como autor de una CLI, quiero que un agente no vea comandos que un plugin agregó para personas, sin tener que conocerlos para excluirlos.
+- **v1:** Requerido
+- **Estado:** Hecho
+- **Descripción:** como autor de una CLI, quiero que un agente no vea comandos que un plugin agregó para personas, sin tener que conocerlos para excluirlos. Es requerida porque un nombre de tool es contrato: sacarla después de la 1.0 exige una major.
 - **Criterios de aceptación:**
   - `completions` no aparece como tool cuando la CLI usa `completionsPlugin`, sin configurar `exclude`.
   - Un plugin puede marcar un comando como solo para la CLI, sin que `core` conozca MCP.
@@ -498,7 +499,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-404 Usar MCP desde un agente real
 
 - **v1:** Requerido
-- **Estado:** En curso
+- **Estado:** Hecho
+- **Resultado:** con `opencode` y `qwen3.5:9b`, el modelo usó las tools en 24 de 24 corridas sin que se las nombraran, y ante un error nunca reintentó. Falta probar una tool con guión como función del proveedor, en otro cliente. El detalle está en [la validación](./research/2026-11-local-beacon-real-model.md).
 - **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio. La prueba la hace otro proyecto, y su agente solo ve lo publicado, para que no lo sesgue conocer Runa por dentro.
 - **Avance:** `local-beacon` vigila la comunicación con un LLM externo, e informa si responde, si está bloqueado o si la máquina está sin conexión, para usar modelos locales desde dispositivos que no pueden correrlos. Adoptó `0.2.0-beta.2` y reportó 14 fricciones, [contrastadas](./research/2026-10-local-beacon-friction.md) y ya en este backlog. Falta comprobar que un modelo llame sus tools y qué hace ante un error.
 - **Criterios de aceptación:**
@@ -748,11 +750,22 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Un error de validación no expone a Zod ni la clave interna.
   - El ejemplo de Layer 3 de `help` compila (H5).
 
+### T-228 `format` recibe las opciones
+
+- **v1:** Opcional
+- **Estado:** Decisión pendiente
+- **Descripción:** como autor de una CLI, quiero que una opción que solo cambia cómo se muestra el resultado, como `--no-truncate`, no tenga que viajar en lo devuelto. Hoy llega también al modelo y a `--json`. Es N1 de [la validación](./research/2026-11-local-beacon-real-model.md).
+- **Decisión:** si `format` recibe un segundo argumento, como `format(result, { options, args })`. Es aditivo: una función de un parámetro sigue funcionando, así que puede salir en una minor.
+- **Criterios de aceptación:**
+  - `format` lee las opciones y los argumentos del comando, con sus tipos.
+  - `format(result)` sigue funcionando.
+  - Lo que recibe una tool no cambia.
+
 ### T-208 Retirar el modo implícito
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Bloqueada por:** T-404, porque cerrar T-208 abre la ventana de estabilidad, y un cambio incompatible la reiniciaría. Por el mismo motivo, también T-212, T-213, T-220, T-221, T-223 y T-309
+- **Bloqueada por:** nada: T-404 y las tareas que podían romper el contrato están cerradas. Cerrarla abre la ventana de estabilidad
 - **Descripción:** como mantenedor, quiero que 1.0 no incluya el modo que depende de contar comandos y falla al sumar un plugin. El retiro cierra la etapa de cambios incompatibles previstos, antes de abrir la ventana de estabilidad.
 - **Criterios de aceptación:**
   - `defineCLI` deja de saltear el nombre del comando cuando hay uno solo.
@@ -791,6 +804,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Hay guías de inicio, plugins, middleware, testing y MCP, además de referencia de API.
   - Hay una guía de migración desde commander, basada en qr-plus.
   - Se resuelven las contradicciones de [la evaluación](./research/2026-10-first-use-evaluation.md): `-h` propio, `db migrate --help`, `rawArgs`, y se documentan los variádicos y `ctx.invocation`.
+  - Se explica lo que faltó en [la validación](./research/2026-11-local-beacon-real-model.md): `--json` imprime lo que devuelve `run()`, `testCLI()` necesita importar la CLI sin arrancarla, y para un modelo solo cuenta el texto del error: `_meta` puede no llegarle.
   - Los ejemplos corren en CI o se verifican en cada release.
 
 ### T-504 Grupo de versiones de los paquetes

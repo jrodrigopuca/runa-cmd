@@ -57,6 +57,7 @@ mcpPlugin({
 });
 ```
 
+- **`tool: false` en un comando:** queda fuera igual que con `exclude`, desde su definición. `core` solo transporta el campo, sin saber de MCP, y `completions` lo usa. Un `exclude` que lo nombra sigue siendo válido; configurarlo en `tools` falla al arrancar.
 - **`exclude`:** la tool no aparece en `tools/list` y llamarla da `Unknown tool`. Es la única frontera real: ningún proceso se lanza por ese nombre.
 - **`annotations`:** se pasan tal como las define la [especificación](https://modelcontextprotocol.io/specification/2025-06-18/schema#toolannotations). Son pistas para el cliente, no control de acceso. Sin ellas no se envía nada, y por defecto de la especificación un cliente asume que la tool puede destruir datos.
 - **`description`:** reemplaza lo que el modelo lee, sin cambiar la ayuda de la CLI.
