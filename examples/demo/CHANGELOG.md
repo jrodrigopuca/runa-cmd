@@ -1,5 +1,24 @@
 # @runa-cmd/demo
 
+## 0.0.1-beta.3
+
+### Patch Changes
+
+- Updated dependencies [1d071a9]
+- Updated dependencies [6ae4563]
+- Updated dependencies [eed18ff]
+- Updated dependencies [8b3b8b4]
+- Updated dependencies [ce76e51]
+- Updated dependencies [30e962f]
+- Updated dependencies [d31ad33]
+- Updated dependencies [f15d0cd]
+- Updated dependencies [0b62ebb]
+- Updated dependencies [b7a504b]
+  - @runa-cmd/core@0.2.0-beta.3
+  - @runa-cmd/help@0.2.0-beta.3
+  - @runa-cmd/mcp@0.2.0-beta.3
+  - @runa-cmd/completions@0.2.0-beta.3
+
 ## 0.0.1-beta.2
 
 ### Patch Changes
