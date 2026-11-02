@@ -58,6 +58,7 @@ export type {
 	Middleware,
 	MiddlewareContext,
 	MiddlewareFn,
+	NamedCommandMeta,
 	OptionMeta,
 	OptionSchema,
 	// Schema walker output (useful for advanced consumers)

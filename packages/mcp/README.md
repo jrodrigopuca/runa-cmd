@@ -71,6 +71,7 @@ A tool is the same command a person runs: env vars, config files, global options
 |---|---|---|
 | `deploy` | `deploy` | Direct mapping |
 | `config get` | `config_get` | Nested commands join with `_` |
+| `with-output` | `with-output` | A command keeps its name |
 | `db migrate` | `db_migrate` | Same pattern |
 
 ### Schema Mapping

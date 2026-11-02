@@ -73,7 +73,7 @@ interface CLIConfig {
 }
 ```
 
-`commands` es un árbol: `{ deploy, config: { get, set } }`.
+`commands` es un árbol: `{ deploy, config: { get, set } }`. La clave es el nombre del comando, sin conversión, en la terminal, la ayuda, las completions, el config y la tool ([ADR-0043](../adr/0043-nombre-unico-de-comando.md)). Solo acepta minúsculas, números y guiones: otra forma falla al arrancar con `INVALID_COMMAND_NAME`, e indica la correcta. `meta.name` es opcional en un subcomando, y si no coincide con la clave también falla. `runCLI` lo exige, porque nombra a la CLI. `run()` y los hooks siempre reciben `command.name`.
 
 ## Módulos
 

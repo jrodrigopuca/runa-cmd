@@ -77,7 +77,7 @@ const deploy = defineCommand({
 
 | Property | Type | Required | Description |
 |---|---|---|---|
-| `meta.name` | `string` | Yes | Command name |
+| `meta.name` | `string` | With `runCLI` | The name of the CLI. In `defineCLI` the key names the command: leave it out, or make it match |
 | `meta.description` | `string` | Yes | One-line description |
 | `meta.version` | `string` | No | Command version |
 | `meta.options` | `Record<string, OptionMeta>` | No | Per-option metadata (alias, env, group, deprecated) |
@@ -220,6 +220,19 @@ A `z.array()` option repeats, and each element is converted to its type: `--port
 | Config | `{ "add": { "tag": ["a", "b"] } }` | `['a', 'b']` |
 
 Each source replaces the ones below it, without adding up. A value with a comma can't go through env: use the config file.
+
+### Command names
+
+A command has one name, its key. It's the same at the terminal, in help, in completions, in the config file and in the MCP tool:
+
+```ts
+defineCLI({
+  meta: { name: 'tool' },
+  commands: { 'with-output': report, tags: { 'add-tag': addTag } },
+});
+```
+
+A key only takes lowercase letters, numbers and dashes. Anything else fails at startup and tells you the right form, as with `withOutput`, which has to be `'with-output'`. There's no conversion, and no second spelling: nothing in your code reads a command by its key.
 
 ### Option names
 

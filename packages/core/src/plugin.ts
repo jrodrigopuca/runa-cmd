@@ -344,6 +344,38 @@ export function validateOptionNames(
 	walk(commands, []);
 }
 
+/** Lowercase words, joined by dashes. The same everywhere: there's nothing to convert. */
+const COMMAND_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * A command has one name, its key (ADR-0043). A CLI of one command is named by
+ * meta.name, and that isn't a command anyone types.
+ */
+export function validateCommandNames(commands: CommandTree, rootName?: string): void {
+	const invalid = (message: string): RunaError =>
+		new RunaError(message, { code: 'INVALID_COMMAND_NAME', exitCode: 1 });
+
+	const walk = (tree: CommandTree, path: string[]): void => {
+		for (const [key, entry] of Object.entries(tree)) {
+			if (path.length === 0 && key === rootName) continue;
+
+			if (!COMMAND_NAME.test(key)) {
+				const proposal = flagName(key).replace(/[^a-z0-9-]+/g, '-');
+				throw invalid(`Command key '${key}' must be '${proposal}': it's what a person types.`);
+			}
+
+			if (!isCommandNode(entry)) {
+				walk(entry, [...path, key]);
+			} else if (entry.meta.name !== undefined && entry.meta.name !== key) {
+				throw invalid(
+					`Command '${[...path, key].join(' ')}' says meta.name is '${entry.meta.name}', but its key is '${key}'. The key names it: remove meta.name, or make it match.`,
+				);
+			}
+		}
+	};
+	walk(commands, []);
+}
+
 /** Human label for a registrant in collision messages. */
 function sourceLabel(registrant: string | undefined): string {
 	return registrant === undefined || registrant === STATIC_GLOBAL_OPTION_SOURCE

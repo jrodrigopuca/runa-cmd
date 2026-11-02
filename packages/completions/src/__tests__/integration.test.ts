@@ -209,3 +209,21 @@ describe('integration: completionsPlugin with real CLI schema', () => {
 		expect(addedCommands.has('completions')).toBe(false);
 	});
 });
+
+describe('a command with a dash in its name', () => {
+	const cmd = defineCommand({ meta: { description: 'A command' }, run: () => {} });
+	const schema = getSchema({
+		meta: { name: 'tool', version: '1.0.0' },
+		commands: { 'with-output': cmd, tools: { 'add-tag': cmd } },
+	});
+
+	it.each([
+		['bash', generateBashCompletions],
+		['zsh', generateZshCompletions],
+		['fish', generateFishCompletions],
+	])('keeps the name in %s', (_shell, generate) => {
+		const script = generate(schema, 'tool');
+		expect(script).toContain('with-output');
+		expect(script).toContain('add-tag');
+	});
+});

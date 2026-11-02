@@ -66,7 +66,7 @@
 | | T-223 | Flag desconocida en la raíz | Requerido | Pendiente |
 | | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Pendiente |
 | | T-225 | Completions con eval y texto con símbolos | Requerido | Pendiente |
-| | T-213 | Nombre de los comandos | Requerido | Pendiente |
+| | T-213 | Nombre de los comandos | Requerido | Hecho |
 | | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Pendiente |
 | | T-215 | README y changelog en npm | Requerido | Pendiente |
 | | T-309 | Fallos sin efecto por MCP | Requerido | Pendiente |
@@ -564,7 +564,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-213 Nombre de los comandos
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero que el nombre que declaro sea el que se ejecuta. `meta.name` es obligatorio, pero en `defineCLI` manda la clave: `withOutput` se ejecuta como `withOutput`, aunque `darkColor` sea `--dark-color`. Es F-03 de [`local-beacon`](./research/2026-10-local-beacon-friction.md), y va contra [ADR-0029](./adr/0029-cada-campo-tiene-efecto.md).
 - **Decisión:** [ADR-0043](./adr/0043-nombre-unico-de-comando.md). La clave es el nombre, sin conversión, en minúsculas, números y guiones.
 - **Criterios de aceptación:**
@@ -572,7 +572,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - `commands: { withOutput }` falla al arrancar, e indica la forma correcta.
   - `meta.name` es opcional en un subcomando, y si no coincide con la clave, falla al arrancar.
   - `runCLI` sigue exigiendo `meta.name`.
-  - Se comprueba una tool con guión con un cliente MCP real.
+  - Se comprueba una tool con guión con el cliente oficial del SDK de MCP. Falta comprobarla en una app de escritorio y con un modelo real.
   - La nota de migración muestra el cambio.
 
 ### T-214 La ayuda de un subcomando muestra la CLI

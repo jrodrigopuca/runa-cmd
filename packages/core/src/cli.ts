@@ -46,6 +46,7 @@ import {
 	runPluginSetup,
 	STATIC_GLOBAL_OPTION_SOURCE,
 	topologicalSort,
+	validateCommandNames,
 	validateOptionCollisions,
 	validateOptionNames,
 } from './plugin.js';
@@ -68,6 +69,7 @@ import type {
 	HookName,
 	Middleware,
 	MiddlewareContext,
+	NamedCommandMeta,
 	OptionMeta,
 	PluginConfig,
 	RunCLIOptions,
@@ -156,26 +158,36 @@ function resolveCommand(commands: CommandTree, tokens: string[]): ResolvedComman
 /** A command returning the wrong shape is an author defect, reported by field. */
 const INVALID_OUTPUT = 'INVALID_OUTPUT';
 
-function assertValidOutput(command: Command, output: ZodType, result: unknown): void {
+/** The key names a command, so that's its name once a run reaches it (ADR-0043). */
+function namedMeta(command: Command, path: string[]): NamedCommandMeta {
+	return { ...command.meta, name: path.at(-1) as string };
+}
+
+function assertValidOutput(name: string, output: ZodType, result: unknown): void {
 	const parsed = output.safeParse(result);
 	if (parsed.success) return;
 
 	const issues = parsed.error.issues.map(
 		(issue) => `  ${issue.path.join('.') || '(root)'}: ${issue.message}`,
 	);
-	throw new RunaError(
-		`Command '${command.meta.name}' returned invalid output:\n${issues.join('\n')}`,
-		{ code: INVALID_OUTPUT, exitCode: 1 },
-	);
+	throw new RunaError(`Command '${name}' returned invalid output:\n${issues.join('\n')}`, {
+		code: INVALID_OUTPUT,
+		exitCode: 1,
+	});
 }
 
 const asJsonText = (value: unknown): string => JSON.stringify(value, null, 2);
 
 /** What a person sees of a result (ADR-0042). */
-function resultText(command: Command, result: unknown, asJson: boolean): string | undefined {
+function resultText(
+	name: string,
+	command: Command,
+	result: unknown,
+	asJson: boolean,
+): string | undefined {
 	if (result === undefined) {
 		if (!command.format) return undefined;
-		throw new RunaError(`Command '${command.meta.name}' declares format but returned nothing.`, {
+		throw new RunaError(`Command '${name}' declares format but returned nothing.`, {
 			code: 'MISSING_RESULT',
 			exitCode: 1,
 		});
@@ -186,8 +198,8 @@ function resultText(command: Command, result: unknown, asJson: boolean): string 
 	return typeof result === 'string' ? result : asJsonText(result);
 }
 
-function printResult(command: Command, result: unknown, asJson: boolean): void {
-	const text = resultText(command, result, asJson);
+function printResult(name: string, command: Command, result: unknown, asJson: boolean): void {
+	const text = resultText(name, command, result, asJson);
 	if (text === undefined) return;
 	process.stdout.write(text.endsWith('\n') ? text : `${text}\n`);
 }
@@ -325,7 +337,7 @@ async function selectFromArgv(
 	// ─── Resolve command ──────────────────────────────
 	const { command, path, remainingArgv } = resolveCommandFromTree(commands, commandArgv, rootName);
 
-	hookCtx.command = command.meta;
+	hookCtx.command = namedMeta(command, path);
 
 	// ─── Parse command args + options ──────────────────
 	// --json stays out of command.options: it's for the terminal, not for run()
@@ -445,7 +457,7 @@ function commandAtPath(commands: CommandTree, path: string[]): Command {
 async function selectFromInput(scope: SelectionScope, call: ToolCall): Promise<Selection> {
 	const { commands, hookCtx } = scope;
 	const command = commandAtPath(commands, call.path);
-	hookCtx.command = command.meta;
+	hookCtx.command = namedMeta(command, call.path);
 
 	const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
 	const { configValues, configSource } = await scope.loadConfig(call.path);
@@ -667,6 +679,7 @@ async function runCLILifecycle(
 		// Post-plugin-setup is the earliest point where the full option
 		// surface (plugin globals + plugin commands) exists. Runs before
 		// any parsing on every invocation; throws RunaError OPTION_COLLISION.
+		validateCommandNames(mutableCommands, rootName);
 		validateOptionNames(mutableCommands, mutableGlobalOptions);
 		validateOptionCollisions(
 			mutableCommands,
@@ -854,6 +867,7 @@ async function runCLILifecycle(
 		if (!selection) return;
 
 		const { command, path, parsedArgs, parsedOptions, optionSources } = selection;
+		const meta = namedMeta(command, path);
 		const optionNames = Object.keys(command.options ?? {});
 		optionEvents('command', optionNames, parsedOptions, optionSources).forEach(trace);
 
@@ -871,7 +885,7 @@ async function runCLILifecycle(
 			args: parsedArgs,
 			options: parsedOptions,
 			globalOptions: parsedGlobalOptions,
-			command: command.meta,
+			command: meta,
 			rawArgs: argv,
 			rest: selection.rest,
 			signal: stop.signal,
@@ -886,13 +900,13 @@ async function runCLILifecycle(
 
 			// Validate output schema if present
 			if (command.output) {
-				assertValidOutput(command, command.output, commandResult);
+				assertValidOutput(meta.name, command.output, commandResult);
 			}
 			report?.({ kind: 'result', value: commandResult });
 			harness?.onResult(commandResult);
 
 			// A tool hands the data to the server, which never runs format()
-			if (!report) printResult(command, commandResult, selection.asJson);
+			if (!report) printResult(meta.name, command, commandResult, selection.asJson);
 		};
 
 		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, innerFn);
@@ -1023,13 +1037,25 @@ export function defineCLI(config: CLIConfig): CLI {
  */
 export async function runCLI(command: Command, options: RunCLIOptions = {}): Promise<void> {
 	const { argv = process.argv.slice(2), ...config } = options;
-	const { name, version, description } = command.meta;
+	const { name } = command.meta;
 
-	await enter(
-		{ ...config, meta: { name, version, description }, commands: { [name]: command } },
-		argv,
-		name,
-	);
+	// A CLI of one command has no key to name it (ADR-0043)
+	if (!name) {
+		console.error('runCLI needs meta.name: it is the name of the CLI.');
+		process.exit(1);
+	}
+
+	await enter(rootConfig(command, name, config), argv, name);
+}
+
+/** What a CLI of one command is. Internal, shared with testCLI(). */
+export function rootConfig(
+	command: Command,
+	name: string,
+	config: Omit<CLIConfig, 'meta' | 'commands'>,
+): CLIConfig {
+	const { version, description } = command.meta;
+	return { ...config, meta: { name, version, description }, commands: { [name]: command } };
 }
 
 /** Every CLI starts here: as itself, or as a tool if an MCP server launched it. */

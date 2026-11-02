@@ -8,7 +8,7 @@
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { format } from 'node:util';
-import { type RunHarness, runWithHarness } from './cli.js';
+import { type RunHarness, rootConfig, runWithHarness } from './cli.js';
 import { ProcessExit } from './errors.js';
 import type { TraceEvent } from './trace.js';
 import type { CLI, CLIConfig, Command, RunCLIOptions } from './types.js';
@@ -142,19 +142,9 @@ function isCLI(target: CLI | Command): target is CLI {
 function configOf(target: CLI | Command, options: TestOptions): [CLIConfig, string | undefined] {
 	if (isCLI(target)) return [target.config, undefined];
 
-	const { name, version, description } = target.meta;
 	const { plugins, middleware, globalOptions, globalMeta } = options;
-	return [
-		{
-			meta: { name, version, description },
-			commands: { [name]: target },
-			plugins,
-			middleware,
-			globalOptions,
-			globalMeta,
-		},
-		name,
-	];
+	const name = target.meta.name ?? 'command';
+	return [rootConfig(target, name, { plugins, middleware, globalOptions, globalMeta }), name];
 }
 
 /**

@@ -50,10 +50,10 @@ function validateJsonFlag<TOptions extends Record<string, ZodType>>(
 		Object.values(optionMeta).some((option) => option.alias?.includes(`--${JSON_OPTION}`));
 
 	if (claimed) {
-		throw new RunaError(
-			`Command '${meta.name}' declares format, which already gives it --${JSON_OPTION}. Rename its option.`,
-			{ code: 'OPTION_COLLISION', exitCode: 1 },
-		);
+		throw new RunaError(`A command with format already has --${JSON_OPTION}. Rename its option.`, {
+			code: 'OPTION_COLLISION',
+			exitCode: 1,
+		});
 	}
 }
 

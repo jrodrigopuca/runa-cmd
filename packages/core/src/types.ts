@@ -23,10 +23,18 @@ export interface OptionMeta {
 	configurable?: boolean;
 }
 
+/** A command as it reaches run() and hooks: by then, it always has its name. */
+export type NamedCommandMeta<TOptions extends Record<string, ZodType> = Record<string, ZodType>> =
+	CommandMeta<TOptions> & { name: string };
+
 // ─── Command Metadata ───────────────────────────────────────
 
 export interface CommandMeta<TOptions extends Record<string, ZodType> = Record<string, ZodType>> {
-	name: string;
+	/**
+	 * The name of a CLI of one command, which runCLI requires. In defineCLI, the
+	 * key names the command: this is optional there, and has to match it.
+	 */
+	name?: string;
 	description: string;
 	version?: string;
 	/** Option metadata — keys MUST be a subset of TOptions keys */
@@ -63,7 +71,7 @@ export interface RunContext<
 	args: InferArgs<TArgs>;
 	options: InferOptions<TOptions>;
 	globalOptions: Record<string, unknown>;
-	command: CommandMeta<TOptions>;
+	command: NamedCommandMeta<TOptions>;
 	rawArgs: string[];
 	/** What's left after `--`, verbatim and unvalidated, if the command declares `rest: true`. Else `[]` */
 	rest: string[];
@@ -240,7 +248,7 @@ export interface HookContext {
 	/** Aborted when the run must stop */
 	signal: AbortSignal;
 	globalOptions?: Record<string, unknown>;
-	command?: CommandMeta;
+	command?: NamedCommandMeta;
 	args?: Record<string, unknown>;
 	options?: Record<string, unknown>;
 	error?: Error;

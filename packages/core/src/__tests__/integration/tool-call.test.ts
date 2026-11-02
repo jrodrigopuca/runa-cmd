@@ -33,7 +33,7 @@ describe('runToolCall', () => {
 		const seen: { ctx?: RunContext } = {};
 		const command = (overrides: Partial<Parameters<typeof defineCommand>[0]> = {}) =>
 			defineCommand({
-				meta: { name: 'deploy', description: 'Deploy' },
+				meta: { description: 'Deploy' },
 				...overrides,
 				run: (ctx) => {
 					seen.ctx = ctx as RunContext;

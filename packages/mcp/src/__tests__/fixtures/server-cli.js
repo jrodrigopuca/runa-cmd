@@ -85,6 +85,11 @@ await defineCLI({
 			},
 			run: ({ args, options }) => ({ service: args.service, ...options }),
 		}),
+		'dashed-name': defineCommand({
+			meta: { description: 'Its name has a dash' },
+			args: { word: z.string() },
+			run: ({ args, command }) => ({ word: args.word, name: command.name }),
+		}),
 		formatted: command('formatted', {
 			run: () => ({ port: 1 }),
 			format() {

@@ -23,7 +23,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
 | KI-015 | En `defineCLI` con un comando, `tool tool` consume el dato como nombre. Con `runCLI` no pasa | Observado | `resolveCommandFromTree` | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
-| KI-039 | En `defineCLI`, `meta.name` no nombra al comando: `with-output` da 127 si la clave es `withOutput` | Observado | Las rutas salen de la clave | [T-213](./backlog.md#t-213-nombre-de-los-comandos) |
 | KI-040 | La ayuda de un subcomando muestra `USAGE  envOption [options]`, sin el nombre de la CLI | Observado | Las dos ayudas usan `fullPath` sin la CLI | [T-214](./backlog.md#t-214-la-ayuda-de-un-subcomando-muestra-la-cli) |
 | KI-041 | El campo `readme` del registro de npm está vacío, así que `npm view` no lo muestra. La página de npm sí muestra el README | Observado | Sin confirmar | [T-215](./backlog.md#t-215-readme-y-changelog-en-npm) |
 | KI-042 | Por MCP, un `CommandError` previsto devuelve `safeToRetry: false` y "may have taken effect", aun con `readOnlyHint: true` | Observado | No hay forma de declarar un fallo sin efecto | [T-309](./backlog.md#t-309-fallos-sin-efecto-por-mcp) |
