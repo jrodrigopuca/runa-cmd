@@ -64,10 +64,10 @@
 | | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Hecho |
 | | T-222 | Los posicionales convierten como las opciones | Requerido | Hecho |
 | | T-223 | Flag desconocida en la raíz | Requerido | Hecho |
-| | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Pendiente |
+| | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Hecho |
 | | T-225 | Completions con eval y texto con símbolos | Requerido | Pendiente |
 | | T-213 | Nombre de los comandos | Requerido | Hecho |
-| | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Pendiente |
+| | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Hecho |
 | | T-215 | README y changelog en npm | Requerido | Pendiente |
 | | T-309 | Fallos sin efecto por MCP | Requerido | Hecho |
 | | T-216 | Opción faltante con su variable de entorno | Opcional | Pendiente |
@@ -578,7 +578,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-214 La ayuda de un subcomando muestra la CLI
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que usa una CLI, quiero copiar el uso que muestra la ayuda. Hoy `USAGE  envOption [options]` no se puede ejecutar. Es F-04 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Criterios de aceptación:**
   - En `defineCLI`, el uso de un subcomando empieza con el nombre de la CLI, en `core` y en el plugin.
@@ -712,7 +712,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-224 Salida de ayuda sin estilos fuera de una terminal
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que usa una CLI, quiero que la ayuda en un pipe o con `NO_COLOR` no traiga códigos ANSI. Es H10 de [la evaluación](./research/2026-10-first-use-evaluation.md).
 - **Criterios de aceptación:**
   - Hacia un pipe o con `NO_COLOR=1`, la ayuda del plugin no contiene secuencias ANSI, ni en negrita ni en tenue.

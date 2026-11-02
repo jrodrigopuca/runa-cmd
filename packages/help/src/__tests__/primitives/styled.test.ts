@@ -35,27 +35,27 @@ describe('styled — no options', () => {
 
 describe('styled — text styles', () => {
 	it('applies bold', () => {
-		const result = styled('hello', { bold: true }, RAW);
+		const result = styled('hello', { bold: true }, COLOR);
 		expect(result).toBe(`${ESC}1mhello${RESET}`);
 	});
 
 	it('applies dim', () => {
-		const result = styled('hello', { dim: true }, RAW);
+		const result = styled('hello', { dim: true }, COLOR);
 		expect(result).toBe(`${ESC}2mhello${RESET}`);
 	});
 
 	it('applies italic', () => {
-		const result = styled('hello', { italic: true }, RAW);
+		const result = styled('hello', { italic: true }, COLOR);
 		expect(result).toBe(`${ESC}3mhello${RESET}`);
 	});
 
 	it('applies underline', () => {
-		const result = styled('hello', { underline: true }, RAW);
+		const result = styled('hello', { underline: true }, COLOR);
 		expect(result).toBe(`${ESC}4mhello${RESET}`);
 	});
 
 	it('applies multiple styles (bold + dim)', () => {
-		const result = styled('hello', { bold: true, dim: true }, RAW);
+		const result = styled('hello', { bold: true, dim: true }, COLOR);
 		// Style order: bold wraps first, then dim wraps
 		expect(result).toContain(`${ESC}1m`);
 		expect(result).toContain(`${ESC}2m`);
@@ -63,7 +63,7 @@ describe('styled — text styles', () => {
 	});
 
 	it('applies all four styles', () => {
-		const result = styled('hello', { bold: true, dim: true, italic: true, underline: true }, RAW);
+		const result = styled('hello', { bold: true, dim: true, italic: true, underline: true }, COLOR);
 		expect(result).toContain(`${ESC}1m`);
 		expect(result).toContain(`${ESC}2m`);
 		expect(result).toContain(`${ESC}3m`);

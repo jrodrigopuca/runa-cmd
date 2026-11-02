@@ -298,6 +298,8 @@ export interface CommandSchema {
 	description: string;
 	/** Full command path, e.g. ['config', 'set'] for nested commands */
 	fullPath: string[];
+	/** What a person types to run it, with the CLI, e.g. ['tool', 'config', 'set']. Set for help */
+	commandLine?: string[];
 	args: ArgSchema[];
 	options: OptionSchema[];
 	hasOutput: boolean;

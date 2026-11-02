@@ -19,6 +19,34 @@ function received(argv: string[], env?: Record<string, string>) {
 
 beforeAll(assertFreshBuild);
 
+describe('the usage of a command', () => {
+	it('starts with the name of the CLI, so it can be copied', () => {
+		expect(routing(['status', '--help']).stdout).toContain('routing status [options]');
+	});
+
+	it('shows the whole path of a nested command', () => {
+		expect(routing(['group', 'inner', '--help']).stdout).toContain('routing group inner [options]');
+	});
+
+	it('names the CLI once with runCLI: the command is the CLI', () => {
+		const { stdout } = rooted('--help');
+		expect(stdout).toContain('\n  tool <content> [options]\n');
+	});
+
+	it('adds the CLI to a command of a plugin, which is not the root', () => {
+		expect(rooted('sync', '--help').stdout).toContain('tool sync [options]');
+	});
+
+	it('marks a variadic with dots', () => {
+		expect(routing(['add', '--help']).stdout).toContain('routing add <files...>');
+	});
+
+	it('titles the help the same way', () => {
+		const { stdout } = routing(['group', 'inner', '--help']);
+		expect(stdout.split('\n')[0]).toBe('routing group inner');
+	});
+});
+
 describe('a flag where a command should be', () => {
 	it.each([
 		['an unknown long flag', ['--bogus'], '--bogus'],

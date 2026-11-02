@@ -18,7 +18,7 @@ import type { ColorDepth, RenderContext } from '../types.js';
  * 6. process.stdout.hasColors(16) → '16'
  * 7. fallback → 'none'
  */
-export function detectColorDepth(): ColorDepth {
+export function detectColorDepth(stream: NodeJS.WriteStream = process.stdout): ColorDepth {
 	const env = process.env;
 
 	// NO_COLOR takes absolute priority (https://no-color.org/)
@@ -35,7 +35,7 @@ export function detectColorDepth(): ColorDepth {
 	}
 
 	// Non-TTY (piped) → no color unless FORCE_COLOR was set (handled above)
-	if (!process.stdout.isTTY) {
+	if (!stream.isTTY) {
 		return 'none';
 	}
 
@@ -51,11 +51,11 @@ export function detectColorDepth(): ColorDepth {
 		return '256';
 	}
 
-	// process.stdout.hasColors() as additional signal
-	if (typeof process.stdout.hasColors === 'function') {
-		if (process.stdout.hasColors(16_777_216)) return 'truecolor';
-		if (process.stdout.hasColors(256)) return '256';
-		if (process.stdout.hasColors(16)) return '16';
+	// hasColors() as additional signal
+	if (typeof stream.hasColors === 'function') {
+		if (stream.hasColors(16_777_216)) return 'truecolor';
+		if (stream.hasColors(256)) return '256';
+		if (stream.hasColors(16)) return '16';
 	}
 
 	return 'none';

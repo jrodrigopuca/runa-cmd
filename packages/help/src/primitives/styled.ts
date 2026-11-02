@@ -39,17 +39,20 @@ export function styled(text: string, opts: StyledOptions = {}, ctx?: RenderConte
 	const renderCtx = ctx ?? getRenderContext();
 	let result = text;
 
-	// Apply color first (innermost)
-	if (opts.color) {
-		const ansiColor = downsampleColor(opts.color, renderCtx.colorDepth);
-		result = fg(result, ansiColor);
-	}
+	// A pipe or NO_COLOR rules out every escape code, not only the colors
+	if (renderCtx.colorDepth !== 'none') {
+		// Apply color first (innermost)
+		if (opts.color) {
+			const ansiColor = downsampleColor(opts.color, renderCtx.colorDepth);
+			result = fg(result, ansiColor);
+		}
 
-	// Apply styles in consistent order: bold → dim → italic → underline
-	if (opts.bold) result = bold(result);
-	if (opts.dim) result = dim(result);
-	if (opts.italic) result = italic(result);
-	if (opts.underline) result = underline(result);
+		// Apply styles in consistent order: bold → dim → italic → underline
+		if (opts.bold) result = bold(result);
+		if (opts.dim) result = dim(result);
+		if (opts.italic) result = italic(result);
+		if (opts.underline) result = underline(result);
+	}
 
 	// Apply padding
 	if (opts.padding) {

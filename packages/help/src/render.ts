@@ -95,7 +95,7 @@ function renderCommand(cmd: CommandSchema, theme: ResolvedTheme, ctx: RenderCont
 	const sections: Block[] = [];
 
 	// Header
-	const cmdPath = cmd.fullPath.join(' ');
+	const cmdPath = (cmd.commandLine ?? cmd.fullPath).join(' ');
 	sections.push(styled(cmdPath, { bold: true }, ctx));
 
 	if (cmd.description) {
@@ -107,7 +107,8 @@ function renderCommand(cmd: CommandSchema, theme: ResolvedTheme, ctx: RenderCont
 	if (cmd.subcommands && cmd.subcommands.length > 0) usageParts.push('<command>');
 	if (cmd.args.length > 0) {
 		for (const arg of cmd.args) {
-			usageParts.push(arg.required ? `<${arg.name}>` : `[${arg.name}]`);
+			const label = arg.isVariadic ? `${arg.name}...` : arg.name;
+			usageParts.push(arg.required ? `<${label}>` : `[${label}]`);
 		}
 	}
 	usageParts.push('[options]');
@@ -271,7 +272,8 @@ function renderArgRow(arg: ArgSchema, theme: ResolvedTheme, ctx: RenderContext):
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function sectionTitle(title: string, theme: ResolvedTheme, _ctx: RenderContext): Block {
+function sectionTitle(title: string, theme: ResolvedTheme, ctx: RenderContext): Block {
+	if (ctx.colorDepth === 'none') return title;
 	// theme colors are already ANSI-resolved, so use fg() directly (not styled.color which re-downsamples)
 	return ansiBold(fg(title, theme.primary));
 }

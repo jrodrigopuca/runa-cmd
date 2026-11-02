@@ -6,6 +6,7 @@
  * same sections, and a test keeps them aligned.
  */
 import type {
+	ArgSchema,
 	CLISchema,
 	Command,
 	CommandSchema,
@@ -95,7 +96,12 @@ function commandAt(schema: CLISchema, path: string[]): CommandSchema | undefined
  */
 export function findHelpTarget(schema: CLISchema, path: string[]): HelpTarget {
 	const command = commandAt(schema, path);
-	return command ? withGlobals(command, schema.globalOptions) : schema;
+	if (!command) return schema;
+
+	// With runCLI the command is the CLI, and its name is already the first word
+	const isRoot = path[0] === schema.root;
+	const commandLine = isRoot ? command.fullPath : [schema.meta.name, ...command.fullPath];
+	return { ...withGlobals(command, schema.globalOptions), commandLine };
 }
 
 // ─── Plain renderer ─────────────────────────────────────────
@@ -157,8 +163,13 @@ function renderCLI(cli: CLISchema): string[][] {
 	return sections;
 }
 
+function argUsage({ name, required, isVariadic }: ArgSchema): string {
+	const label = isVariadic ? `${name}...` : name;
+	return required ? `<${label}>` : `[${label}]`;
+}
+
 function renderCommand(command: CommandSchema): string[][] {
-	const path = command.fullPath.join(' ');
+	const path = (command.commandLine ?? command.fullPath).join(' ');
 	const sections = [[path]];
 	if (command.description) sections.push([command.description]);
 
@@ -166,7 +177,7 @@ function renderCommand(command: CommandSchema): string[][] {
 	const usage = [
 		path,
 		...(hasSubcommands ? ['<command>'] : []),
-		...command.args.map((arg) => (arg.required ? `<${arg.name}>` : `[${arg.name}]`)),
+		...command.args.map(argUsage),
 		'[options]',
 	];
 	sections.push(['USAGE', `  ${usage.join(' ')}`]);

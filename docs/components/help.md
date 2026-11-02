@@ -39,7 +39,7 @@ No dependen del plugin y se pueden usar en cualquier comando.
 
 | Export | Uso |
 |---|---|
-| `styled(text, opts, ctx?)` | Color y estilo |
+| `styled(text, opts, ctx?)` | Color y estilo. Con `colorDepth: 'none'` no escribe ningún código ANSI, y conserva el padding |
 | `box(opts, ctx?)` | Caja con borde; el contenido va en `opts` |
 | `join.vertical(blocks, opts?)`, `join.horizontal(blocks, opts?)` | Composición |
 | `table(rows, opts?)` | Tabla |
@@ -52,7 +52,7 @@ Las firmas exactas están en `packages/help/src/primitives/`. Todo devuelve un `
 
 | Export | Uso |
 |---|---|
-| `detectColorDepth()`, `detectTermWidth()` | Detección |
+| `detectColorDepth(stream?)`, `detectTermWidth()` | Detección. El plugin pregunta por el stream donde escribe |
 | `getRenderContext()`, `resetRenderContext()` | Contexto en caché; el reset es para tests |
 | `downsampleColor(color, depth)` | Degrada un color |
 | `strip(text)`, `visibleWidth(text)` | Quita ANSI y mide ancho |

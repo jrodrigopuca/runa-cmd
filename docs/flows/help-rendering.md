@@ -59,7 +59,7 @@ Sin nada que correr, es un error de uso ([ADR-0034](../adr/0034-sin-nada-que-cor
 ## Qué renderiza
 
 - **Raíz:** nombre, versión, descripción, uso, comandos y opciones globales.
-- **Comando:** ruta, descripción, uso, argumentos, opciones por grupo y subcomandos.
+- **Comando:** ruta con el nombre de la CLI (`commandLine`), descripción, uso, argumentos, opciones por grupo y subcomandos. Con `runCLI`, el comando es la CLI, así que su nombre aparece una sola vez.
 
 `core` agrega a cada comando las opciones globales que no tomó antes de renderizar, así que también las reciben los renderers propios. `--help` y `--version` son parte del schema, y por eso aparecen en la ayuda y en las completions sin código aparte.
 

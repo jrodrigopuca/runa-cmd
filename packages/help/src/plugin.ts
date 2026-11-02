@@ -8,7 +8,7 @@
  */
 import type { PluginConfig } from '@runa-cmd/core';
 import { definePlugin } from '@runa-cmd/core';
-import { getRenderContext } from './ansi/detect.js';
+import { detectColorDepth, getRenderContext } from './ansi/detect.js';
 import { defaultRenderer } from './render.js';
 import { resolveTheme } from './theme.js';
 import type { HelpPluginOptions } from './types.js';
@@ -29,7 +29,11 @@ export function helpPlugin(opts: HelpPluginOptions = {}): PluginConfig {
 			// Core decides when help runs and what it's about, and yields if a
 			// command declares --help or -h: only the rendering is left here.
 			api.replaceHelp((target, output) => {
-				const renderCtx = getRenderContext();
+				// With nothing to run, help goes to stderr: that's the one to ask about
+				const renderCtx = {
+					...getRenderContext(),
+					colorDepth: detectColorDepth(output as NodeJS.WriteStream),
+				};
 				const renderer = opts.render ?? defaultRenderer;
 				const rendered = renderer({
 					schema: target,
