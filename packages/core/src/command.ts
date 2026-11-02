@@ -5,10 +5,14 @@
  * a CommandConfig. Validates variadic args and meta.options keys at
  * definition time.
  */
-import type { ZodType } from 'zod';
+import { type ZodType, z } from 'zod';
 import { RunaError } from './errors.js';
 import { validateVariadicArgs } from './parse/variadic.js';
-import type { Command, CommandConfig, CommandMeta, RunContext } from './types.js';
+import type { Command, CommandConfig, CommandMeta, OptionMeta, RunContext } from './types.js';
+
+/** The option a command with format gains. It's for the terminal: a tool never sees it. */
+export const JSON_OPTION = 'json';
+export const JSON_SCHEMA = z.boolean().optional();
 
 // ─── Definition-time validation ─────────────────────────────
 
@@ -35,6 +39,24 @@ function validateMetaOptionsKeys<TOptions extends Record<string, ZodType>>(
 	}
 }
 
+/** A command with format gets `--json`, so nothing else can claim that flag. */
+function validateJsonFlag<TOptions extends Record<string, ZodType>>(
+	meta: CommandMeta<TOptions>,
+	options?: TOptions,
+): void {
+	const optionMeta = (meta.options ?? {}) as Record<string, OptionMeta>;
+	const claimed =
+		Object.hasOwn(options ?? {}, JSON_OPTION) ||
+		Object.values(optionMeta).some((option) => option.alias?.includes(`--${JSON_OPTION}`));
+
+	if (claimed) {
+		throw new RunaError(
+			`Command '${meta.name}' declares format, which already gives it --${JSON_OPTION}. Rename its option.`,
+			{ code: 'OPTION_COLLISION', exitCode: 1 },
+		);
+	}
+}
+
 // ─── Public API ─────────────────────────────────────────────
 
 /**
@@ -50,7 +72,8 @@ export function defineCommand<
 	TArgs extends Record<string, ZodType> = Record<string, ZodType>,
 	TOptions extends Record<string, ZodType> = Record<string, ZodType>,
 	TOutput extends ZodType | undefined = undefined,
->(config: CommandConfig<TArgs, TOptions, TOutput>): Command {
+	TResult = void,
+>(config: CommandConfig<TArgs, TOptions, TOutput, TResult>): Command {
 	// Validate variadic args at definition time
 	if (config.args) {
 		validateVariadicArgs(config.args as Record<string, ZodType>);
@@ -58,6 +81,8 @@ export function defineCommand<
 
 	// Validate meta.options keys match options keys
 	validateMetaOptionsKeys(config.meta, config.options);
+
+	if (config.format) validateJsonFlag(config.meta, config.options);
 
 	// Construct branded Command object
 	return {
@@ -68,5 +93,6 @@ export function defineCommand<
 		output: config.output as ZodType | undefined,
 		rest: config.rest,
 		run: config.run as (ctx: RunContext) => unknown,
+		format: config.format as Command['format'],
 	};
 }

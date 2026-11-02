@@ -17,8 +17,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
 | KI-006 | En `defineCLI` con un comando, `completionsPlugin` rompe el modo implícito: `tool hola` da 127. Con `runCLI` no pasa | Observado | El modo depende de contar comandos | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
-| KI-037 | Lo que `run()` devuelve no sale por stdout: la terminal queda vacía con exit 0, aunque [`VERSIONING.md`](../VERSIONING.md) promete que los resultados van a stdout | Observado | Solo el canal de tools recibe el resultado | [T-212](./backlog.md#t-212-lo-que-devuelve-un-comando-llega-a-la-terminal) |
-| KI-038 | Sin `output`, devolver un valor da `TS2322`, aunque el README de `mcp` lo documenta | Observado | `RunReturn` exige `void` sin `output` | [T-212](./backlog.md#t-212-lo-que-devuelve-un-comando-llega-a-la-terminal) |
 
 ## Severidad media
 

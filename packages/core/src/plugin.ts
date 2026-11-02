@@ -6,6 +6,7 @@
  * Capability validation via PluginAPI proxy
  */
 import type { ZodType } from 'zod';
+import { JSON_OPTION } from './command.js';
 import { RunaError } from './errors.js';
 import { flagName, longFlag } from './flag-name.js';
 import { walkSchema } from './parse/schema-walker.js';
@@ -466,7 +467,10 @@ export function validateOptionCollisions(
 			const commandPath = [...path, key].join(' ');
 			const optionMeta = entry.meta.options as Record<string, OptionMeta> | undefined;
 
-			for (const optName of Object.keys(entry.options ?? {})) {
+			const claimed = Object.keys(entry.options ?? {});
+			if (entry.format) claimed.push(JSON_OPTION);
+
+			for (const optName of claimed) {
 				const { longs, shorts } = splitAliases(optionMeta?.[optName]);
 
 				const collide = (owner: GlobalTokenOwner): never => {

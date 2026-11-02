@@ -94,7 +94,7 @@ Each key goes to its arg or option by name, so arrays, objects and numbers arriv
 | Command returns nothing | `text` with what it printed, or `Command '<name>' executed successfully.` |
 | Command fails | `isError: true`, with the reason and what happened to its effects in the text, plus `_meta['runa/error']` |
 
-A returned value wins over what the command printed.
+A returned value wins over what the command printed. The `format` of a command is for people: it doesn't run for a tool, and `--json` isn't a parameter.
 
 ### Errors and Retries
 

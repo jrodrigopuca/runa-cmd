@@ -12,6 +12,7 @@
  */
 import { parseArgs } from 'node:util';
 import type { ZodType } from 'zod';
+import { JSON_OPTION, JSON_SCHEMA } from './command.js';
 import { type ConfigFile, loadConfigFile } from './config/merge.js';
 import {
 	assertConfigNames,
@@ -168,6 +169,29 @@ function assertValidOutput(command: Command, output: ZodType, result: unknown): 
 	);
 }
 
+const asJsonText = (value: unknown): string => JSON.stringify(value, null, 2);
+
+/** What a person sees of a result (ADR-0042). */
+function resultText(command: Command, result: unknown, asJson: boolean): string | undefined {
+	if (result === undefined) {
+		if (!command.format) return undefined;
+		throw new RunaError(`Command '${command.meta.name}' declares format but returned nothing.`, {
+			code: 'MISSING_RESULT',
+			exitCode: 1,
+		});
+	}
+
+	if (asJson) return asJsonText(result);
+	if (command.format) return command.format(result);
+	return typeof result === 'string' ? result : asJsonText(result);
+}
+
+function printResult(command: Command, result: unknown, asJson: boolean): void {
+	const text = resultText(command, result, asJson);
+	if (text === undefined) return;
+	process.stdout.write(text.endsWith('\n') ? text : `${text}\n`);
+}
+
 function toolFailureReason(error: Error): ToolFailureReason {
 	if (isUsageError(error)) return 'input';
 	return error instanceof RunaError && error.code === INVALID_OUTPUT ? 'output' : 'other';
@@ -223,6 +247,8 @@ interface Selection {
 	parsedOptions: Record<string, unknown>;
 	optionSources: Record<string, ValueSource>;
 	rest: string[];
+	/** The person asked for the data, not for what format() makes of it */
+	asJson: boolean;
 }
 
 interface SelectionScope {
@@ -302,7 +328,12 @@ async function selectFromArgv(
 	hookCtx.command = command.meta;
 
 	// ─── Parse command args + options ──────────────────
-	const optionMetadata = command.options ? walkSchema(command.options) : [];
+	// --json stays out of command.options: it's for the terminal, not for run()
+	// or a tool.
+	const optionMetadata = [
+		...walkSchema(command.options ?? {}),
+		...(command.format ? walkSchema({ [JSON_OPTION]: JSON_SCHEMA }) : []),
+	];
 
 	const commandOptionMeta = command.meta.options as Record<string, OptionMeta> | undefined;
 
@@ -360,6 +391,9 @@ async function selectFromArgv(
 		optionMeta: commandOptionMeta,
 	});
 
+	const asJson = command.format !== undefined && commandValues[JSON_OPTION] === true;
+	if (command.format) delete commandValues[JSON_OPTION];
+
 	const { configValues, configSource } = await scope.loadConfig(path);
 	const operands = distributeRest(cmdParseResult.positionals, rest, command.args ?? {});
 
@@ -391,7 +425,7 @@ async function selectFromArgv(
 		env: scope.env,
 	});
 
-	return { command, path, parsedArgs, parsedOptions, optionSources, rest: operands.rest };
+	return { command, path, parsedArgs, parsedOptions, optionSources, rest: operands.rest, asJson };
 }
 
 function commandAtPath(commands: CommandTree, path: string[]): Command {
@@ -433,7 +467,15 @@ async function selectFromInput(scope: SelectionScope, call: ToolCall): Promise<S
 		env: scope.env,
 	});
 
-	return { command, path: call.path, parsedArgs, parsedOptions, optionSources, rest: [] };
+	return {
+		command,
+		path: call.path,
+		parsedArgs,
+		parsedOptions,
+		optionSources,
+		rest: [],
+		asJson: false,
+	};
 }
 
 // ─── CLI Execution Engine ───────────────────────────────────
@@ -848,6 +890,9 @@ async function runCLILifecycle(
 			}
 			report?.({ kind: 'result', value: commandResult });
 			harness?.onResult(commandResult);
+
+			// A tool hands the data to the server, which never runs format()
+			if (!report) printResult(command, commandResult, selection.asJson);
 		};
 
 		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, innerFn);

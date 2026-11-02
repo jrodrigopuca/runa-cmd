@@ -75,11 +75,14 @@ export interface RunContext<
 
 /**
  * If TOutput extends ZodType, run() must return data matching the schema.
- * If TOutput is undefined, run() returns void.
+ * If not, run() returns whatever it wants, or nothing.
  */
-export type RunReturn<TOutput> = TOutput extends ZodType
+export type RunReturn<TOutput, TResult = void> = TOutput extends ZodType
 	? z.infer<TOutput> | Promise<z.infer<TOutput>>
-	: void | Promise<void>;
+	: TResult | Promise<TResult>;
+
+/** What format() receives: the data, once it's no longer a promise. */
+export type RunResult<TOutput, TResult> = TOutput extends ZodType ? z.infer<TOutput> : TResult;
 
 // ─── Command Config (Builder Input) ────────────────────────
 
@@ -87,6 +90,7 @@ export interface CommandConfig<
 	TArgs extends Record<string, ZodType> = Record<string, ZodType>,
 	TOptions extends Record<string, ZodType> = Record<string, ZodType>,
 	TOutput extends ZodType | undefined = undefined,
+	TResult = void,
 > {
 	meta: CommandMeta<TOptions>;
 	args?: TArgs;
@@ -94,7 +98,12 @@ export interface CommandConfig<
 	output?: TOutput;
 	/** Take what's left after `--` in `ctx.rest`. Without it, that's a usage error */
 	rest?: boolean;
-	run: (ctx: RunContext<TArgs, TOptions>) => RunReturn<TOutput>;
+	run: (ctx: RunContext<TArgs, TOptions>) => RunReturn<TOutput, TResult>;
+	/**
+	 * What a person reads at the terminal, from what run() returned. A tool gets
+	 * the data instead, and the command gains `--json`.
+	 */
+	format?: (result: RunResult<TOutput, TResult>) => string;
 }
 
 // ─── Command (Branded Runtime Object) ──────────────────────
@@ -107,6 +116,7 @@ export interface Command {
 	readonly output?: ZodType;
 	readonly rest?: boolean;
 	readonly run: (ctx: RunContext) => unknown;
+	readonly format?: (result: unknown) => string;
 }
 
 // ─── Command Tree ───────────────────────────────────────────

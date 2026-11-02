@@ -98,6 +98,71 @@ describe('type-level tests', () => {
 		});
 	});
 
+	describe('what run() returns', () => {
+		it('can return a value without an output schema', () => {
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				run: () => ({ ok: true }),
+			});
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				run: () => 'text',
+			});
+		});
+
+		it('gives format the type of what run() returns', () => {
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				run: () => ({ port: 1 }),
+				format: (result) => {
+					expectTypeOf(result).toEqualTypeOf<{ port: number }>();
+					return String(result.port);
+				},
+			});
+		});
+
+		it('unwraps an async run()', () => {
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				run: async () => ({ port: 1 }),
+				format: (result) => {
+					expectTypeOf(result).toEqualTypeOf<{ port: number }>();
+					return '';
+				},
+			});
+		});
+
+		it('gives format the output schema, if there is one', () => {
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				output: z.object({ url: z.string() }),
+				run: () => ({ url: 'x' }),
+				format: (result) => {
+					expectTypeOf(result).toEqualTypeOf<{ url: string }>();
+					return result.url;
+				},
+			});
+		});
+
+		it('still rejects what does not match the output schema', () => {
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				output: z.object({ url: z.string() }),
+				// @ts-expect-error url must be a string
+				run: () => ({ url: 1 }),
+			});
+		});
+
+		it('requires format to return text', () => {
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				run: () => 1,
+				// @ts-expect-error format returns a string
+				format: () => 1,
+			});
+		});
+	});
+
 	describe('InferArgs and InferOptions utility types', () => {
 		it('InferArgs maps Zod schemas to inferred types', () => {
 			// Use concrete schema instances — z.string/z.number are functions in Zod v4

@@ -42,40 +42,20 @@ export const deploy = defineCommand({
 		service: z.string(),
 		environment: z.string(),
 		replicas: z.number(),
+		tag: z.string(),
 		deployId: z.string(),
+		dryRun: z.boolean(),
 	}),
 	run({ args, options }) {
 		const deployId = `dep_${Date.now().toString(36)}`;
 		const tag = options.tag ?? 'latest';
 
-		if (options.dryRun) {
-			console.log(`\n  ${yellow('⬡')} ${bold('Dry Run')} ${dim('— no changes will be made')}\n`);
-			console.log(kv('Service', bold(args.service)));
-			console.log(kv('Environment', cyan(options.env)));
-			console.log(kv('Replicas', String(options.replicas)));
-			console.log(kv('Tag', tag));
-			console.log();
-		} else {
-			const envColors: Record<string, (s: string) => string> = {
-				production: (s: string) => `\x1b[31m${s}\x1b[39m`,
-				staging: yellow,
-				preview: cyan,
-			};
-			const envColor = envColors[options.env] ?? cyan;
-
-			console.log();
-			console.log(step(1, 3, 'Building image...'));
-			console.log(step(2, 3, `Pushing ${gray(`${args.service}:${tag}`)} to registry...`));
-			console.log(step(3, 3, `Deploying to ${envColor(options.env)}...`));
-
-			console.log(
-				successBox(`Deployed ${bold(args.service)} to ${envColor(options.env)}`, [
-					kv('URL', magenta(`https://${options.env}.example.com/${args.service}`)),
-					kv('Replicas', green(String(options.replicas))),
-					kv('Tag', tag),
-					kv('Deploy ID', dim(deployId)),
-				]),
-			);
+		// Progress goes to stderr: stdout is for the result, so --json stays clean
+		if (!options.dryRun) {
+			console.error();
+			console.error(step(1, 3, 'Building image...'));
+			console.error(step(2, 3, `Pushing ${gray(`${args.service}:${tag}`)} to registry...`));
+			console.error(step(3, 3, `Deploying to ${options.env}...`));
 		}
 
 		return {
@@ -83,7 +63,35 @@ export const deploy = defineCommand({
 			service: args.service,
 			environment: options.env,
 			replicas: options.replicas,
+			tag,
 			deployId,
+			dryRun: options.dryRun,
 		};
+	},
+	format(result) {
+		if (result.dryRun) {
+			return [
+				`\n  ${yellow('⬡')} ${bold('Dry Run')} ${dim('— no changes will be made')}\n`,
+				kv('Service', bold(result.service)),
+				kv('Environment', cyan(result.environment)),
+				kv('Replicas', String(result.replicas)),
+				kv('Tag', result.tag),
+				'',
+			].join('\n');
+		}
+
+		const envColors: Record<string, (s: string) => string> = {
+			production: (s: string) => `\x1b[31m${s}\x1b[39m`,
+			staging: yellow,
+			preview: cyan,
+		};
+		const envColor = envColors[result.environment] ?? cyan;
+
+		return successBox(`Deployed ${bold(result.service)} to ${envColor(result.environment)}`, [
+			kv('URL', magenta(result.url)),
+			kv('Replicas', green(String(result.replicas))),
+			kv('Tag', result.tag),
+			kv('Deploy ID', dim(result.deployId)),
+		]);
 	},
 });

@@ -85,6 +85,12 @@ await defineCLI({
 			},
 			run: ({ args, options }) => ({ service: args.service, ...options }),
 		}),
+		formatted: command('formatted', {
+			run: () => ({ port: 1 }),
+			format() {
+				throw new Error('format must not run for a tool');
+			},
+		}),
 		profiled: command('profiled', {
 			output: z.object({ profile: z.string() }),
 			run: ({ globalOptions }) => ({ profile: globalOptions.profile }),

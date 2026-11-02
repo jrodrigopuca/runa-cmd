@@ -144,6 +144,8 @@ $ my-tool --mcp           # Start as MCP server for AI agents
 $ my-tool completions bash  # Generate shell completions
 ```
 
+What `run()` returns goes to stdout: a string as it is, anything else as JSON. Add `format: (result) => string` for people, and the command also gets `--json`, while a tool keeps getting the data.
+
 With MCP, a tool is the same command a person runs: each call runs your CLI as a child process, with its env vars, config, hooks and middleware. See the [MCP package](./packages/mcp#current-limitations) for what's still missing.
 
 ## Core Concepts

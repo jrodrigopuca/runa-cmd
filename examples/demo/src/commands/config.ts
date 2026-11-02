@@ -27,17 +27,11 @@ export const configGet = defineCommand({
 		key: z.string(),
 		value: z.string().nullable(),
 	}),
-	run({ args }) {
-		const value = store[args.key] ?? null;
-		console.log();
-		if (value !== null) {
-			console.log(`  ${cyan(args.key)} ${dim('=')} ${bold(value)}`);
-		} else {
-			console.log(`  ${yellow('⚠')} ${dim(args.key)} is not set`);
-		}
-		console.log();
-		return { key: args.key, value };
-	},
+	run: ({ args }) => ({ key: args.key, value: store[args.key] ?? null }),
+	format: ({ key, value }) =>
+		value === null
+			? `\n  ${yellow('⚠')} ${dim(key)} is not set\n`
+			: `\n  ${cyan(key)} ${dim('=')} ${bold(value)}\n`,
 });
 
 export const configSet = defineCommand({
@@ -57,38 +51,27 @@ export const configSet = defineCommand({
 
 export const configList = defineCommand({
 	meta: { name: 'list', description: 'List all configuration values' },
-	options: {
-		json: z.boolean().default(false).describe('Output as JSON'),
-	},
 	output: z.object({
 		entries: z.array(z.object({ key: z.string(), value: z.string() })),
 	}),
-	run({ options }) {
-		const entries = Object.entries(store).map(([key, value]) => ({ key, value }));
-
-		if (options.json) {
-			console.log(JSON.stringify(entries, null, 2));
-		} else {
-			console.log();
-			// Group by prefix
-			const groups = new Map<string, { key: string; subkey: string; value: string }[]>();
-			for (const { key, value } of entries) {
-				const dotIdx = key.indexOf('.');
-				const prefix = dotIdx > 0 ? key.slice(0, dotIdx) : '';
-				const subkey = dotIdx > 0 ? key.slice(dotIdx + 1) : key;
-				if (!groups.has(prefix)) groups.set(prefix, []);
-				groups.get(prefix)?.push({ key, subkey, value });
-			}
-
-			for (const [prefix, items] of groups) {
-				console.log(`  ${bold(prefix)}`);
-				for (const item of items) {
-					console.log(`    ${gray(item.subkey)} ${dim('=')} ${item.value}`);
-				}
-			}
-			console.log();
+	run: () => ({
+		entries: Object.entries(store).map(([key, value]) => ({ key, value })),
+	}),
+	format({ entries }) {
+		// Group by prefix
+		const groups = new Map<string, { subkey: string; value: string }[]>();
+		for (const { key, value } of entries) {
+			const dotIdx = key.indexOf('.');
+			const prefix = dotIdx > 0 ? key.slice(0, dotIdx) : '';
+			const subkey = dotIdx > 0 ? key.slice(dotIdx + 1) : key;
+			if (!groups.has(prefix)) groups.set(prefix, []);
+			groups.get(prefix)?.push({ subkey, value });
 		}
 
-		return { entries };
+		const lines = [...groups].flatMap(([prefix, items]) => [
+			`  ${bold(prefix)}`,
+			...items.map((item) => `    ${gray(item.subkey)} ${dim('=')} ${item.value}`),
+		]);
+		return `\n${lines.join('\n')}\n`;
 	},
 });

@@ -22,7 +22,7 @@ flowchart TD
     L --> M["Resolver valores y validar"]
     M --> N["Hook: afterParse"]
     N --> O["Hook: beforeRun"]
-    O --> P["Middleware, run() y validación de output"]
+    O --> P["Middleware, run(), validación de output e impresión del resultado"]
     P --> Q["Hook: afterRun"]
     Q --> Z
     B & C & D & E & G & I & J & K & L & M & N & O & P & Q -->|error| R["Hook: onError"]

@@ -84,6 +84,7 @@ const deploy = defineCommand({
 | `args` | `Record<string, ZodType>` | No | Positional arguments (insertion order matters) |
 | `options` | `Record<string, ZodType>` | No | Named options (--flag style) |
 | `output` | `ZodType` | No | Output schema — if set, `run()` must return matching data |
+| `format` | `(result) => string` | No | What a person reads at the terminal, from what `run()` returned. Adds `--json` |
 | `run` | `(ctx: RunContext) => RunReturn` | Yes | Command handler |
 
 #### Option Metadata (`meta.options`)
@@ -114,6 +115,40 @@ interface RunContext {
   signal: AbortSignal;             // Aborted when the run must stop
 }
 ```
+
+### What a command returns
+
+Return the data, and Runa shows it. One `run()` serves people and agents:
+
+```ts
+const status = defineCommand({
+  meta: { name: 'status', description: 'Show the proxy status' },
+  run: () => ({ running: true, port: 11435 }),
+  format: (result) => `Proxy ${result.running ? 'on' : 'off'}, port ${result.port}`,
+});
+```
+
+```
+$ tool status
+Proxy on, port 11435
+
+$ tool status --json
+{
+  "running": true,
+  "port": 11435
+}
+```
+
+| `run()` returns | At the terminal |
+|---|---|
+| Nothing | What the command printed |
+| A string | The string |
+| Anything else | JSON |
+| A value, with `format` | What `format` returns, or JSON with `--json` |
+
+An MCP tool always gets the data: `format` doesn't run, and `--json` isn't a parameter. A command with `format` that returns nothing fails, so the terminal never stays empty. It can't also declare an option called `json`.
+
+The result goes to stdout, after `output` is validated and before `afterRun`. A command that prints and returns shows both, so print progress with `console.error`, and keep stdout for the result: that's what makes `--json` safe to pipe.
 
 ### `defineCLI(config)`
 

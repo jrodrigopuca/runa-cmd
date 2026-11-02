@@ -61,7 +61,7 @@
 | | T-219 | Las opciones globales leen el config | Requerido | Hecho |
 | | T-220 | Forma del archivo de config | Requerido | Hecho |
 | | T-221 | Probar una CLI sin subproceso | Requerido | Hecho |
-| | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Pendiente |
+| | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Hecho |
 | | T-222 | Los posicionales convierten como las opciones | Requerido | Pendiente |
 | | T-223 | Flag desconocida en la raíz | Requerido | Pendiente |
 | | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Pendiente |
@@ -548,7 +548,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-212 Lo que devuelve un comando llega a la terminal
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero que un mismo `run()` sirva a personas y agentes. Hoy lo devuelto llega a la tool pero no a la terminal, así que hay que imprimir y además devolver. Sin `output`, los tipos tampoco permiten devolver un valor, aunque el README de `mcp` lo documenta. Reúne F-01, F-02, F-11 y F-12 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Decisión:** [ADR-0042](./adr/0042-lo-devuelto-llega-a-la-terminal.md). Lo devuelto sale por stdout, con `format(result)` si existe; un comando con `format` recibe `--json`, y `format` no corre por MCP.
 - **Criterios de aceptación:**

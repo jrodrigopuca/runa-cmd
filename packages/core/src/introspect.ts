@@ -5,6 +5,7 @@
  * (CLISchema) for use by plugins (help, MCP, completions).
  */
 import type { ZodType } from 'zod';
+import { JSON_OPTION } from './command.js';
 import { flagName } from './flag-name.js';
 import { builtInOptions } from './help.js';
 import { walkSchema } from './parse/schema-walker.js';
@@ -71,6 +72,16 @@ function walkCommand(name: string, command: Command, parentPath: string[]): Comm
 				enumValues: meta.enumValues,
 			});
 		}
+	}
+
+	if (command.format) {
+		optionSchemas.push({
+			name: JSON_OPTION,
+			flag: JSON_OPTION,
+			description: 'Print the result as JSON',
+			type: 'boolean',
+			required: false,
+		});
 	}
 
 	return {

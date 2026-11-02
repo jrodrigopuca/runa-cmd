@@ -8,6 +8,43 @@ import { z } from 'zod';
 import { defineCommand } from '../command.js';
 import { RunaError } from '../errors.js';
 
+describe('format and --json', () => {
+	const format = () => 'text';
+	const run = () => 'value';
+
+	it('rejects an option named json: format already gives that flag', () => {
+		expect(() =>
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				options: { json: z.boolean() },
+				run,
+				format,
+			}),
+		).toThrow(/--json/);
+	});
+
+	it('rejects an alias that takes --json', () => {
+		expect(() =>
+			defineCommand({
+				meta: { name: 'test', description: 'Test', options: { raw: { alias: ['--json'] } } },
+				options: { raw: z.boolean() },
+				run,
+				format,
+			}),
+		).toThrow(RunaError);
+	});
+
+	it('leaves an option named json alone without format', () => {
+		expect(() =>
+			defineCommand({
+				meta: { name: 'test', description: 'Test' },
+				options: { json: z.boolean() },
+				run,
+			}),
+		).not.toThrow();
+	});
+});
+
 describe('defineCommand', () => {
 	it('creates a branded command object', () => {
 		const cmd = defineCommand({

@@ -351,6 +351,30 @@ describe('values', () => {
 	});
 });
 
+describe('a command with format', () => {
+	it('gives the tool the data, without running format', async () => {
+		const client = await serve();
+		const result = await client.call('formatted', {});
+
+		expect(result.isError).toBeFalsy();
+		expect(JSON.parse(text(result))).toEqual({ port: 1 });
+	});
+
+	it('does not offer --json: it means nothing to a model', async () => {
+		const client = await serve();
+		const tools = await client.tools();
+		const tool = tools.find((candidate) => candidate.name === 'formatted');
+
+		expect(Object.keys(tool?.inputSchema.properties ?? {})).toEqual([]);
+	});
+
+	it('rejects json as an input', async () => {
+		const client = await serve();
+		const result = await client.call('formatted', { json: true });
+		expect(result.isError).toBe(true);
+	});
+});
+
 describe('values the operator fixed', () => {
 	const SECRET = 'sk-secret-123456';
 	let dir: string;
