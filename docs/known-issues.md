@@ -24,7 +24,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 |---|---|---|---|---|
 | KI-015 | En `defineCLI` con un comando, `tool tool` consume el dato como nombre. Con `runCLI` no pasa | Observado | `resolveCommandFromTree` | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
 | KI-041 | El campo `readme` del registro de npm está vacío, así que `npm view` no lo muestra. La página de npm sí muestra el README | Observado | Sin confirmar | [T-215](./backlog.md#t-215-readme-y-changelog-en-npm) |
-| KI-047 | `eval "$(cli completions zsh)"` falla | Observado | El script solo funciona como archivo en `fpath` | [T-225](./backlog.md#t-225-completions-con-eval-y-texto-con-símbolos) |
 
 ## Severidad baja
 

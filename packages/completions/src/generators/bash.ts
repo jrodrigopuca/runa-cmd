@@ -33,6 +33,23 @@ function buildOptWords(options: OptionSchema[], globalOptions: OptionSchema[]): 
 	return all.flatMap(optionFlags).join(' ');
 }
 
+/**
+ * The lines that offer enum values. compgen splits on IFS, so a value with a
+ * space needs newlines as the separator, and %q so it's inserted as one word.
+ */
+function enumReply(values: string[]): string[] {
+	if (!values.some((value) => /\s/.test(value))) {
+		const words = values.map((value) => escapeBash(value)).join(' ');
+		return [`                COMPREPLY=($(compgen -W '${words}' -- "$cur"))`];
+	}
+
+	const words = values.map((value) => escapeBash(value)).join('\n');
+	return [
+		"                local IFS=$'\\n'",
+		`                COMPREPLY=($(compgen -W '${words}' -- "$cur" | while IFS= read -r value; do printf '%q\\n' "$value"; done))`,
+	];
+}
+
 /** Build prev-matching case entries for enum options */
 function buildPrevCases(options: OptionSchema[], globalOptions: OptionSchema[]): string {
 	const lines: string[] = [];
@@ -46,9 +63,8 @@ function buildPrevCases(options: OptionSchema[], globalOptions: OptionSchema[]):
 				}
 			}
 			const pattern = triggers.join('|');
-			const values = opt.enumValues.map((v) => escapeBash(v)).join(' ');
 			lines.push(`            ${pattern})`);
-			lines.push(`                COMPREPLY=($(compgen -W '${values}' -- "$cur"))`);
+			lines.push(...enumReply(opt.enumValues));
 			lines.push('                return ;;');
 		}
 	}

@@ -6,7 +6,7 @@
  */
 
 import type { CLISchema, CommandSchema, OptionSchema } from '@runa-cmd/core';
-import { escapeFish } from './escape.js';
+import { escapeFish, escapeFishValue } from './escape.js';
 
 /** Generate complete directives for a single option */
 function optionDirectives(binName: string, opt: OptionSchema, condition: string): string[] {
@@ -24,7 +24,7 @@ function optionDirectives(binName: string, opt: OptionSchema, condition: string)
 		// --no-* variant
 		lines.push(`complete -c ${binName}${condPart}` + ` -l no-${opt.flag}${desc}`);
 	} else if (opt.enumValues?.length) {
-		const vals = opt.enumValues.map((v) => escapeFish(v)).join(' ');
+		const vals = opt.enumValues.map((v) => escapeFishValue(v)).join(' ');
 		lines.push(
 			`complete -c ${binName}${condPart}` +
 				` -l ${opt.flag}${shortFlag}${desc}` +

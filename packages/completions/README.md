@@ -158,6 +158,9 @@ my-tool completions zsh > ~/.zsh/completions/_my-tool
 # Add to .zshrc (before compinit):
 #   fpath=(~/.zsh/completions $fpath)
 #   autoload -Uz compinit && compinit
+
+# Or load it in .zshrc, after compinit:
+#   eval "$(my-tool completions zsh)"
 ```
 
 ### Fish
@@ -195,11 +198,13 @@ All values (command names, descriptions, enum values) are properly escaped for e
 
 | Shell | Escaping Strategy |
 |---|---|
-| Bash | Single-quote context: `'` → `'\''` |
-| Zsh | Same as bash |
-| Fish | `'` → `\'`, `\` → `\\` |
+| Bash | Single-quote context: `'` → `'\''`. A value with a space stays one candidate |
+| Zsh | As bash, plus `[`, `]` and `:` in descriptions, and spaces in values |
+| Fish | `'` → `\'`, `\` → `\\`. A value with a space gets its own quotes |
 
 Descriptions are truncated to 80 characters and newlines are collapsed to spaces.
+
+Scripts are tested in the real shells on CI, with `bash`, `zsh` and `fish`.
 
 ## Architecture
 

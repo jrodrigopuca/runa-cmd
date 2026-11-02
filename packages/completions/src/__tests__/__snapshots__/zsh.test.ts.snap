@@ -106,5 +106,9 @@ _mycli_config_get() {
         '--format[Output format]:format:(json text table)'
 }
 
-_mycli"
+if [ "$funcstack[1]" = "_mycli" ]; then
+    _mycli "$@"
+else
+    compdef _mycli mycli
+fi"
 `;

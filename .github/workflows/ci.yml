@@ -56,9 +56,16 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Generated completion scripts run in the real shells. Linux only: one OS
+      # is enough to prove the scripts, and bash is already there.
+      - name: Install the shells completions are tested in
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh fish
       # Build before test: packages consume each other's dist/ via workspace deps.
       - run: pnpm build
       - run: pnpm test
+        env:
+          RUNA_REQUIRE_SHELLS: ${{ runner.os == 'Linux' && '1' || '' }}
 
   coverage:
     # Single canonical coverage cell (ADR-0015). The threshold lives in

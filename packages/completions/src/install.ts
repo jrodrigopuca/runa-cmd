@@ -55,9 +55,9 @@ function getZshInstructions(binName: string): string {
 #     fpath=(~/.zsh/completions $fpath)
 #     autoload -Uz compinit && compinit
 #
-# Option 2: Add to your .zshrc directly
+# Option 2: Add to your .zshrc directly, after compinit
 #
-#   echo 'eval "$(${binName} completions zsh)"' >> ~/.zshrc
+#   eval "$(${binName} completions zsh)"
 #
 # Then restart your shell or run:
 #

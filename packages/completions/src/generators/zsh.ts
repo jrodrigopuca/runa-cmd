@@ -6,7 +6,7 @@
  */
 
 import type { CLISchema, CommandSchema, OptionSchema } from '@runa-cmd/core';
-import { escapeZsh } from './escape.js';
+import { escapeZsh, escapeZshExplanation, escapeZshValue } from './escape.js';
 
 /** Replace non-identifier characters with underscores */
 function safeName(name: string): string {
@@ -16,12 +16,12 @@ function safeName(name: string): string {
 /** Format an option spec for _arguments */
 function formatOptionSpec(opt: OptionSchema): string[] {
 	const specs: string[] = [];
-	const desc = opt.description ? escapeZsh(opt.description) : '';
+	const desc = opt.description ? escapeZshExplanation(opt.description) : '';
 	const shortAlias = opt.alias?.find((a) => a.startsWith('-') && !a.startsWith('--'));
 
 	// `*` tells zsh the option can repeat, so it keeps offering it
 	if (opt.type === 'array') {
-		const vals = opt.enumValues?.map((v) => escapeZsh(v)).join(' ');
+		const vals = opt.enumValues?.map((v) => escapeZshValue(v)).join(' ');
 		const value = `:${opt.flag}:${vals ? `(${vals})` : ''}`;
 		const flags = shortAlias ? `'*'{${shortAlias},--${opt.flag}}'` : `'*--${opt.flag}`;
 		specs.push(`${flags}[${desc}]${value}'`);
@@ -37,7 +37,7 @@ function formatOptionSpec(opt: OptionSchema): string[] {
 			specs.push(`'--no-${opt.flag}[${desc}]'`);
 		}
 	} else if (opt.type === 'enum' && opt.enumValues?.length) {
-		const vals = opt.enumValues.map((v) => escapeZsh(v)).join(' ');
+		const vals = opt.enumValues.map((v) => escapeZshValue(v)).join(' ');
 		if (shortAlias) {
 			specs.push(
 				`'(${shortAlias} --${opt.flag})'` +
@@ -202,8 +202,13 @@ export function generateZshCompletions(schema: CLISchema, binName: string): stri
 		lines.push('');
 	}
 
-	// Call the main function
-	lines.push(funcName);
+	// As an autoloaded file, zsh calls it to complete. Through eval there's no
+	// completion running yet: it has to be registered instead, or _arguments fails.
+	lines.push(`if [ "$funcstack[1]" = "_${binName}" ]; then`);
+	lines.push(`    ${funcName} "$@"`);
+	lines.push('else');
+	lines.push(`    compdef ${funcName} ${binName}`);
+	lines.push('fi');
 
 	return lines.join('\n');
 }

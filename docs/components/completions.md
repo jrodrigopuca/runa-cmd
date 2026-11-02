@@ -40,6 +40,8 @@ mycli completions zsh --instructions
 - Flags largas, alias cortos y `--no-*` en booleanos.
 - Valores de opciones `enum`.
 
+El script de zsh funciona en `fpath` y con `eval`, después de `compinit`. Las pruebas en `shells.test.ts` lo ejecutan en bash, zsh y fish reales, con TAB en una terminal para zsh, porque `zsh -n` no ve un spec roto. En CI son obligatorias en Linux, con `RUNA_REQUIRE_SHELLS`; en local, se omite el shell que falte.
+
 ## Módulos
 
 | Módulo | Responsabilidad |

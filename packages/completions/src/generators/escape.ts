@@ -35,6 +35,25 @@ export function escapeZsh(str: string): string {
 }
 
 /**
+ * Escape the explanation of an option: the `...` of `--flag[...]:name:action`.
+ *
+ * It isn't only text: a `]` ends it, and what follows is read as the action of
+ * the option, which zsh runs. So a description could become a command.
+ */
+export function escapeZshExplanation(str: string): string {
+	return sanitize(str)
+		.replace(/[\\[\]:]/g, '\\$&')
+		.replace(/'/g, "'\\''");
+}
+
+/** Escape a value inside the `(a b)` list of an action, where a space separates. */
+export function escapeZshValue(str: string): string {
+	return sanitize(str)
+		.replace(/[\\\s()[\]:'"]/g, '\\$&')
+		.replace(/'/g, "'\\''");
+}
+
+/**
  * Escape a string for embedding in a single-quoted fish context.
  *
  * Fish uses backslash escaping inside single quotes:
@@ -43,4 +62,13 @@ export function escapeZsh(str: string): string {
  */
 export function escapeFish(str: string): string {
 	return sanitize(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+/**
+ * Escape a value for the list of `complete -a`, which fish splits on spaces. A
+ * value with a space needs its own quotes inside the single-quoted list.
+ */
+export function escapeFishValue(str: string): string {
+	const value = escapeFish(str);
+	return /\s/.test(value) ? `\\'${value}\\'` : value;
 }

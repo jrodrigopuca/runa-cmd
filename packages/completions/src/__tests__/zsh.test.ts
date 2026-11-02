@@ -143,8 +143,10 @@ describe('generateZshCompletions', () => {
 		expect(output).toContain('_mycli() {');
 	});
 
-	it('calls _mycli at the end', () => {
-		expect(output.trimEnd().endsWith('_mycli')).toBe(true);
+	it('runs when autoloaded, and registers itself through eval', () => {
+		expect(output).toContain('if [ "$funcstack[1]" = "_mycli" ]; then');
+		expect(output).toContain('_mycli "$@"');
+		expect(output).toContain('compdef _mycli mycli');
 	});
 
 	it('uses _describe for command listing', () => {
@@ -188,6 +190,6 @@ describe('generateZshCompletions', () => {
 		const result = generateZshCompletions(emptySchema, 'empty');
 		expect(result).toContain('#compdef empty');
 		expect(result).toContain('_empty() {');
-		expect(result.trimEnd().endsWith('_empty')).toBe(true);
+		expect(result).toContain('compdef _empty empty');
 	});
 });
