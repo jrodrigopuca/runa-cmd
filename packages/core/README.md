@@ -84,7 +84,7 @@ const deploy = defineCommand({
 | `args` | `Record<string, ZodType>` | No | Positional arguments (insertion order matters) |
 | `options` | `Record<string, ZodType>` | No | Named options (--flag style) |
 | `output` | `ZodType` | No | Output schema — if set, `run()` must return matching data |
-| `format` | `(result) => string` | No | What a person reads at the terminal, from what `run()` returned. Adds `--json` |
+| `format` | `(result, { args, options }) => string` | No | What a person reads at the terminal, from what `run()` returned. Adds `--json` |
 | `tool` | `boolean` | No | `false` if it's only for people at a terminal: an MCP server won't offer it |
 | `run` | `(ctx: RunContext) => RunReturn` | Yes | Command handler |
 
@@ -146,6 +146,14 @@ $ tool status --json
 | A string | The string |
 | Anything else | JSON |
 | A value, with `format` | What `format` returns, or JSON with `--json` |
+
+`format` also receives the args and options, so what only changes the display stays out of the data, and out of what a model gets:
+
+```ts
+run: () => ({ notes: readNotes() }),
+format: ({ notes }, { options }) =>
+  notes.map((note) => (options.truncate ? note.slice(0, 40) : note)).join('\n'),
+```
 
 An MCP tool always gets the data: `format` doesn't run, and `--json` isn't a parameter. A command with `format` that returns nothing fails, so the terminal never stays empty. It can't also declare an option called `json`.
 

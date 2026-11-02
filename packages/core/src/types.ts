@@ -89,6 +89,12 @@ export type RunReturn<TOutput, TResult = void> = TOutput extends ZodType
 	? z.infer<TOutput> | Promise<z.infer<TOutput>>
 	: TResult | Promise<TResult>;
 
+/** What format() can read besides the data. */
+export type FormatContext<
+	TArgs extends Record<string, ZodType> = Record<string, ZodType>,
+	TOptions extends Record<string, ZodType> = Record<string, ZodType>,
+> = Pick<RunContext<TArgs, TOptions>, 'args' | 'options'>;
+
 /** What format() receives: the data, once it's no longer a promise. */
 export type RunResult<TOutput, TResult> = TOutput extends ZodType ? z.infer<TOutput> : TResult;
 
@@ -109,9 +115,10 @@ export interface CommandConfig<
 	run: (ctx: RunContext<TArgs, TOptions>) => RunReturn<TOutput, TResult>;
 	/**
 	 * What a person reads at the terminal, from what run() returned. A tool gets
-	 * the data instead, and the command gains `--json`.
+	 * the data instead, and the command gains `--json`. It also receives the args
+	 * and options, so what only changes the display stays out of the data.
 	 */
-	format?: (result: RunResult<TOutput, TResult>) => string;
+	format?: (result: RunResult<TOutput, TResult>, context: FormatContext<TArgs, TOptions>) => string;
 	/** False if this is only for people at a terminal: an MCP server won't offer it */
 	tool?: boolean;
 }
@@ -126,7 +133,7 @@ export interface Command {
 	readonly output?: ZodType;
 	readonly rest?: boolean;
 	readonly run: (ctx: RunContext) => unknown;
-	readonly format?: (result: unknown) => string;
+	readonly format?: (result: unknown, context: FormatContext) => string;
 	readonly tool?: boolean;
 }
 

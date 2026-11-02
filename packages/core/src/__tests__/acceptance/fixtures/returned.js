@@ -37,6 +37,13 @@ const commands = {
 		run: status,
 		format: (result) => `Proxy ${result.running ? 'on' : 'off'}, port ${result.port}`,
 	}),
+	notes: command('notes', {
+		args: { name: z.string() },
+		options: { truncate: z.boolean().default(true) },
+		run: ({ args }) => ({ text: `a long note about ${args.name}` }),
+		format: (result, { args, options }) =>
+			`${args.name}: ${options.truncate ? `${result.text.slice(0, 6)}...` : result.text}`,
+	}),
 	forgetful: command('forgetful', { run: () => {}, format: () => 'never' }),
 	broken: command('broken', {
 		run: status,

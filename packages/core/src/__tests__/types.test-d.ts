@@ -153,6 +153,21 @@ describe('type-level tests', () => {
 			});
 		});
 
+		it('gives format the options and args of the command, with their types', () => {
+			defineCommand({
+				meta: { description: 'Test' },
+				args: { id: z.string() },
+				options: { truncate: z.boolean().default(true) },
+				run: () => ({ port: 1 }),
+				format: (result, { args, options }) => {
+					expectTypeOf(result).toEqualTypeOf<{ port: number }>();
+					expectTypeOf(args.id).toEqualTypeOf<string>();
+					expectTypeOf(options.truncate).toEqualTypeOf<boolean>();
+					return '';
+				},
+			});
+		});
+
 		it('requires format to return text', () => {
 			defineCommand({
 				meta: { name: 'test', description: 'Test' },

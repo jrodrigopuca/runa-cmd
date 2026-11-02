@@ -65,6 +65,7 @@ import type {
 	CLISchema,
 	Command,
 	CommandTree,
+	FormatContext,
 	HookContext,
 	HookName,
 	Middleware,
@@ -184,28 +185,29 @@ function assertValidOutput(name: string, output: ZodType, result: unknown): void
 
 const asJsonText = (value: unknown): string => JSON.stringify(value, null, 2);
 
+/** What decides how a result is shown. */
+interface ResultDisplay extends FormatContext {
+	name: string;
+	asJson: boolean;
+}
+
 /** What a person sees of a result (ADR-0042). */
-function resultText(
-	name: string,
-	command: Command,
-	result: unknown,
-	asJson: boolean,
-): string | undefined {
+function resultText(command: Command, result: unknown, run: ResultDisplay): string | undefined {
 	if (result === undefined) {
 		if (!command.format) return undefined;
-		throw new RunaError(`Command '${name}' declares format but returned nothing.`, {
+		throw new RunaError(`Command '${run.name}' declares format but returned nothing.`, {
 			code: 'MISSING_RESULT',
 			exitCode: 1,
 		});
 	}
 
-	if (asJson) return asJsonText(result);
-	if (command.format) return command.format(result);
+	if (run.asJson) return asJsonText(result);
+	if (command.format) return command.format(result, { args: run.args, options: run.options });
 	return typeof result === 'string' ? result : asJsonText(result);
 }
 
-function printResult(name: string, command: Command, result: unknown, asJson: boolean): void {
-	const text = resultText(name, command, result, asJson);
+function printResult(command: Command, result: unknown, run: ResultDisplay): void {
+	const text = resultText(command, result, run);
 	if (text === undefined) return;
 	process.stdout.write(text.endsWith('\n') ? text : `${text}\n`);
 }
@@ -942,7 +944,14 @@ async function runCLILifecycle(
 			harness?.onResult(commandResult);
 
 			// A tool hands the data to the server, which never runs format()
-			if (!report) printResult(meta.name, command, commandResult, selection.asJson);
+			if (!report) {
+				printResult(command, commandResult, {
+					name: meta.name,
+					asJson: selection.asJson,
+					args: parsedArgs,
+					options: parsedOptions,
+				});
+			}
 		};
 
 		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, innerFn);

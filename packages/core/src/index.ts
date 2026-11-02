@@ -44,6 +44,7 @@ export type {
 	CommandTree,
 	// Config
 	ConfigLoader,
+	FormatContext,
 	HelpHandler,
 	HelpTarget,
 	HookContext,

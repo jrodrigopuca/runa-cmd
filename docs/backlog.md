@@ -76,7 +76,7 @@
 | | T-310 | Valores fijos que no son secretos | Opcional | Pendiente |
 | | T-226 | Ruta completa en hooks y middleware | Opcional | Pendiente |
 | | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
-| | T-228 | `format` recibe las opciones | Opcional | Decisión pendiente |
+| | T-228 | `format` recibe las opciones | Opcional | Hecho |
 | | T-208 | Retirar el modo implícito | Requerido | Pendiente |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
@@ -753,9 +753,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-228 `format` recibe las opciones
 
 - **v1:** Opcional
-- **Estado:** Decisión pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero que una opción que solo cambia cómo se muestra el resultado, como `--no-truncate`, no tenga que viajar en lo devuelto. Hoy llega también al modelo y a `--json`. Es N1 de [la validación](./research/2026-11-local-beacon-real-model.md).
-- **Decisión:** si `format` recibe un segundo argumento, como `format(result, { options, args })`. Es aditivo: una función de un parámetro sigue funcionando, así que puede salir en una minor.
+- **Decisión:** `format(result, { args, options })`. Es aditivo: una función de un parámetro sigue funcionando.
 - **Criterios de aceptación:**
   - `format` lee las opciones y los argumentos del comando, con sus tipos.
   - `format(result)` sigue funcionando.

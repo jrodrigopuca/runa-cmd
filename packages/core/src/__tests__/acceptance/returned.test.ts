@@ -70,6 +70,16 @@ describe('with format', () => {
 		expect(run(['object', '--help']).stdout).not.toContain('--json');
 	});
 
+	it('gives format the options and args, so a display option stays out of the data', () => {
+		expect(run(['notes', 'x']).stdout).toBe('x: a long...\n');
+		expect(run(['notes', 'x', '--no-truncate']).stdout).toBe('x: a long note about x\n');
+	});
+
+	it('keeps those options out of --json', () => {
+		const { stdout } = run(['notes', 'x', '--json']);
+		expect(JSON.parse(stdout)).toEqual({ text: 'a long note about x' });
+	});
+
 	it('fails if the command returns nothing: format promises something', () => {
 		const { status, stdout, stderr } = run(['forgetful']);
 		expect(status).toBe(1);
