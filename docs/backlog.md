@@ -722,7 +722,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Requerido
 - **Estado:** En curso
-- **Avance:** todo resuelto y probado con bash y zsh reales, con TAB de verdad en zsh. Falta que CI confirme fish, que no está instalado en la máquina de desarrollo.
+- **Avance:** todo resuelto, y probado con bash, zsh y fish reales, con TAB de verdad en zsh. CI ya confirmó fish; falta su corrida completa en zsh, tras aislar la prueba de los archivos globales del sistema.
 - **Descripción:** como persona que usa una CLI, quiero que el completado funcione como se sugiere. `eval "$(cli completions zsh)"` fallaba, y un `]` en una descripción o un enum con espacio lo rompían: zsh llegaba a ejecutar parte de la descripción como comando. Son H7 y H8 de [la evaluación](./research/2026-10-first-use-evaluation.md).
 - **Criterios de aceptación:**
   - La instalación que sugiere la CLI funciona en zsh, o deja de sugerirse.

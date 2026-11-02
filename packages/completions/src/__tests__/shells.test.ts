@@ -92,6 +92,8 @@ describe.skipIf(!runs('zsh'))('zsh', () => {
 	const home = (name: string, zshrc: string) => {
 		const path = join(dir, name);
 		mkdirSync(path, { recursive: true });
+		// A system zshrc can run its own compinit, whose security prompt eats the TAB
+		writeFileSync(join(path, '.zshenv'), 'unsetopt GLOBAL_RCS\n');
 		writeFileSync(join(path, '.zshrc'), zshrc);
 		return path;
 	};
