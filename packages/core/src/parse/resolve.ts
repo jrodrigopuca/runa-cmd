@@ -281,6 +281,16 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 			};
 		}
 
+		// Wrong type (e.g. expected number, got string)
+		if (issue.code === 'invalid_type') {
+			const { expected } = issue as unknown as { expected: unknown };
+			return {
+				code: 'custom' as const,
+				message: `Invalid value for <${name}>: expected ${String(expected)}`,
+				path: issue.path,
+			};
+		}
+
 		return issue;
 	});
 }
@@ -447,8 +457,13 @@ function validateArgs(
 ): Record<string, unknown> {
 	if (Object.keys(argSchemas).length === 0) return {};
 
+	const fields = new Map(walkSchema(argSchemas).map((field) => [field.name, field]));
+	const coerced = Object.fromEntries(
+		Object.entries(rawArgs).map(([key, value]) => [key, coerceField(value, fields.get(key))]),
+	);
+
 	try {
-		return z.object(argSchemas).parse(rawArgs) as Record<string, unknown>;
+		return z.object(argSchemas).parse(coerced) as Record<string, unknown>;
 	} catch (err) {
 		if (err instanceof ZodError) {
 			throw new ValidationError(humanizeArgIssues(err.issues, argSchemas));

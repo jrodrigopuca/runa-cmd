@@ -25,7 +25,6 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | KI-015 | En `defineCLI` con un comando, `tool tool` consume el dato como nombre. Con `runCLI` no pasa | Observado | `resolveCommandFromTree` | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
 | KI-040 | La ayuda de un subcomando muestra `USAGE  envOption [options]`, sin el nombre de la CLI | Observado | Las dos ayudas usan `fullPath` sin la CLI | [T-214](./backlog.md#t-214-la-ayuda-de-un-subcomando-muestra-la-cli) |
 | KI-041 | El campo `readme` del registro de npm está vacío, así que `npm view` no lo muestra. La página de npm sí muestra el README | Observado | Sin confirmar | [T-215](./backlog.md#t-215-readme-y-changelog-en-npm) |
-| KI-045 | `z.number()` en un posicional falla por CLI y funciona por MCP | Observado | Los posicionales no pasan por la coerción de las opciones | [T-222](./backlog.md#t-222-los-posicionales-convierten-como-las-opciones) |
 | KI-047 | `eval "$(cli completions zsh)"` falla | Observado | El script solo funciona como archivo en `fpath` | [T-225](./backlog.md#t-225-completions-con-eval-y-texto-con-símbolos) |
 | KI-049 | La ayuda del plugin emite códigos ANSI hacia un pipe y con `NO_COLOR=1` | Observado | Sin confirmar | [T-224](./backlog.md#t-224-salida-de-ayuda-sin-estilos-fuera-de-una-terminal) |
 

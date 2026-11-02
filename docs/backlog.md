@@ -62,7 +62,7 @@
 | | T-220 | Forma del archivo de config | Requerido | Hecho |
 | | T-221 | Probar una CLI sin subproceso | Requerido | Hecho |
 | | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Hecho |
-| | T-222 | Los posicionales convierten como las opciones | Requerido | Pendiente |
+| | T-222 | Los posicionales convierten como las opciones | Requerido | Hecho |
 | | T-223 | Flag desconocida en la raíz | Requerido | Hecho |
 | | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Pendiente |
 | | T-225 | Completions con eval y texto con símbolos | Requerido | Pendiente |
@@ -693,7 +693,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-222 Los posicionales convierten como las opciones
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una CLI, quiero que un schema se comporte igual en opciones, argumentos y MCP. Hoy `args: { id: z.number() }` falla por CLI, y los tipos dicen `number`. Es H3 de [la evaluación](./research/2026-10-first-use-evaluation.md).
 - **Criterios de aceptación:**
   - `z.number()` y `z.boolean()` en posicionales usan la coerción de [ADR-0013](./adr/0013-coercion-numerica.md).

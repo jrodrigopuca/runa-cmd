@@ -45,7 +45,7 @@ const deploy = defineCommand({
 runCLI(deploy);
 ```
 
-- **`args`:** posicionales, por orden de claves. Solo el último puede ser `z.array()`.
+- **`args`:** posicionales, por orden de claves. Solo el último puede ser `z.array()`. Convierten igual que las opciones: `z.number()` entrega un número, también en cada elemento de un variádico ([ADR-0013](../adr/0013-coercion-numerica.md)).
 - **`options`:** Zod puro. Alias, env, grupo y deprecación van en `meta.options`. `deprecated` se muestra en la ayuda y avisa por stderr al usar la opción.
 - **`output`:** si existe, `run()` debe cumplirlo; se comprueba en compilación y en ejecución.
 - **Lo devuelto:** en la terminal sale por stdout, después de validar `output` y antes de `afterRun`: un string tal cual, otro valor como JSON ([ADR-0042](../adr/0042-lo-devuelto-llega-a-la-terminal.md)).

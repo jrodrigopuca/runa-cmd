@@ -208,6 +208,23 @@ The command is the root of the CLI, so a value equal to its name is data: `tool 
 
 `defineCLI` with a single command also works, but it's deprecated: adding a plugin that registers a command silently changes how it routes.
 
+### Positional arguments
+
+`args` maps positionals by the order of its keys, and only the last one can be a list. A schema works the same as in an option, so `z.number()` delivers a number:
+
+```ts
+defineCommand({
+  meta: { description: 'Tag notes' },
+  args: {
+    tag: z.string(),
+    ids: z.array(z.number()),  // tool tag urgent 1 2 3
+  },
+  run({ args }) {
+    // args.tag: 'urgent', args.ids: [1, 2, 3]
+  },
+});
+```
+
 ### Options that repeat
 
 A `z.array()` option repeats, and each element is converted to its type: `--port 80 --port 81` gives `[80, 81]` with `z.array(z.number())`.

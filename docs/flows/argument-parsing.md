@@ -57,6 +57,7 @@ Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte q
 | Número | `coerceNumberValue` convierte strings, salvo vacíos o de espacios |
 | Booleano | `coerceBooleanValue` acepta `true`, `1`, `false` y `0`, sin distinguir mayúsculas; el resto lo rechaza Zod ([ADR-0028](../adr/0028-coercion-booleana.md)) |
 | Enum y string | Sin coerción |
+| Posicionales | La misma regla, también en cada elemento de un variádico |
 
 ## Posicionales
 
