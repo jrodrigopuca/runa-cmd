@@ -23,7 +23,7 @@ Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se bor
 | ID | Problema | Evidencia | Causa | Tarea |
 |---|---|---|---|---|
 | KI-015 | En `defineCLI` con un comando, `tool tool` consume el dato como nombre. Con `runCLI` no pasa | Observado | `resolveCommandFromTree` | [T-208](./backlog.md#t-208-retirar-el-modo-implícito) |
-| KI-041 | El campo `readme` del registro de npm está vacío, así que `npm view` no lo muestra. La página de npm sí muestra el README | Observado | Sin confirmar | [T-215](./backlog.md#t-215-readme-y-changelog-en-npm) |
+| KI-041 | El campo `readme` del registro de npm está vacío, así que `npm view` no lo muestra. La página de npm sí muestra el README | Observado | Sin confirmar: la publicación envía el README, y el campo parece llenarse desde `latest` | [T-506](./backlog.md#t-506-salir-de-pre-release-y-publicar-100) |
 
 ## Severidad baja
 

@@ -68,7 +68,7 @@
 | | T-225 | Completions con eval y texto con símbolos | Requerido | Hecho |
 | | T-213 | Nombre de los comandos | Requerido | Hecho |
 | | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Hecho |
-| | T-215 | README y changelog en npm | Requerido | Pendiente |
+| | T-215 | README y changelog en npm | Requerido | Hecho |
 | | T-309 | Fallos sin efecto por MCP | Requerido | Hecho |
 | | T-216 | Opción faltante con su variable de entorno | Opcional | Pendiente |
 | | T-217 | Valor por defecto legible en la ayuda | Opcional | Pendiente |
@@ -588,11 +588,11 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-215 README y changelog en npm
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que evalúa Runa, quiero leer la documentación en npm y ver qué cambió. El campo `readme` del registro está vacío, y `CHANGELOG.md` no viaja en el paquete, aunque [`VERSIONING.md`](../VERSIONING.md) manda a leerlo. Son F-05 y F-10 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Resultado:** la página de npm muestra el README, y la publicación lo envía, [medido](./research/2026-11-readme-in-npm.md). Una beta no puede comprobar `npm view`, así que esa verificación pasó a T-506.
 - **Criterios de aceptación:**
-  - Se confirma por qué el registro tiene `readme` vacío. La página de npm sí muestra el README, confirmado por el mantenedor.
-  - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cuatro paquetes.
+  - Se investiga por qué el registro tiene `readme` vacío, y queda escrito qué se sabe y qué no.
   - Cada paquete publicado incluye su `CHANGELOG.md`.
 
 ### T-309 Fallos sin efecto por MCP
@@ -826,6 +826,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Un dry-run de `changeset version` da las versiones esperadas antes de publicar.
   - Los cuatro paquetes quedan en `1.0.0` bajo `latest`, y la tabla del README dice `Stable`.
   - Después de publicar, `fixed` queda vacío en `.changeset/config.json`, como pide [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md).
+  - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cuatro paquetes. Si no, se aplica lo que dice [la investigación](./research/2026-11-readme-in-npm.md).
 
 ## Después de v1 o si llega a tiempo
 

@@ -2,7 +2,7 @@
 
 > **Verificado:** 2026-10-31, con Node 26.11.1 local. CI usa Node 24.
 
-**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. qr-plus ya migró a `0.2.0-beta.2` sin workarounds (T-402), pero esa versión no está publicada: su versión en npm sigue con commander, y migra después de la estable. `local-beacon`, cuyo agente solo ve lo publicado, adoptó Runa y MCP (T-404, en curso). Su [reporte](./research/2026-10-local-beacon-friction.md) y una [evaluación de primer uso](./research/2026-10-first-use-evaluation.md) abrieron 12 tareas requeridas. El archivo de config, `testCLI()`, la salida de lo devuelto, los nombres de comandos y los errores por MCP ya están resueltos en `main`, sin publicar (T-219, T-220, T-221, T-212, T-213, T-309, T-223, T-222, T-224, T-214, T-225), y queda T-215. Después de resolverlas se retira el modo implícito (T-208).
+**Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo quedan T-307 y T-308, opcionales. qr-plus ya migró a `0.2.0-beta.2` sin workarounds (T-402), pero esa versión no está publicada: su versión en npm sigue con commander, y migra después de la estable. `local-beacon`, cuyo agente solo ve lo publicado, adoptó Runa y MCP (T-404, en curso). Su [reporte](./research/2026-10-local-beacon-friction.md) y una [evaluación de primer uso](./research/2026-10-first-use-evaluation.md) abrieron 12 tareas requeridas. El archivo de config, `testCLI()`, la salida de lo devuelto, los nombres de comandos y los errores por MCP ya están resueltos en `main`, sin publicar: las 12 tareas están cerradas. Falta publicar esos cambios en una beta. Después de resolverlas se retira el modo implícito (T-208).
 
 ## Versiones
 
@@ -24,7 +24,7 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 1291 pasan en Ubuntu: core 794, help 236, completions 121, mcp 140, con bash, zsh y fish reales |
+| Tests | 1295 en Ubuntu: core 798, help 236, completions 121, mcp 140, con bash, zsh y fish reales |
 | Aceptación con procesos reales | Pasan los 314 casos, sin fallos esperados |
 | Cobertura de `core` | 91,88% de líneas, 80,17% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
