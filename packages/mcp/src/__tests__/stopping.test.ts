@@ -106,7 +106,6 @@ describe('stopping the server', () => {
 		expect(result._meta?.['runa/error']).toEqual({
 			class: 'cancelled',
 			effect: 'unknown',
-			safeToRetry: false,
 		});
 		expect(trace()).toContain('cleanup');
 	});
@@ -239,7 +238,6 @@ describe('output limits', () => {
 		expect(result._meta?.['runa/error']).toEqual({
 			class: 'output_too_large',
 			effect: 'completed',
-			safeToRetry: false,
 		});
 		expect(text(result)).toContain('already ran');
 	});

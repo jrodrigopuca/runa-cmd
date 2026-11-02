@@ -116,19 +116,20 @@ El servidor comprueba `selfCommand` al arrancar, y si no funciona falla con `MCP
 | Devuelve un string | Ese texto |
 | Devuelve otro valor | JSON en texto |
 | No devuelve nada | Lo que imprimió, o `Command '<name>' executed successfully.` |
-| Falla | `isError: true`, con el motivo y qué pasó con sus efectos en el texto, y `_meta['runa/error']` |
+| Falla | `isError: true`, con el motivo en el texto, y `_meta['runa/error']` |
 
 El valor devuelto gana sobre stdout. Para detectar una tool dentro de un hook, usá `ctx.invocation.surface`.
 
 Un error nunca afirma que no pasó nada si el comando llegó a empezar:
 
-| `effect` | Significa | `safeToRetry` | Clases |
+| `effect` | Significa | Texto agregado | Clases |
 |---|---|---|---|
-| `none` | `run()` no empezó | `true` | `unknown_tool`, `invalid_input`, `rejected`, `not_run`, `crashed` |
-| `unknown` | `run()` empezó y no volvió, o se pidió detenerlo | `false` | `command_failed`, `crashed`, `cancelled` |
-| `completed` | `run()` volvió | `false` | `invalid_output`, `output_too_large`, `after_run_failed` |
+| `none` | `run()` no empezó | `The command did not run.` | `unknown_tool`, `invalid_input`, `rejected`, `not_run`, `crashed` |
+| `unknown` | `run()` empezó y no volvió, o se pidió detenerlo | `The command did not finish.` | `crashed`, `cancelled` |
+| `unknown` | El comando lanzó un error | Ninguno: solo su mensaje | `command_failed` |
+| `completed` | `run()` volvió | `The command already ran.` | `invalid_output`, `output_too_large`, `after_run_failed` |
 
-`safeToRetry: true` habla del comando: un middleware o un hook pudo haber hecho algo antes de que `run()` empezara. La tabla completa está en el [flujo](../flows/mcp-tool-call.md#cómo-se-arma-el-resultado).
+Runa informa hasta dónde llegó el comando, y no opina sobre reintentar ([ADR-0044](../adr/0044-runa-no-opina-sobre-reintentos.md)). `readOnlyHint` no cambia la respuesta. La tabla completa está en el [flujo](../flows/mcp-tool-call.md#cómo-se-arma-el-resultado).
 
 ## Módulos
 

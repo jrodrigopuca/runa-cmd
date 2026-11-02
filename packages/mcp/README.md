@@ -93,21 +93,23 @@ Each key goes to its arg or option by name, so arrays, objects and numbers arriv
 | Command returns a string (no output schema) | `text` content |
 | Command returns an object (no output schema) | `text` content (JSON stringified) |
 | Command returns nothing | `text` with what it printed, or `Command '<name>' executed successfully.` |
-| Command fails | `isError: true`, with the reason and what happened to its effects in the text, plus `_meta['runa/error']` |
+| Command fails | `isError: true`, with the reason in the text, plus `_meta['runa/error']` |
 
 A returned value wins over what the command printed. The `format` of a command is for people: it doesn't run for a tool, and `--json` isn't a parameter.
 
-### Errors and Retries
+### Errors
 
-A failed call says whether repeating it can repeat its effects. The text says it for the model, and `_meta['runa/error']` for the client, as `{ class, effect, safeToRetry }`:
+A failed call says what happened, not what to do next. `_meta['runa/error']` tells the client, as `{ class, effect }`, and the text tells the model:
 
-| `effect` | Meaning | `safeToRetry` |
+| `effect` | Meaning | Text added |
 |---|---|---|
-| `none` | `run()` never started | `true` |
-| `unknown` | `run()` started and did not return | `false` |
-| `completed` | `run()` returned, and something failed after it, like an invalid `output` | `false` |
+| `none` | `run()` never started | `The command did not run.` |
+| `unknown` | `run()` started and did not return | `The command did not finish.` |
+| `completed` | `run()` returned, and something failed after it, like an invalid `output` | `The command already ran.` |
 
-`safeToRetry` is about the command: a middleware or hook may have acted before `run()` started.
+A `CommandError` is the exception: the model reads your message as you wrote it, with `effect: "unknown"`, because only you know what the command did. To guide the model, say it there: `throw new CommandError('The proxy is off. Start it first.')`.
+
+**Retrying is up to you and whoever approves the calls.** Runa knows how far a command got, not whether repeating it is a good idea. If a command fails partway, a model only sees `unknown` and may run it again, so make that safe, or say so in your message.
 
 ### Cancellation
 

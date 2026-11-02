@@ -105,70 +105,72 @@ describe('the result of a call', () => {
 	});
 });
 
-describe('what an error says about retrying', () => {
+describe('what an error says happened', () => {
 	const meta = (result: { _meta?: Record<string, unknown> }) => result._meta?.['runa/error'];
 
-	it('invalid input: nothing ran, safe to fix and retry', async () => {
+	it('invalid input: nothing ran', async () => {
 		const client = await serve();
-		expect(meta((await client.call('deploy', {})) as never)).toEqual({
-			class: 'invalid_input',
-			effect: 'none',
-			safeToRetry: true,
-		});
+		const result = await client.call('deploy', {});
+		expect(meta(result as never)).toEqual({ class: 'invalid_input', effect: 'none' });
+		expect(text(result)).toContain('The command did not run.');
 	});
 
 	it('rejected by a middleware: nothing ran', async () => {
 		const client = await serve({ MIDDLEWARE_REJECTS: '1' });
 		const result = await client.call('greet', { name: 'Ana' });
-		expect(meta(result as never)).toEqual({ class: 'rejected', effect: 'none', safeToRetry: true });
-		expect(text(result)).toContain('The command did not run');
+		expect(meta(result as never)).toEqual({ class: 'rejected', effect: 'none' });
+		expect(text(result)).toContain('The command did not run.');
 	});
 
 	it('skipped by a middleware: nothing ran, and it is not a success', async () => {
 		const client = await serve({ MIDDLEWARE_SKIPS: '1' });
 		const result = await client.call('greet', { name: 'Ana' });
 		expect(result.isError).toBe(true);
-		expect(meta(result as never)).toEqual({ class: 'not_run', effect: 'none', safeToRetry: true });
+		expect(meta(result as never)).toEqual({ class: 'not_run', effect: 'none' });
 	});
 
-	it('failed partway: the effects are unknown, never reported as nothing', async () => {
+	it('a failure the author threw: their message, and nothing about effects', async () => {
 		const client = await serve();
 		const result = await client.call('partial');
-		expect(meta(result as never)).toEqual({
-			class: 'command_failed',
-			effect: 'unknown',
-			safeToRetry: false,
-		});
+		expect(meta(result as never)).toEqual({ class: 'command_failed', effect: 'unknown' });
 		expect(text(result)).toContain('then the network failed');
-		expect(text(result)).toContain('may have taken effect');
+		expect(text(result)).not.toMatch(/did not|already ran|effect/);
 	});
 
-	it('a crash: the effects are unknown', async () => {
+	it('a CommandError reaches the model as the author wrote it', async () => {
+		const client = await serve({ LEAK_FAILS: '1', TEST_TOKEN: 'short' });
+		const result = await client.call('leaky', {});
+		expect(meta(result as never)).toEqual({ class: 'command_failed', effect: 'unknown' });
+		expect(text(result).trim()).toBe('rejected short');
+	});
+
+	it('does not read readOnlyHint: a hint says nothing about what happened', async () => {
+		const tools = JSON.stringify({ partial: { annotations: { readOnlyHint: true } } });
+		const client = await serve({ TOOLS: tools });
+		const result = await client.call('partial');
+		expect(meta(result as never)).toEqual({ class: 'command_failed', effect: 'unknown' });
+	});
+
+	it('a crash: it did not finish', async () => {
 		const client = await serve();
-		expect(meta((await client.call('crash')) as never)).toEqual({
-			class: 'crashed',
-			effect: 'unknown',
-			safeToRetry: false,
-		});
+		const result = await client.call('crash');
+		expect(meta(result as never)).toEqual({ class: 'crashed', effect: 'unknown' });
+		expect(text(result)).toContain('The command did not finish.');
 	});
 
-	it('exit 0 before finishing: the effects are unknown', async () => {
+	it('exit 0 before finishing: it did not finish', async () => {
 		const client = await serve();
 		const result = await client.call('leave');
 		expect(result.isError).toBe(true);
-		expect(meta(result as never)).toMatchObject({ effect: 'unknown', safeToRetry: false });
+		expect(meta(result as never)).toMatchObject({ effect: 'unknown' });
+		expect(text(result)).toContain('The command did not finish.');
 	});
 
 	it('invalid output: it already ran, and the text says so without raw Zod', async () => {
 		const client = await serve();
 		const result = await client.call('charged');
-		expect(meta(result as never)).toEqual({
-			class: 'invalid_output',
-			effect: 'completed',
-			safeToRetry: false,
-		});
-		expect(text(result)).toContain('already ran');
-		expect(text(result)).toContain('Do not retry');
+		expect(meta(result as never)).toEqual({ class: 'invalid_output', effect: 'completed' });
+		expect(text(result)).toContain('The command already ran.');
 		expect(text(result)).toContain('receipt:');
 		expect(text(result)).not.toContain('"code"');
 	});
@@ -177,13 +179,26 @@ describe('what an error says about retrying', () => {
 		const client = await serve({ AFTER_RUN_FAILS: '1' });
 		const result = await client.call('greet', { name: 'Ana' });
 		expect(result.isError).toBe(true);
-		expect(meta(result as never)).toEqual({
-			class: 'after_run_failed',
-			effect: 'completed',
-			safeToRetry: false,
-		});
+		expect(meta(result as never)).toEqual({ class: 'after_run_failed', effect: 'completed' });
 		expect(text(result)).toContain('telemetry is down');
-		expect(text(result)).toContain('already ran');
+		expect(text(result)).toContain('The command already ran.');
+	});
+
+	it('never offers advice about retrying, nor a key for it', async () => {
+		const client = await serve();
+		const calls: Array<[string, Record<string, unknown>]> = [
+			['deploy', {}],
+			['partial', {}],
+			['crash', {}],
+			['charged', {}],
+			['nope', {}],
+		];
+
+		for (const [name, input] of calls) {
+			const result = await client.call(name, input);
+			expect(text(result)).not.toMatch(/retry|retrying/i);
+			expect(meta(result as never)).not.toHaveProperty('safeToRetry');
+		}
 	});
 
 	it.each([

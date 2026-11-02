@@ -69,7 +69,7 @@
 | | T-213 | Nombre de los comandos | Requerido | Hecho |
 | | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Pendiente |
 | | T-215 | README y changelog en npm | Requerido | Pendiente |
-| | T-309 | Fallos sin efecto por MCP | Requerido | Pendiente |
+| | T-309 | Fallos sin efecto por MCP | Requerido | Hecho |
 | | T-216 | Opción faltante con su variable de entorno | Opcional | Pendiente |
 | | T-217 | Valor por defecto legible en la ayuda | Opcional | Pendiente |
 | | T-218 | Parada limpia de un servicio | Opcional | Pendiente |
@@ -598,7 +598,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-309 Fallos sin efecto por MCP
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor de una tool, quiero que un fallo previsto no le sugiera al modelo un efecto que no ocurrió. Hoy un `CommandError` devuelve `effect: "unknown"` y `safeToRetry: false`, aun en una tool con `readOnlyHint: true`. Es F-06 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Decisión:** [ADR-0044](./adr/0044-runa-no-opina-sobre-reintentos.md). Runa informa lo que ocurrió y no opina sobre reintentos: `safeToRetry` desaparece.
 - **Criterios de aceptación:**
@@ -726,6 +726,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Criterios de aceptación:**
   - La instalación que sugiere la CLI funciona en zsh, o deja de sugerirse.
   - Se reproduce H8, y los valores quedan escapados como promete el README.
+  - CI comprueba los scripts generados con cada shell real: `bash -n`, `zsh -n` y `fish -n`, en el job de Linux. Fish nunca se probó: en la máquina de desarrollo no está instalado, y hoy solo se verifica el texto generado.
 
 ### T-226 Ruta completa en hooks y middleware
 

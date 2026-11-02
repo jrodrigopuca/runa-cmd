@@ -51,7 +51,7 @@ export function toolDefinition(reg: ToolRegistration): Tool {
 
 const success = (text: string): CallToolResult => ({ content: [{ type: 'text', text }] });
 
-/** What happened to the command's side effects, the thing a retry depends on. */
+/** How far the command got: all Runa knows. What to do about it isn't Runa's call (ADR-0044). */
 type Effect = 'none' | 'completed' | 'unknown';
 
 interface ToolFailure {
@@ -70,15 +70,14 @@ interface ToolFailure {
 }
 
 const EFFECT_TEXT: Record<Effect, string> = {
-	none: 'The command did not run, so it is safe to retry.',
-	completed: 'The command already ran. Do not retry it.',
-	unknown: 'The command started, so it may have taken effect. Check before retrying.',
+	none: 'The command did not run.',
+	completed: 'The command already ran.',
+	unknown: 'The command did not finish.',
 };
 
 /**
- * The reports say how far the command got, which is what decides whether a
- * retry can repeat its effects. Without one, a command may have done anything:
- * the safe reading of the unknown is never that nothing happened.
+ * The reports say how far the command got. Without one, a command may have done
+ * anything: the safe reading of the unknown is never that nothing happened.
  */
 function findFailure({ reports, status, cancelled }: ChildOutcome): ToolFailure | undefined {
 	const reached = (kind: ToolReport['kind']) => reports.some((report) => report.kind === kind);
@@ -106,8 +105,14 @@ function findFailure({ reports, status, cancelled }: ChildOutcome): ToolFailure 
 /** Anything the model has to read goes in the text: `_meta` is for the client. */
 const failure = (reason: string, found: ToolFailure): CallToolResult => ({
 	isError: true,
-	content: [{ type: 'text', text: `${reason}\n\n${EFFECT_TEXT[found.effect]}` }],
-	_meta: { 'runa/error': { ...found, safeToRetry: found.effect === 'none' } },
+	// A failure the author threw says what it has to say: Runa can't add a fact to it
+	content: [
+		{
+			type: 'text',
+			text: found.class === 'command_failed' ? reason : `${reason}\n\n${EFFECT_TEXT[found.effect]}`,
+		},
+	],
+	_meta: { 'runa/error': found },
 });
 
 function failedChild(

@@ -111,7 +111,6 @@ describe('toToolResult', () => {
 		expect(result._meta?.['runa/error']).toEqual({
 			class: 'crashed',
 			effect: 'none',
-			safeToRetry: true,
 		});
 	});
 

@@ -60,7 +60,7 @@ El hijo informa hasta dónde llegó: `running` antes de `run()`, `ran` cuando vu
 
 Exit 0 no alcanza para considerar exitosa una llamada: un middleware puede saltear el comando, y un comando puede llamar a `process.exit(0)`.
 
-El texto lleva el motivo que escribió el comando y una frase sobre el efecto, porque `_meta` es para el cliente y puede no llegar al modelo. Las pistas para personas, como `RUNA_DEBUG` o `--help`, no aparecen salvo que quien opera active `RUNA_DEBUG`.
+El texto lleva el motivo que escribió el comando y una frase con lo que ocurrió, porque `_meta` es para el cliente y puede no llegar al modelo. Un fallo que lanzó el comando llega solo con su mensaje, y ningún texto opina sobre reintentos ([ADR-0044](../adr/0044-runa-no-opina-sobre-reintentos.md)). Las pistas para personas, como `RUNA_DEBUG` o `--help`, no aparecen salvo que quien opera active `RUNA_DEBUG`.
 
 ## CLI y tool
 
