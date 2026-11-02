@@ -65,7 +65,7 @@
 | | T-222 | Los posicionales convierten como las opciones | Requerido | Hecho |
 | | T-223 | Flag desconocida en la raíz | Requerido | Hecho |
 | | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Hecho |
-| | T-225 | Completions con eval y texto con símbolos | Requerido | En curso |
+| | T-225 | Completions con eval y texto con símbolos | Requerido | Hecho |
 | | T-213 | Nombre de los comandos | Requerido | Hecho |
 | | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Hecho |
 | | T-215 | README y changelog en npm | Requerido | Pendiente |
@@ -721,8 +721,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-225 Completions con eval y texto con símbolos
 
 - **v1:** Requerido
-- **Estado:** En curso
-- **Avance:** todo resuelto, y probado con bash, zsh y fish reales, con TAB de verdad en zsh. CI ya confirmó fish; falta su corrida completa en zsh, tras aislar la prueba de los archivos globales del sistema.
+- **Estado:** Hecho
+- **Resultado:** probado en CI con bash, zsh y fish reales, con TAB de verdad en zsh. Si falta un shell en CI, la prueba falla en vez de omitirse.
 - **Descripción:** como persona que usa una CLI, quiero que el completado funcione como se sugiere. `eval "$(cli completions zsh)"` fallaba, y un `]` en una descripción o un enum con espacio lo rompían: zsh llegaba a ejecutar parte de la descripción como comando. Son H7 y H8 de [la evaluación](./research/2026-10-first-use-evaluation.md).
 - **Criterios de aceptación:**
   - La instalación que sugiere la CLI funciona en zsh, o deja de sugerirse.
