@@ -1,5 +1,120 @@
 # @runa-cmd/core
 
+## 0.2.0-beta.3
+
+### Minor Changes
+
+- 1d071a9: Each package now ships its `CHANGELOG.md`, so you can read what changed from `node_modules`.
+- 6ae4563: Completions now work the way they're suggested, with any text.
+
+  `eval "$(tool completions zsh)"` used to fail on every shell start. The script now registers itself with `compdef`, so it works in a `.zshrc` after `compinit`, as well as from a file in `fpath`.
+
+  In zsh, a `]` in a description used to end it early, and what followed was run as a command when pressing TAB, so `Mode [x]: fast` left the option without completion and could run `mode`. Brackets and colons are now escaped.
+
+  An enum value with a space, like `very slow`, used to be split in two candidates in bash, zsh and fish. It's now one.
+
+  CI runs the generated scripts in the real shells.
+
+- eed18ff: A value in the config file now reaches one command, and nothing is ignored. A key used to apply to every option with that name: `{"force":true}` turned on `--force` in any command.
+
+  **Breaking:** the shape of the file changed. A key at the root is a global option or a command, and groups nest. With `runCLI`, options stay at the root.
+
+  **Migration:** move each option under its command.
+
+  ```json
+  // Before
+  { "force": true, "priority": "high" }
+
+  // After
+  { "clear": { "force": true }, "tag": { "add": { "priority": "high" } } }
+  ```
+
+  An unknown key now exits with 2, naming the file and the key, with a suggestion if there's a close one. `$schema` is accepted. An invalid value names the file and the key too, as in `notes.config.json: invalid value for 'list.priority'`, and broken JSON is reported as a problem of the file, not as an unexpected error.
+
+  A global option can't share a name with a command in a CLI with a config file: it fails at startup with `CONFIG_COLLISION`. Rename one.
+
+  Global options now read the config file. They used to ignore it without a word, even with a value of the wrong type, so a `store` in the file left the CLI writing somewhere else. They follow the same order as any option: CLI, env, config, default.
+
+  `meta.options.<key>.configurable: false` keeps an option out of the file, so a guardrail can't be turned off by a file in the current directory. `--mcp` uses it: only the terminal can start a server.
+
+  `api.getConfigValues(path)` returns the values of one command. `@runa-cmd/mcp` uses it, so a value only keeps the option of that tool away from the model.
+
+- 8b3b8b4: A failed tool call now says what happened, not what to do. An expected `CommandError` used to tell the model "it may have taken effect. Check before retrying", even in a read-only tool, and `safeToRetry` said nothing about how often or when.
+
+  **Breaking:** `_meta['runa/error']` no longer has `safeToRetry`. It keeps `class` and `effect`.
+
+  The text only states facts: `The command did not run.`, `The command already ran.` or `The command did not finish.`. A `CommandError` reaches the model as you wrote it, with `effect: "unknown"`.
+
+  **Migration:** a client that read `safeToRetry` can read `effect`, where `none` means `run()` never started. To guide a model, say it in your error message. Retrying is up to you and whoever approves the calls: if a command fails partway, a model may run it again, so make that safe.
+
+- ce76e51: The help of a command can now be copied and run. It used to show `USAGE  deploy [options]`, without the CLI: now it's `tool deploy [options]`, in the built-in help and in the plugin. A variadic shows its dots, as in `<files...>`.
+
+  `styled()` and the help plugin no longer write escape codes to a pipe or with `NO_COLOR`. Colors were left out, but bold, dim, italic and underline weren't, so `tool --help > file` or `| less` got raw codes. Padding stays: it's layout.
+
+  `detectColorDepth(stream)` takes the stream to ask about, and the plugin asks about the one it writes to, which is stderr when there was nothing to run.
+
+  `CommandSchema.commandLine` says what a person types to run a command. It's set for help: `fullPath` doesn't change.
+
+- 30e962f: A command now has one name, its key, written the same way everywhere. `meta.name` used to be required and do nothing in `defineCLI`: `commands: { withOutput }` ran as `withOutput`, whatever `meta.name` said.
+
+  **Breaking:** a key only takes lowercase letters, numbers and dashes, and anything else fails at startup with `INVALID_COMMAND_NAME`, saying the right form. `meta.name` has to match the key if you write it. An MCP tool takes the name of its command, so a renamed command is a renamed tool.
+
+  **Migration:** rename the keys that don't fit.
+
+  ```ts
+  // Before
+  commands: { withOutput }
+
+  // After
+  commands: { 'with-output': withOutput }
+  ```
+
+  `meta.name` is now optional in `defineCLI`, and `run()` and hooks still get `command.name`. `runCLI` requires it, because it names the CLI.
+
+  Options don't change: `run()` reads them by key, so `darkColor` is still `--dark-color`.
+
+- d31ad33: A positional now gets the type of its schema. `args: { id: z.number() }` used to fail at the terminal with `expected number, received string`, although TypeScript said it was a number and it worked through MCP.
+
+  Numbers and booleans convert as in an option, in each item of a variadic too, and an empty string is still never read as 0. An invalid value says `Invalid value for <id>: expected number`.
+
+  **Migration:** if you used `z.coerce.number()` as a workaround, `z.number()` is enough now.
+
+- f15d0cd: What a command returns now reaches the terminal. It used to reach MCP tools only, so at the terminal a command that returned data showed nothing and exited with 0.
+
+  A string goes to stdout as it is, and anything else as JSON. `run()` can return a value without `output`: this used to be a type error, even though it worked.
+
+  `format: (result) => string` says what a person reads. It receives the type of what `run()` returned, doesn't run for a tool, and gives the command a `--json` flag that prints the data. A command with `format` that returns nothing fails with `MISSING_RESULT`.
+
+  **Breaking:** a command that prints and also returns shows both. A command with `format` can't declare an option called `json`, and no global option can take that name while such a command exists.
+
+  **Migration:** move the printing to `format`, and delete your own `json` option.
+
+  ```ts
+  // Before
+  options: { json: z.boolean().default(false) },
+  run({ options }) {
+    const status = read();
+    console.log(options.json ? JSON.stringify(status) : `Port ${status.port}`);
+    return status;
+  },
+
+  // After
+  run: () => read(),
+  format: (status) => `Port ${status.port}`,
+  ```
+
+  Progress belongs on stderr, with `console.error`, so `--json` stays clean to pipe.
+
+- 0b62ebb: `testCLI()`, from `@runa-cmd/core/testing`, runs a CLI or a command through its real lifecycle without ending the process. A failing command used to kill the test runner, and capturing its output took a page of patches.
+
+  It returns the exit code, stdout, stderr, what `run()` returned, the original error, and a `trace` of what happened: where each value came from, which hooks ran and for how long, and everything written, in order. It takes `env` and `config` instead of reading the machine, and several runs can share a process without mixing their output, with `node --test` and with Vitest. A value from env stays out of `trace`, because it can be a secret.
+
+  `RUNA_DEBUG=1` now shows those steps on stderr while they happen. It never prints a value.
+
+- b7a504b: A flag where a command should be is now a usage error. `tool --bogus` used to say `Command not found: '--bogus'` and exit with 127.
+
+  **Breaking:** it now says `Unknown option: --bogus` and exits with 2, with the same suggestions as a flag after a command, so `--verison` points to `--version`. A script that checked for 127 here has to check for 2. An unknown command still exits with 127.
+
 ## 0.2.0-beta.2
 
 ### Minor Changes
