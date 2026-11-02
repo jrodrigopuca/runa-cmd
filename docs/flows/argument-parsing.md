@@ -76,7 +76,7 @@ Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte q
 | Falta una opción | `Missing required option: --name` |
 | Enum inválido | `Invalid value for --name. Expected one of: a, b` |
 | Tipo inválido | `Invalid value for --name: expected number` |
-| Flag desconocida | `Unknown option: --name. Did you mean '--other'?` |
+| Flag desconocida, antes o después del comando | `Unknown option: --name. Did you mean '--other'?` |
 | Falta el valor | `Option -n, --name requires a value` |
 | Posicional de más | `Unexpected positional argument: 'x'` |
 

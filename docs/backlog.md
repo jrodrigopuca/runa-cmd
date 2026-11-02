@@ -63,7 +63,7 @@
 | | T-221 | Probar una CLI sin subproceso | Requerido | Hecho |
 | | T-212 | Lo que devuelve un comando llega a la terminal | Requerido | Hecho |
 | | T-222 | Los posicionales convierten como las opciones | Requerido | Pendiente |
-| | T-223 | Flag desconocida en la raíz | Requerido | Pendiente |
+| | T-223 | Flag desconocida en la raíz | Requerido | Hecho |
 | | T-224 | Salida de ayuda sin estilos fuera de una terminal | Requerido | Pendiente |
 | | T-225 | Completions con eval y texto con símbolos | Requerido | Pendiente |
 | | T-213 | Nombre de los comandos | Requerido | Hecho |
@@ -703,7 +703,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-223 Flag desconocida en la raíz
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que usa una CLI, quiero que `tool --bogus` diga que la opción no existe. Hoy da `Command not found` y 127. Como los exit codes son contrato, hay que corregirlo antes de la 1.0.
 - **Criterios de aceptación:**
   - Una flag desconocida antes del comando da exit 2 y `Unknown option`.

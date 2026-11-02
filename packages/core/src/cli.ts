@@ -92,6 +92,8 @@ class RouteNotFoundError extends CommandNotFoundError {
 		readonly path: string[],
 		/** Nothing was wrong, only unfinished: argv ended before reaching a command */
 		readonly isIncomplete: boolean,
+		/** What stopped the route, if it was a flag and not a mistyped command */
+		readonly flag?: string,
 	) {
 		super(name, suggestion);
 	}
@@ -102,6 +104,8 @@ interface Route {
 	command?: Command;
 	path: string[];
 	isIncomplete: boolean;
+	/** A flag where a command should be: a usage error, not an unknown command */
+	flag?: string;
 }
 
 /**
@@ -149,8 +153,10 @@ function resolveCommand(commands: CommandTree, tokens: string[]): ResolvedComman
 		throw new RouteNotFoundError(path.join(' ') || '(no command specified)', undefined, path, true);
 	}
 
+	// A lone `-` means stdin in many CLIs: it isn't a flag, whatever it is here
+	const flag = next.length > 1 && next.startsWith('-') ? next : undefined;
 	const suggestion = findSuggestion(next, Object.keys(current));
-	throw new RouteNotFoundError([...path, next].join(' '), suggestion, path, false);
+	throw new RouteNotFoundError([...path, next].join(' '), suggestion, path, false, flag);
 }
 
 // ─── Output Validation ──────────────────────────────────────
@@ -304,6 +310,33 @@ function findBuiltInAnswer(
 	return route.isIncomplete ? 'usage' : undefined;
 }
 
+/** Report a flag before any command: same message as one after it, same exit code. */
+function assertKnownFlag(
+	token: string,
+	{ config, globalOptions, globalMeta }: SelectionScope,
+): void {
+	const rawName = token.split('=')[0] as string;
+	const name = rawName.replace(/^-+/, '');
+
+	const longAliases = Object.values(globalMeta.options)
+		.flatMap((meta) => meta.alias ?? [])
+		.filter((alias) => alias.startsWith('--'))
+		.map((alias) => alias.slice(2));
+
+	assertKnownOptions({
+		producedKeys: [name],
+		knownKeys: new Set(),
+		booleanKeys: new Set(),
+		suggestionCandidates: [
+			'help',
+			...(config.meta.version === undefined ? [] : ['version']),
+			...Object.keys(globalOptions).map(flagName),
+			...longAliases,
+		],
+		tokens: [{ kind: 'option', name, rawName }],
+	});
+}
+
 /** Select from argv. Undefined means the run ended here, as with --version. */
 async function selectFromArgv(
 	scope: SelectionScope,
@@ -333,6 +366,9 @@ async function selectFromArgv(
 		if (answer === 'usage') scope.exitWith(USAGE_EXIT_CODE);
 		return undefined;
 	}
+
+	// Globals were taken out already, so a flag here belongs to nobody
+	if (route.flag) assertKnownFlag(route.flag, scope);
 
 	// ─── Resolve command ──────────────────────────────
 	const { command, path, remainingArgv } = resolveCommandFromTree(commands, commandArgv, rootName);
@@ -1011,7 +1047,7 @@ function findRoute(commands: CommandTree, argv: string[], rootName?: string): Ro
 		return { command, path, isIncomplete: false };
 	} catch (err) {
 		if (!(err instanceof RouteNotFoundError)) throw err;
-		return { path: err.path, isIncomplete: err.isIncomplete };
+		return { path: err.path, isIncomplete: err.isIncomplete, flag: err.flag };
 	}
 }
 

@@ -19,6 +19,55 @@ function received(argv: string[], env?: Record<string, string>) {
 
 beforeAll(assertFreshBuild);
 
+describe('a flag where a command should be', () => {
+	it.each([
+		['an unknown long flag', ['--bogus'], '--bogus'],
+		['one with a value', ['--bogus=1'], '--bogus'],
+		['a short flag', ['-x'], '-x'],
+		['one before a command', ['--bogus', 'status'], '--bogus'],
+		['one inside a group', ['group', '--bogus'], '--bogus'],
+	])('reports %s as a usage error, not as a command', (_case, argv, flag) => {
+		const { status, stderr, stdout } = routing(argv);
+		expect(status).toBe(2);
+		expect(stdout).toBe('');
+		expect(stderr).toContain(`Unknown option: ${flag}`);
+		expect(stderr).not.toContain('Command not found');
+		expect(stderr).toContain("Run 'routing --help' for usage.");
+	});
+
+	it('suggests the flag that was meant', () => {
+		const { stderr } = routing(['--verison'], VERSIONED);
+		expect(stderr).toContain("Did you mean '--version'?");
+	});
+
+	it('suggests a global option too', () => {
+		const { stderr } = routing(['--profil']);
+		expect(stderr).toContain("Did you mean '--profile'?");
+	});
+
+	it('points -V to --version', () => {
+		expect(routing(['-V'], VERSIONED).stderr).toContain("Did you mean '--version'?");
+	});
+
+	it('keeps 127 for a command that does not exist', () => {
+		const { status, stderr } = routing(['nope']);
+		expect(status).toBe(127);
+		expect(stderr).toContain('Command not found');
+	});
+
+	it('keeps 127 for a lone dash: it is not a flag', () => {
+		expect(routing(['-']).status).toBe(127);
+	});
+
+	it('still answers --help after an unknown flag', () => {
+		expect(routing(['--bogus', '--help']).status).toBe(0);
+	});
+
+	it('still reads a global before the command', () => {
+		expect(routing(['--profile', 'x', 'status']).status).toBe(0);
+	});
+});
+
 describe('--version', () => {
 	it.each([
 		['before any command', ['--version']],

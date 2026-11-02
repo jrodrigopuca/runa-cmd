@@ -6,7 +6,11 @@ const print = ({ args, options, rest }) => console.log(JSON.stringify({ args, op
 
 await defineCLI({
 	meta: { name: 'routing', version: process.env.CLI_VERSION },
+	globalOptions: { profile: z.string().optional() },
 	commands: {
+		group: {
+			inner: defineCommand({ meta: { description: 'inner' }, run: print }),
+		},
 		status: defineCommand({
 			meta: { name: 'status', description: 'status' },
 			rest: true,
