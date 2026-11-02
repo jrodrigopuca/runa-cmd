@@ -1,7 +1,7 @@
 # Release — see docs/adr/0016-release-con-changesets.md
 #
 # Version-PR-only mode: on push to main with pending changesets,
-# changesets/action@v2 opens/updates the "Version Packages" PR. Publishing is
+# changesets/action@v1 opens/updates the "Version Packages" PR. Publishing is
 # NOT automated — no NPM_TOKEN lives in repo secrets: a Bypass-2FA token in
 # secrets is worse security than local publish with 2FA in hand, and 90-day
 # granular-token rotation isn't worth it at this cadence.
@@ -37,7 +37,8 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: changesets/action@v2
+      - uses: changesets/action@v1
+        # v1 is the line for Changesets CLI v2: action v2 requires CLI v3.
         # No `publish` input and no NPM_TOKEN: this action only maintains the
         # Version Packages PR. Publishing happens locally with 2FA.
         env:
