@@ -139,7 +139,7 @@ describe('defineCLI + lifecycle integration', () => {
 			expect(spies.exitSpy).not.toHaveBeenCalled();
 		});
 
-		it('defineCLI routes directly without command name', async () => {
+		it('defineCLI needs the command name, even with one command', async () => {
 			const log: string[] = [];
 
 			const cmd = defineCommand({
@@ -155,8 +155,11 @@ describe('defineCLI + lifecycle integration', () => {
 				commands: { build: cmd },
 			});
 
-			// In single-command mode, argv doesn't need the command name
+			await cli.run(['build', 'production']);
+			expect(log).toEqual(['build:production']);
+
 			await cli.run(['production']);
+			expect(spies.exitSpy).toHaveBeenCalledWith(127);
 			expect(log).toEqual(['build:production']);
 		});
 	});

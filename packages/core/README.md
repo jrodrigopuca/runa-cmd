@@ -215,7 +215,7 @@ runCLI(myCommand, {
 
 The command is the root of the CLI, so a value equal to its name is data: `tool tool` passes `"tool"`. If a plugin adds a subcommand, that name routes to it, and `--` passes it as data: `tool -- completions`.
 
-`defineCLI` with a single command also works, but it's deprecated: adding a plugin that registers a command silently changes how it routes.
+`defineCLI` always needs the name of a command, even with only one, so use `runCLI` for a CLI of one command.
 
 ### Positional arguments
 

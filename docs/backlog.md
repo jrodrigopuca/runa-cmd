@@ -77,7 +77,7 @@
 | | T-226 | Ruta completa en hooks y middleware | Opcional | Pendiente |
 | | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
 | | T-228 | `format` recibe las opciones | Opcional | Hecho |
-| | T-208 | Retirar el modo implícito | Requerido | Pendiente |
+| | T-208 | Retirar el modo implícito | Requerido | Hecho |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
 | | T-503 | Documentación de v1 | Requerido | Pendiente |
@@ -764,8 +764,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-208 Retirar el modo implícito
 
 - **v1:** Requerido
-- **Estado:** Pendiente
-- **Bloqueada por:** nada: T-404 y las tareas que podían romper el contrato están cerradas. Cerrarla abre la ventana de estabilidad
+- **Estado:** Hecho
+- **Resultado:** `defineCLI` siempre necesita el nombre del comando. La ventana de estabilidad empieza cuando se publique la beta que lo incluye.
 - **Descripción:** como mantenedor, quiero que 1.0 no incluya el modo que depende de contar comandos y falla al sumar un plugin. El retiro cierra la etapa de cambios incompatibles previstos, antes de abrir la ventana de estabilidad.
 - **Criterios de aceptación:**
   - `defineCLI` deja de saltear el nombre del comando cuando hay uno solo.

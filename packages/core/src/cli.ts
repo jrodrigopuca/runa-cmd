@@ -1025,29 +1025,7 @@ function resolveCommandFromTree(
 		return resolveCommand(commands, argv);
 	}
 
-	// Implicit single-command mode, retired before 1.0: it depends on counting
-	// commands, so a plugin that adds one silently turns it off.
-	const entries = Object.entries(commands);
-	const [name, entry] = entries[0] ?? [];
-	if (entries.length === 1 && entry && isCommand(entry)) {
-		const path = [name as string];
-		if (argv[0] === name) return { command: entry, path, remainingArgv: argv.slice(1) };
-		warnImplicitMode();
-		return { command: entry, path, remainingArgv: argv };
-	}
-
 	return resolveCommand(commands, argv);
-}
-
-let warnedImplicitMode = false;
-
-function warnImplicitMode(): void {
-	if (warnedImplicitMode) return;
-	warnedImplicitMode = true;
-	process.emitWarning('defineCLI() with a single command is deprecated. Use runCLI().', {
-		type: 'DeprecationWarning',
-		code: 'RUNA_IMPLICIT_SINGLE_COMMAND',
-	});
 }
 
 function findRoute(commands: CommandTree, argv: string[], rootName?: string): Route {

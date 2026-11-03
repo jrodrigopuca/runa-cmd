@@ -1,5 +1,5 @@
-// The implicit single-command mode of defineCLI, deprecated by ADR-0023.
-import { defineCLI, defineCommand } from '@runa-cmd/core';
+// A defineCLI with one command: it routes as any other (ADR-0023).
+import { defineCLI, defineCommand, definePlugin } from '@runa-cmd/core';
 import { z } from '@runa-cmd/core/zod';
 
 const tool = defineCommand({
@@ -8,4 +8,19 @@ const tool = defineCommand({
 	run: ({ args }) => console.log(`content: ${args.content}`),
 });
 
-await defineCLI({ meta: { name: 'tool' }, commands: { tool } }).run();
+const addsCommand = definePlugin({
+	meta: { name: 'adds-command' },
+	capabilities: { addCommands: true },
+	setup(api) {
+		api.addCommand(
+			'extra',
+			defineCommand({ meta: { description: 'Added by a plugin' }, run() {} }),
+		);
+	},
+});
+
+await defineCLI({
+	meta: { name: 'cli' },
+	commands: { tool },
+	plugins: process.env.WITH_PLUGIN ? [addsCommand] : [],
+}).run();

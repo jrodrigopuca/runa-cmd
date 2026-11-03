@@ -212,15 +212,33 @@ describe('runCLI with a plugin that adds a subcommand', () => {
 describe('defineCLI with a single command', () => {
 	const implicit = (...argv: string[]) => runFixture('implicit.js', argv);
 
-	it('keeps working, and warns once that the mode is deprecated', () => {
+	it('routes as any other CLI: a word is a command, not data', () => {
 		const { status, stdout, stderr } = implicit('hola');
-		expect(status, stderr).toBe(0);
-		expect(stdout).toContain('content: hola');
-		expect(stderr.match(/DeprecationWarning/g)).toHaveLength(1);
-		expect(stderr).toContain('Use runCLI()');
+		expect(status).toBe(127);
+		expect(stdout).toBe('');
+		expect(stderr).toContain("Command not found: 'hola'");
 	});
 
-	it('does not warn when the command is named, which is regular routing', () => {
-		expect(implicit('tool', 'hola').stderr).toBe('');
+	it('runs the command by its name', () => {
+		const { status, stdout, stderr } = implicit('tool', 'hola');
+		expect(status, stderr).toBe(0);
+		expect(stdout).toContain('content: hola');
+		expect(stderr).toBe('');
+	});
+
+	it('shows the help of the CLI with nothing to run', () => {
+		const { status, stderr } = implicit();
+		expect(status).toBe(2);
+		expect(stderr).toContain('COMMANDS');
+	});
+
+	it('does not change when a plugin adds a command', () => {
+		// The mode this replaces depended on counting commands
+		expect(runFixture('implicit.js', ['hola'], { WITH_PLUGIN: '1' }).status).toBe(127);
+		expect(runFixture('implicit.js', ['tool', 'hola'], { WITH_PLUGIN: '1' }).status).toBe(0);
+	});
+
+	it('keeps a value equal to the command name as data', () => {
+		expect(implicit('tool', 'tool').stdout).toContain('content: tool');
 	});
 });

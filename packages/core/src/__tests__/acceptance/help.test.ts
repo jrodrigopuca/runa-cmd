@@ -115,11 +115,17 @@ describe('a required global option', () => {
 });
 
 describe('a single command through defineCLI', () => {
-	it.each([[['--help']], [['tool', '--help']]])('shows the command for %j', (argv) => {
-		const { stdout, status } = runFixture('implicit.js', argv);
+	it('shows the CLI, with its command', () => {
+		const { stdout, status } = runFixture('implicit.js', ['--help']);
 		expect(status).toBe(0);
-		expect(stdout).toContain('tool <content> [options]');
-		expect(stdout).not.toContain('<command>');
+		expect(stdout).toContain('cli <command> [options]');
+		expect(stdout).toContain('COMMANDS');
+	});
+
+	it('shows the command when it is named', () => {
+		const { stdout, status } = runFixture('implicit.js', ['tool', '--help']);
+		expect(status).toBe(0);
+		expect(stdout).toContain('cli tool <content> [options]');
 	});
 });
 

@@ -68,17 +68,13 @@ flowchart TD
     R{"¿runCLI?"} -->|Sí| R1{"¿El primer token es otro comando?"}
     R1 -->|No| R2["Correr la raíz sin consumir tokens"]
     R1 -->|Sí| D
-    R -->|No| A{"¿Una sola entrada y es comando?"}
-    A -->|No| D["Recorrer el árbol token por token"]
-    A -->|Sí| B{"¿El primer token es su nombre?"}
-    B -->|Sí| C1["Consumir el token y correr"]
-    B -->|No| C2["Correr sin consumir tokens y avisar la deprecación"]
+    R -->|No| D["Recorrer el árbol token por token"]
     D --> E{"¿Encontró comando?"}
     E -->|Sí| F["Correr con el resto de argv"]
     E -->|No| G["CommandNotFoundError con sugerencia"]
 ```
 
-La rama `¿Una sola entrada?` es el modo implícito de `defineCLI`, que causa KI-006 y KI-015 y se retira en [T-208](../backlog.md#t-208-retirar-el-modo-implícito). Con `runCLI`, un dato igual al nombre de un subcomando se pasa con `--` ([ADR-0023](../adr/0023-runcli-y-modo-raiz.md)).
+`defineCLI` siempre necesita el nombre del comando, aunque tenga uno solo: la cantidad de comandos no cambia cómo se interpreta un token. Con `runCLI`, un dato igual al nombre de un subcomando se pasa con `--` ([ADR-0023](../adr/0023-runcli-y-modo-raiz.md)).
 
 ## Middleware
 

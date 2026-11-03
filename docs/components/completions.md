@@ -56,7 +56,6 @@ El script de zsh funciona en `fpath` y con `eval`, después de `compinit`. Las p
 ## Limitaciones
 
 - Con `runCLI`, las opciones del comando raíz se completan en el nivel superior, y el comando no se lista como subcomando.
-- Agregar este plugin a `defineCLI` con un comando rompe el modo implícito (KI-006). Usá `runCLI`.
 - No completa rutas de archivo ([T-603](../backlog.md#t-603-completions-de-rutas-de-archivo)).
 - PowerShell queda fuera de alcance.
 
