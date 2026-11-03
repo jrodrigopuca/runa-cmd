@@ -1,5 +1,30 @@
 # @runa-cmd/completions
 
+## 0.2.0-beta.4
+
+### Minor Changes
+
+- 4b6b197: `tool: false` keeps a command out of the MCP server, from its definition. It's for commands that only make sense at a terminal.
+
+  **Breaking:** `completions` is no longer a tool. A shell script means nothing to a model, and it took an `exclude` to hide it. An `exclude` that names it stays valid, and settings for it in `tools` now fail at startup.
+
+- ab1321c: `format` now receives the args and options, as `format(result, { args, options })`, with their types. An option that only changes the display, like `--no-truncate`, no longer has to travel in what `run()` returns, where a model and `--json` would get it too. `format(result)` keeps working.
+- 64d3962: `defineCLI` no longer skips the command name when there's only one command. That mode depended on counting commands, so adding a plugin with a command of its own broke `tool hola`, and `tool tool` took a value for the name. It was deprecated with `RUNA_IMPLICIT_SINGLE_COMMAND`.
+
+  **Breaking:** a `defineCLI` with one command now routes as any other: `tool hola` exits with 127.
+
+  **Migration:** for a CLI of one command, use `runCLI`.
+
+  ```ts
+  // Before
+  await defineCLI({ meta: { name: "tool" }, commands: { tool } }).run();
+
+  // After
+  await runCLI(tool);
+  ```
+
+  If you'd rather keep `defineCLI`, write the command name: `tool tool hola`.
+
 ## 0.2.0-beta.3
 
 ### Minor Changes
