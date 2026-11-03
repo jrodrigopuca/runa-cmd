@@ -12,6 +12,7 @@
 | `@runa-cmd/help` | 0.1.0 | 0.2.0-beta.4 | 0.2.0-beta.4 |
 | `@runa-cmd/mcp` | 0.1.0 | 0.2.0-beta.4 | 0.2.0-beta.4 |
 | `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.4 | 0.2.0-beta.4 |
+| `@runa-cmd/create` | — | — | 0.2.0-beta.4, sin publicar; sale en la próxima beta |
 
 Changesets está en modo pre-release con el tag `beta`.
 
@@ -24,7 +25,7 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 1310 en Ubuntu: core 807, help 236, completions 122, mcp 145, con bash, zsh y fish reales |
+| Tests | 1326 en Ubuntu: core 807, help 236, completions 122, mcp 145, create 16, con bash, zsh y fish reales |
 | Aceptación con procesos reales | Pasan los 319 casos, sin fallos esperados |
 | Cobertura de `core` | 91,89% de líneas, 80,45% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |

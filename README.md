@@ -51,10 +51,19 @@ HELLO, WORLD!
 | [`@runa-cmd/help`](./packages/help) | Themeable help output with layout primitives | Beta |
 | [`@runa-cmd/mcp`](./packages/mcp) | Model Context Protocol server mode | Beta |
 | [`@runa-cmd/completions`](./packages/completions) | Shell completions (bash, zsh, fish) | Beta |
+| [`@runa-cmd/create`](./packages/create) | `npm create @runa-cmd@beta my-tool`: a new CLI project | Beta |
 
 ## Quick Start
 
 Requires Node 24+. This README describes the `beta` release: without `@beta`, npm installs the older `0.1.0`.
+
+To start a new CLI, ready to run, test and publish:
+
+```bash
+npm create @runa-cmd@beta my-tool
+```
+
+To add Runa to a project you already have:
 
 ```bash
 pnpm add @runa-cmd/core@beta zod

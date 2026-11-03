@@ -28,8 +28,9 @@ flowchart TD
 | `@runa-cmd/help` | Ayuda con temas y primitivas de layout | Ninguna; `core` y Zod son peers | [help](./components/help.md) |
 | `@runa-cmd/mcp` | Servidor MCP desde los comandos | `@modelcontextprotocol/sdk` | [mcp](./components/mcp.md) |
 | `@runa-cmd/completions` | Scripts para bash, zsh y fish | Ninguna; `core` y Zod son peers | [completions](./components/completions.md) |
+| `@runa-cmd/create` | `npm create @runa-cmd my-tool`: crea un proyecto nuevo | Ninguna | [README](../packages/create/README.md) |
 
-`examples/demo` es una CLI de ejemplo que usa los cuatro paquetes.
+`examples/demo` es una CLI de ejemplo que usa los cuatro paquetes de librería. `@runa-cmd/create` no es una librería: es un programa que copia `examples/getting-started`, y no importa `core`. Escribe en el proyecto la versión de `core` con la que se compiló.
 
 ## Reglas de dependencia
 

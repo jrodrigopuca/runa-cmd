@@ -89,7 +89,7 @@
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
 | | T-604 | `#RGB` en temas | Opcional | Pendiente |
-| | T-605 | Generador de proyectos | Opcional | Pendiente |
+| | T-605 | Generador de proyectos | Opcional | Hecho |
 
 ## Fase 1: base confiable
 
@@ -821,6 +821,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Se explica lo que faltó en [la validación](./research/2026-11-local-beacon-real-model.md): `--json` imprime lo que devuelve `run()`, `testCLI()` necesita importar la CLI sin arrancarla, y para un modelo solo cuenta el texto del error: `_meta` puede no llegarle.
   - La guía de inicio explica cómo empaquetar una CLI: Node no ejecuta TypeScript dentro de `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`), así que hay que compilar antes de publicar o instalar. Lo encontró `local-beacon` al instalarse global con `0.2.0-beta.4`.
   - Los ejemplos corren en CI o se verifican en cada release.
+  - Una guía muestra cómo se arranca una CLI con Runa y con otras herramientas, con las diferencias bien marcadas, apoyada en [la comparación](./research/2026-11-ease-of-use.md). Se escribe después de T-605, para incluir el generador.
 
 ### T-504 Grupo de versiones de los paquetes
 
@@ -899,7 +900,9 @@ Estas tareas son aditivas y pueden salir en 1.x.
 ### T-605 Generador de proyectos
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** Hecho
+- **Resultado:** el paquete empaquetado con `pnpm pack` crea `my-tool` en 1,6 s desde una carpeta vacía. Contra `@runa-cmd/core@0.2.0-beta.4` de npm, el proyecto instala, corre, pasa sus 3 tests, compila y se instala como `my-tool`. Un nombre inválido o una carpeta con archivos salen con exit 2 sin escribir nada. En CI, una prueba genera un proyecto, corre sus tests y lo compila contra el workspace. La versión de `core` se graba al compilar el generador, en `template/runa.json`, y no se toma de la versión propia: después de T-506 los paquetes dejan de compartir versión. Se hizo antes de terminar T-503, por decisión del mantenedor, en vez de esperar evidencia de que la guía era larga.
+- **Decisión:** `@runa-cmd/create`, que se usa como `npm create @runa-cmd my-tool`, porque el nombre queda dentro del scope. No tiene dependencias, no instala nada por su cuenta y no hace preguntas. Su plantilla es `examples/getting-started`, así que genera lo mismo que enseña la guía. Se versiona con los otros paquetes.
 - **Descripción:** como dev nuevo, quiero empezar una CLI con un comando, como `npm create runa-cmd@latest my-tool`, sin saber de `type: module`, `tsconfig`, shebang ni `bin`. Hoy hay que armar todo a mano, y la guía de inicio de T-503 tiene muchos pasos. Es una propuesta del mantenedor, sin pedido de usuarios: la prioridad del proyecto es que empezar sea fácil.
 - **Criterios de aceptación:**
   - Un comando crea un proyecto que corre, se prueba con `testCLI()` y se compila para distribuir.

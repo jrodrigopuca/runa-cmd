@@ -8,6 +8,7 @@
 			"**/*.json",
 			"!node_modules",
 			"!**/dist",
+			"!packages/create/template",
 			"!**/coverage",
 			"!.DS_Store",
 			"!pnpm-lock.yaml",

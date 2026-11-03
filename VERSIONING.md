@@ -11,6 +11,7 @@ A change here needs a major version.
 | Area | What you can rely on |
 |---|---|
 | Exports | Everything exported from `@runa-cmd/core`, `@runa-cmd/core/zod`, `@runa-cmd/core/testing`, `@runa-cmd/help`, `@runa-cmd/mcp` and `@runa-cmd/completions` |
+| Project generator | `npm create @runa-cmd <name>`: its arguments and exit codes. The files it creates follow the getting started guide, and change with it |
 | Exit codes | `0` success, `1` failure, `2` usage error, `127` command not found, `130` `SIGINT`, `143` `SIGTERM`, and the case each one covers |
 | Streams | Results go to stdout. Errors, warnings and the help of a run with nothing to do go to stderr |
 | Error codes | The `code` of each `RunaError`: use it, not the message, to tell errors apart |

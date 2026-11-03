@@ -4,6 +4,8 @@ From an empty folder to a CLI you can test, install and publish. It takes about 
 
 You need Node 24 or later. Until Runa reaches 1.0, install it with `@beta`: without it, npm gives you the older `0.1.0`.
 
+> **In a hurry?** `npm create @runa-cmd@beta my-tool` creates the project this guide builds, named after yours. This guide explains every file it makes.
+
 ## 1. Create the project
 
 ```bash
