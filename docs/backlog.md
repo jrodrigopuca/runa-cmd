@@ -813,7 +813,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Estado:** En curso
 - **Descripción:** como dev nuevo, quiero guías que me lleven de cero a una CLI y una tool MCP.
 - **Cómo:** las guías están en inglés, en `guides/`, porque son para usuarios. Cada bloque de código que muestran es un archivo de un proyecto en `examples/`, que corre sus pruebas en CI, y `docs:check` falla si el bloque y el archivo difieren.
-- **Avance:** guía de inicio. Faltan plugins, middleware, testing, MCP, referencia de API y migración desde commander.
+- **Avance:** guía de inicio, y [comparación con otras herramientas](../guides/runa-compared.md), que cumple el último criterio. En esa guía, el código de Runa sale de `examples/getting-started`; el de commander, yargs, citty y cac se corrió una vez en las versiones que nombra, y no está en CI para no depender de releases ajenos. Faltan plugins, middleware, testing, MCP, referencia de API y migración desde commander.
 - **Criterios de aceptación:**
   - Hay guías de inicio, plugins, middleware, testing y MCP, además de referencia de API.
   - Hay una guía de migración desde commander, basada en qr-plus.

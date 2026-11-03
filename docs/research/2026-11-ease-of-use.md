@@ -72,6 +72,8 @@ Lo de commander y yargs sale de su documentación, citada en [la investigación 
 
 **El generador existe:** `npm create @runa-cmd@beta my-tool` (T-605) crea los dos archivos, los tests y la configuración. Eso saca de la lista de arriba el punto 3, porque nadie tiene que separar los archivos a mano, y la parte de preparar el proyecto, que antes costaba lo mismo que con las demás. Entre las herramientas comparadas, solo oclif tenía generador.
 
+**Pruebas sin subproceso, verificadas:** se escribieron las tres pruebas de la guía de inicio con commander, yargs, citty y cac, en las versiones de arriba. Las cuatro pasan con la CLI correcta y fallan 2 de 3 con el saludo cambiado. Todas se pueden probar en el mismo proceso, pero cada una necesita un helper propio que reemplaza `console.log`: 23 líneas en commander (`exitOverride` y `configureOutput`), 22 en yargs (`exitProcess(false)` y `fail`), 14 en citty (`runCommand`) y 16 en cac (`parse` con `run: false`). citty y cac no dan exit code, solo una excepción. Esto reemplaza "Ajustes en la instancia" y "Sin verificar" de la tabla. Está en la [guía comparativa](../../guides/runa-compared.md).
+
 ## Límites
 
 Una sola CLI chica, en una máquina. Las líneas dependen del estilo de cada uno. No se midió la experiencia de alguien real, ni oclif. El peso de `node_modules` no incluye TypeScript.

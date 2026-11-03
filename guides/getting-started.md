@@ -152,6 +152,8 @@ npm publish   # Run npm run build first, every time
 
 ## Next
 
+- **Coming from another tool?** [Runa and the alternatives](./runa-compared.md) builds this same CLI with commander, yargs, citty and cac, and marks what changes.
+
 - **Help with colors and layout:** [`@runa-cmd/help`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/help).
 - **Shell completions:** [`@runa-cmd/completions`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/completions).
 - **Your CLI as tools for an AI agent:** [`@runa-cmd/mcp`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/mcp). The same commands, with `--mcp`.
