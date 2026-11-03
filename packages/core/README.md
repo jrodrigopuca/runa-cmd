@@ -336,6 +336,15 @@ const auth = defineMiddleware(async ({ next, globalOptions }) => {
 });
 ```
 
+Middleware, hooks and `run()` get the command that runs as `command`. `command.name` is its own name, and `command.path` the whole path, which is what a permissions or audit check needs: `tag add` and `add` share the name `add`.
+
+```ts
+const audit = defineMiddleware(async ({ command, next }) => {
+  log(command.path.join(' '));  // 'tag add'
+  await next();
+});
+```
+
 ### `definePlugin(config)`
 
 Creates a plugin that extends the CLI:
@@ -348,7 +357,7 @@ const analytics = definePlugin({
     api.addGlobalOption('trackUsage', z.boolean().default(true));
     api.hook('afterRun', (ctx) => {
       if (ctx.globalOptions?.trackUsage) {
-        trackEvent(ctx.command?.name);
+        trackEvent(ctx.command?.path.join(' '));
       }
     });
   },

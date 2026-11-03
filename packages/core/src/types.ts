@@ -25,7 +25,11 @@ export interface OptionMeta {
 
 /** A command as it reaches run() and hooks: by then, it always has its name. */
 export type NamedCommandMeta<TOptions extends Record<string, ZodType> = Record<string, ZodType>> =
-	CommandMeta<TOptions> & { name: string };
+	CommandMeta<TOptions> & {
+		name: string;
+		/** The whole path, e.g. ['tag', 'add']: `name` alone can't tell it from `add` */
+		path: string[];
+	};
 
 // ─── Command Metadata ───────────────────────────────────────
 
@@ -275,6 +279,8 @@ export type HookHandler = (ctx: HookContext) => void | Promise<void>;
 export interface MiddlewareContext {
 	next: () => Promise<void>;
 	globalOptions: Record<string, unknown>;
+	/** The command that runs, with its whole path */
+	command: NamedCommandMeta;
 }
 
 export type MiddlewareFn = (ctx: MiddlewareContext) => Promise<void>;

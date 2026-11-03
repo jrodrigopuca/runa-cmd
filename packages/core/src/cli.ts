@@ -167,7 +167,7 @@ const INVALID_OUTPUT = 'INVALID_OUTPUT';
 
 /** The key names a command, so that's its name once a run reaches it (ADR-0043). */
 function namedMeta(command: Command, path: string[]): NamedCommandMeta {
-	return { ...command.meta, name: path.at(-1) as string };
+	return { ...command.meta, name: path.at(-1) as string, path: [...path] };
 }
 
 function assertValidOutput(name: string, output: ZodType, result: unknown): void {
@@ -227,6 +227,7 @@ function toolFailureReason(error: Error): ToolFailureReason {
 function composeMiddleware(
 	middlewareList: Middleware[],
 	globalOptions: Record<string, unknown>,
+	command: NamedCommandMeta,
 	innerFn: () => Promise<void>,
 ): () => Promise<void> {
 	// Build the chain from inside out
@@ -242,6 +243,7 @@ function composeMiddleware(
 					await next();
 				},
 				globalOptions,
+				command,
 			};
 			return mw.handler(ctx);
 		};
@@ -954,7 +956,7 @@ async function runCLILifecycle(
 			}
 		};
 
-		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, innerFn);
+		const chain = composeMiddleware(mutableMiddleware, parsedGlobalOptions, meta, innerFn);
 
 		await stop.guard(chain);
 

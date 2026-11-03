@@ -74,7 +74,7 @@
 | | T-217 | Valor por defecto legible en la ayuda | Opcional | Pendiente |
 | | T-218 | Parada limpia de un servicio | Opcional | Pendiente |
 | | T-310 | Valores fijos que no son secretos | Opcional | Pendiente |
-| | T-226 | Ruta completa en hooks y middleware | Opcional | Pendiente |
+| | T-226 | Ruta completa en hooks y middleware | Opcional | Hecho |
 | | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
 | | T-228 | `format` recibe las opciones | Opcional | Hecho |
 | | T-229 | Ejecutar una CLI sin terminar el proceso | Opcional | Pendiente |
@@ -735,7 +735,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-226 Ruta completa en hooks y middleware
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** Hecho
+- **Resultado:** `command.path` llega a hooks, middleware y `run()`, y el middleware recibe `command`. Es aditivo, así que no reinicia la ventana.
 - **Descripción:** como autor de un plugin, quiero distinguir `tag add` de `add`. Hoy `ctx.command.name` es solo la hoja, y el middleware no recibe el comando. Es H6 de [la evaluación](./research/2026-10-first-use-evaluation.md). Es aditivo, así que puede salir en 1.x.
 - **Criterios de aceptación:**
   - Hooks y middleware reciben la ruta completa del comando.
