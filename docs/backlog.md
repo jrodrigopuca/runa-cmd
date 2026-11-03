@@ -77,6 +77,7 @@
 | | T-226 | Ruta completa en hooks y middleware | Opcional | Pendiente |
 | | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
 | | T-228 | `format` recibe las opciones | Opcional | Hecho |
+| | T-229 | Ejecutar una CLI sin terminar el proceso | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Hecho |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
@@ -761,6 +762,15 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - `format(result)` sigue funcionando.
   - Lo que recibe una tool no cambia.
 
+### T-229 Ejecutar una CLI sin terminar el proceso
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor de un programa que embebe una CLI, quiero ejecutarla y recibir su resultado, sin que un error termine mi proceso. `cli.run()` llama a `process.exit`, y `testCLI()` resuelve las pruebas, no este caso. Es H4 de [la evaluación](./research/2026-10-first-use-evaluation.md), reportado de nuevo con `0.2.0-beta.4`. Es aditivo, así que puede salir en 1.x, y [ADR-0041](./adr/0041-funcion-de-pruebas.md) ya lo anticipó como opción.
+- **Criterios de aceptación:**
+  - Un programa ejecuta la CLI y recibe el exit code y lo devuelto, sin que el proceso termine.
+  - `run()` sigue terminando el proceso, como hasta ahora.
+
 ### T-208 Retirar el modo implícito
 
 - **v1:** Requerido
@@ -805,6 +815,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Hay una guía de migración desde commander, basada en qr-plus.
   - Se resuelven las contradicciones de [la evaluación](./research/2026-10-first-use-evaluation.md): `-h` propio, `db migrate --help`, `rawArgs`, y se documentan los variádicos y `ctx.invocation`.
   - Se explica lo que faltó en [la validación](./research/2026-11-local-beacon-real-model.md): `--json` imprime lo que devuelve `run()`, `testCLI()` necesita importar la CLI sin arrancarla, y para un modelo solo cuenta el texto del error: `_meta` puede no llegarle.
+  - La guía de inicio explica cómo empaquetar una CLI: Node no ejecuta TypeScript dentro de `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`), así que hay que compilar antes de publicar o instalar. Lo encontró `local-beacon` al instalarse global con `0.2.0-beta.4`.
   - Los ejemplos corren en CI o se verifican en cada release.
 
 ### T-504 Grupo de versiones de los paquetes

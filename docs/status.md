@@ -38,7 +38,7 @@ Changesets está en modo pre-release con el tag `beta`.
 
 ## Camino a v1
 
-La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([ADR-0038](./adr/0038-ventana-de-estabilidad.md)). **La ventana abrió el 2026-11-03 a las 01:59 UTC,** al publicarse `0.2.0-beta.4`, y se completa el 2026-12-01 si no hay cambios incompatibles. Cuenta el uso de `local-beacon` sobre esa beta o una posterior, instalada desde npm. Un cambio incompatible la reinicia desde la beta que lo publique. Falta la documentación (T-503), y después la 1.0 y qr-plus estable.
+La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([ADR-0038](./adr/0038-ventana-de-estabilidad.md)). **La ventana abrió el 2026-11-03 a las 01:59 UTC,** al publicarse `0.2.0-beta.4`, y se completa el 2026-12-01 si no hay cambios incompatibles. Cuenta el uso de `local-beacon` sobre esa beta o una posterior, instalada desde npm. El 2026-11-03 pasó a `0.2.0-beta.4` sin cambios de código, con sus 129 pruebas, y se instaló global desde su tarball. Todavía no hay uso con un agente sobre esta beta: la máquina con Ollama estaba apagada. Un cambio incompatible la reinicia desde la beta que lo publique. Falta la documentación (T-503), y después la 1.0 y qr-plus estable.
 
 ## Decisiones abiertas
 
