@@ -4,6 +4,8 @@ The engine of the Runa CLI framework. Schema-driven, TypeScript-first, with zero
 
 Define your CLI with Zod schemas and get full type inference, validation, and metadata for help, completions and MCP plugins — from a single source of truth.
 
+**New to Runa?** The [getting started guide](https://github.com/jrodrigopuca/runa-cmd/blob/main/guides/getting-started.md) goes from an empty folder to a CLI you can test, install and publish.
+
 ## Install
 
 ```bash

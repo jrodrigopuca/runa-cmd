@@ -49,6 +49,22 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
+  examples/getting-started:
+    dependencies:
+      '@runa-cmd/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   packages/completions:
     devDependencies:
       '@runa-cmd/core':

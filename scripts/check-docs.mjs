@@ -16,6 +16,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = join(ROOT, 'docs');
 const RESEARCH = join(DOCS, 'research');
+const GUIDES = join(ROOT, 'guides');
+/** Guides are read on GitHub and npm, so they link to the repo with full URLs. */
+const REPO_LINK = /^https:\/\/github\.com\/jrodrigopuca\/runa-cmd\/(?:tree|blob)\/main\/([^#]*)(#.*)?$/;
 const TASK_STATES = ['Pendiente', 'Decisión pendiente', 'En curso', 'Hecho', 'Descartado'];
 const V1_VALUES = ['Requerido', 'Opcional'];
 const ADR_FIELDS = ['Estado', 'Drivers', 'Decisión', 'Costo aceptado', 'Revisar si'];
@@ -55,17 +58,49 @@ function anchorsOf(file) {
 	);
 }
 
+/** A link to this repo on GitHub, as the local path it points to. */
+function repoPath(target) {
+	const match = target.match(REPO_LINK);
+	return match ? `${join(ROOT, match[1])}${match[2] ?? ''}` : undefined;
+}
+
 function checkLinks(file, text) {
-	for (const [, target] of text.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
+	for (const [, link] of text.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
+		const target = repoPath(link) ?? link;
 		if (/^[a-z]+:/i.test(target)) continue;
 		const [path, anchor] = target.split('#');
-		const dest = path ? resolve(dirname(file), path) : file;
+		const local = path ? resolve(dirname(file), path) : file;
+		// A folder on GitHub shows its README, and its anchors are the README's
+		const dest =
+			existsSync(local) && statSync(local).isDirectory() && anchor
+				? join(local, 'README.md')
+				: local;
 		if (!existsSync(dest)) {
-			fail(rel(file), `broken link ${target}`);
+			fail(rel(file), `broken link ${link}`);
 			continue;
 		}
 		if (anchor && statSync(dest).isFile() && !anchorsOf(dest).has(decodeURIComponent(anchor))) {
-			fail(rel(file), `broken anchor ${target}`);
+			fail(rel(file), `broken anchor ${link}`);
+		}
+	}
+}
+
+/**
+ * A guide shows code from a project in examples/, which runs its tests in CI.
+ * The block after `<!-- file: path -->` must be that file, so it can't drift.
+ */
+function checkSnippets(file, raw) {
+	const markers = [...raw.matchAll(/<!-- file: (\S+) -->/g)];
+	const blocks = [...raw.matchAll(/<!-- file: (\S+) -->\n```[\w-]*\n([\s\S]*?)\n```/g)];
+	if (markers.length !== blocks.length) {
+		fail(rel(file), 'a `<!-- file: -->` marker must be followed by a code block');
+	}
+	for (const [, path, block] of blocks) {
+		const source = join(ROOT, path);
+		if (!existsSync(source)) {
+			fail(rel(file), `shows a missing file ${path}`);
+		} else if (readFileSync(source, 'utf8').trimEnd() !== block.trimEnd()) {
+			fail(rel(file), `the block for ${path} differs from the file`);
 		}
 	}
 }
@@ -185,6 +220,12 @@ for (const file of [...walk(DOCS).filter((path) => path.endsWith('.md')), join(R
 	checkIssueReferences(file, text, issues);
 }
 checkAdrs();
+
+for (const file of existsSync(GUIDES) ? walk(GUIDES).filter((path) => path.endsWith('.md')) : []) {
+	const raw = readFileSync(file, 'utf8');
+	checkLinks(file, withoutFences(raw));
+	checkSnippets(file, raw);
+}
 
 if (args.includes('--staged')) {
 	const files = git('diff', '--cached', '--name-only').split('\n').filter(Boolean);

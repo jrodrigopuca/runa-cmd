@@ -81,7 +81,7 @@
 | | T-208 | Retirar el modo implícito | Requerido | Hecho |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
-| | T-503 | Documentación de v1 | Requerido | Pendiente |
+| | T-503 | Documentación de v1 | Requerido | En curso |
 | | T-504 | Grupo de versiones de los paquetes | Requerido | Hecho |
 | | T-505 | Trusted Publishing | Opcional | Pendiente |
 | | T-506 | Salir de pre-release y publicar 1.0.0 | Requerido | Pendiente |
@@ -89,6 +89,7 @@
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
 | | T-604 | `#RGB` en temas | Opcional | Pendiente |
+| | T-605 | Generador de proyectos | Opcional | Pendiente |
 
 ## Fase 1: base confiable
 
@@ -809,8 +810,10 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-503 Documentación de v1
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** En curso
 - **Descripción:** como dev nuevo, quiero guías que me lleven de cero a una CLI y una tool MCP.
+- **Cómo:** las guías están en inglés, en `guides/`, porque son para usuarios. Cada bloque de código que muestran es un archivo de un proyecto en `examples/`, que corre sus pruebas en CI, y `docs:check` falla si el bloque y el archivo difieren.
+- **Avance:** guía de inicio. Faltan plugins, middleware, testing, MCP, referencia de API y migración desde commander.
 - **Criterios de aceptación:**
   - Hay guías de inicio, plugins, middleware, testing y MCP, además de referencia de API.
   - Hay una guía de migración desde commander, basada en qr-plus.
@@ -892,6 +895,17 @@ Estas tareas son aditivas y pueden salir en 1.x.
 - **Descripción:** como autor de un tema, quiero usar la forma corta de un color.
 - **Criterios de aceptación:**
   - `#F0A` equivale a `#FF00AA`.
+
+### T-605 Generador de proyectos
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como dev nuevo, quiero empezar una CLI con un comando, como `npm create runa-cmd@latest my-tool`, sin saber de `type: module`, `tsconfig`, shebang ni `bin`. Hoy hay que armar todo a mano, y la guía de inicio de T-503 tiene muchos pasos. Es una propuesta del mantenedor, sin pedido de usuarios: la prioridad del proyecto es que empezar sea fácil.
+- **Criterios de aceptación:**
+  - Un comando crea un proyecto que corre, se prueba con `testCLI()` y se compila para distribuir.
+  - El proyecto separa la definición de la CLI de su arranque, para poder probarla.
+  - Lo que genera es lo mismo que enseña la guía de inicio, verificado en CI.
+  - Se decide después de T-503: si la guía resulta larga o frágil, esa es la evidencia para hacerlo.
 
 ## Fuera de alcance por ahora
 
