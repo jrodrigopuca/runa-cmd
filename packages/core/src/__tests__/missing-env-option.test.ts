@@ -9,15 +9,15 @@ import { defineCLI } from '../cli.js';
 import { defineCommand } from '../command.js';
 import { testCLI } from '../testing.js';
 
-const proxy = defineCommand({
+const migrate = defineCommand({
 	meta: {
-		name: 'beacon',
-		description: 'Start the proxy',
-		options: { upstream: { env: 'OLLAMA_URL' } },
+		name: 'tool',
+		description: 'Migrate the database',
+		options: { database: { env: 'TOOL_DATABASE_URL' } },
 	},
 	options: {
-		upstream: z.string().describe('Where the model runs'),
-		port: z.number().describe('Port to listen on'),
+		database: z.string().describe('Database to migrate'),
+		steps: z.number().describe('How many migrations to run'),
 	},
 	run: () => 'ok',
 });
@@ -26,20 +26,22 @@ const firstLine = (stderr: string) => stderr.split('\n')[0];
 
 describe('a missing required option', () => {
 	it('names its variable when it declares one', async () => {
-		const { code, stderr } = await testCLI(proxy, ['--port', '1'], { env: {} });
+		const { code, stderr } = await testCLI(migrate, ['--steps', '1'], { env: {} });
 
 		expect(code).toBe(2);
-		expect(firstLine(stderr)).toBe('Missing required option: --upstream, or set OLLAMA_URL');
+		expect(firstLine(stderr)).toBe('Missing required option: --database, or set TOOL_DATABASE_URL');
 	});
 
 	it('stays as it was without a variable', async () => {
-		const { stderr } = await testCLI(proxy, [], { env: { OLLAMA_URL: 'http://127.0.0.1:1' } });
+		const { stderr } = await testCLI(migrate, [], {
+			env: { TOOL_DATABASE_URL: 'postgres://localhost/app' },
+		});
 
-		expect(firstLine(stderr)).toBe('Missing required option: --port');
+		expect(firstLine(stderr)).toBe('Missing required option: --steps');
 	});
 
 	it('shows no value, not even of other variables', async () => {
-		const { stderr } = await testCLI(proxy, ['--port', '1'], {
+		const { stderr } = await testCLI(migrate, ['--steps', '1'], {
 			env: { OTHER_SECRET: 'hunter2' },
 		});
 
@@ -48,15 +50,15 @@ describe('a missing required option', () => {
 
 	it('works on global options', async () => {
 		const cli = defineCLI({
-			meta: { name: 'beacon', description: 'Watch a model' },
+			meta: { name: 'tool', description: 'Manage the app' },
 			commands: { status: defineCommand({ meta: { description: 'Status' }, run: () => 'ok' }) },
 			globalOptions: { store: z.string().describe('Data folder') },
-			globalMeta: { options: { store: { env: 'BEACON_STORE' } } },
+			globalMeta: { options: { store: { env: 'TOOL_STORE' } } },
 		});
 
 		const { code, stderr } = await testCLI(cli, ['status'], { env: {} });
 
 		expect(code).toBe(2);
-		expect(firstLine(stderr)).toBe('Missing required option: --store, or set BEACON_STORE');
+		expect(firstLine(stderr)).toBe('Missing required option: --store, or set TOOL_STORE');
 	});
 });

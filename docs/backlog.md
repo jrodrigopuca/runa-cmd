@@ -617,7 +617,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Opcional
 - **Estado:** Hecho
-- **Resultado:** `Missing required option: --upstream, or set OLLAMA_URL`, en opciones de comando y globales. El mensaje empieza igual que antes, y el texto de los errores no es contrato ([VERSIONING.md](../VERSIONING.md)). Por MCP, el error le dice a quien opera qué variable falta y no repite lo que mandó el modelo.
+- **Resultado:** `Missing required option: --database, or set TOOL_DATABASE_URL`, en opciones de comando y globales. El mensaje empieza igual que antes, y el texto de los errores no es contrato ([VERSIONING.md](../VERSIONING.md)). Por MCP, el error le dice a quien opera qué variable falta y no repite lo que mandó el modelo.
 - **Descripción:** como persona que usa una CLI, quiero saber que una opción obligatoria también se puede dar por env. Es F-08 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Avance:** el 2026-11-08, commander 15.0.0 tampoco nombra la variable en el error (`required option '--token <token>' not specified`), y los dos la muestran en la ayuda (`[env: API_TOKEN]` en Runa). Sirve más con MCP: ahí la opción es de quien opera ([ADR-0032](./adr/0032-postura-sobre-secretos.md)), y el error le dice qué variable falta.
 - **Criterios de aceptación:**
