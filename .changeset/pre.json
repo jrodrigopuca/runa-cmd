@@ -45,6 +45,7 @@
     "rest-is-declared",
     "results-reach-the-terminal",
     "single-command-first-class",
+    "stop-by-the-signal",
     "stopping-reaches-the-whole-tree",
     "test-a-cli",
     "tools-as-subprocesses",
