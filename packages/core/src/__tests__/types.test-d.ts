@@ -7,6 +7,7 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import { defineCommand } from '../command.js';
+import type { FormatContext, RunResult as PublicRunResult } from '../index.js';
 import { definePlugin } from '../plugin.js';
 import type { InferArgs, InferOptions, OptionMeta, PluginMeta, RunReturn } from '../types.js';
 
@@ -225,6 +226,31 @@ describe('type-level tests', () => {
 			//   options: { env: z.string() },
 			//   run: () => {},
 			// })
+		});
+	});
+
+	// A format written apart from defineCommand needs to name both of its parameters
+	describe('RunResult, from the package', () => {
+		it('is the output schema type when the command declares one', () => {
+			const output = z.object({ count: z.number() });
+			expectTypeOf<PublicRunResult<typeof output, void>>().toEqualTypeOf<{ count: number }>();
+		});
+
+		it('is what run() returns when the command declares no output', () => {
+			expectTypeOf<PublicRunResult<undefined, string[]>>().toEqualTypeOf<string[]>();
+		});
+
+		it('types a format written apart, as defineCommand expects it', () => {
+			const output = z.object({ notes: z.array(z.string()) });
+			const format = (result: PublicRunResult<typeof output, void>, _ctx: FormatContext) =>
+				result.notes.join('\n');
+
+			defineCommand({
+				meta: { name: 'notes', description: 'List notes' },
+				output,
+				run: () => ({ notes: ['a'] }),
+				format,
+			});
 		});
 	});
 });

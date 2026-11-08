@@ -630,7 +630,7 @@ import type {
   HookContext, HookHandler, HookName,
   Middleware, MiddlewareContext, MiddlewareFn,
   PluginAPI, PluginCapabilities, PluginConfig, PluginMeta,
-  RunContext, RunReturn,
+  RunContext, RunReturn, RunResult, FormatContext,
   ArgSchema, OptionSchema, OptionMeta,
   InferArgs, InferOptions,
   ConfigLoader, ParamMetadata, ParamType,

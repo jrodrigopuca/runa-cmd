@@ -73,6 +73,7 @@ export type {
 	RunCLIOptions,
 	// Runtime types
 	RunContext,
+	RunResult,
 	RunReturn,
 } from './types.js';
 
