@@ -1,5 +1,7 @@
 # @runa-cmd/mcp
 
+## 0.2.0-beta.6
+
 ## 0.2.0-beta.5
 
 ### Minor Changes
