@@ -1,5 +1,11 @@
 # @runa-cmd/completions
 
+## 0.2.0-beta.5
+
+### Minor Changes
+
+- 2b3d392: Hooks, middleware and `run()` now get the whole path of the command, as `command.path`. `tag add` and `add` both had the name `add`, so a permissions or audit plugin couldn't tell them apart. Middleware also gets `command`, which it didn't have. `command.name` doesn't change.
+
 ## 0.2.0-beta.4
 
 ### Minor Changes
