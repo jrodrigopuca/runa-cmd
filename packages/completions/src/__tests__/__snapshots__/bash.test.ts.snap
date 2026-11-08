@@ -9,14 +9,21 @@ _mycli_completions() {
     local cur="\${COMP_WORDS[COMP_CWORD]}"
     local prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
-    # Build command path from COMP_WORDS
+    # Build the command path from COMP_WORDS, past positionals and values
+    local paths=" _deploy _config _config_set _config_get "
+    local value_flags=" --format --environment -e --replicas "
     local cmd_path=""
+    local skip=0
     local i=1
     while [[ $i -lt $COMP_CWORD ]]; do
-        case "\${COMP_WORDS[i]}" in
-            -*) ;;
-            *) cmd_path="\${cmd_path}_\${COMP_WORDS[i]}" ;;
-        esac
+        local word="\${COMP_WORDS[i]}"
+        if [[ $skip -eq 1 ]]; then
+            skip=0
+        elif [[ "$word" == -* ]]; then
+            [[ "$word" != *=* && "$value_flags" == *" $word "* ]] && skip=1
+        elif [[ "$paths" == *" \${cmd_path}_\${word} "* ]]; then
+            cmd_path="\${cmd_path}_\${word}"
+        fi
         ((i++))
     done
 

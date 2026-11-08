@@ -44,7 +44,8 @@ _mycli_deploy() {
         '--format[Output format]:format:(json text table)' \\
         '(-e --environment)'{-e,--environment}'[Target environment]:environment:(staging prod)' \\
         '--force[Force deploy without confirmation]' \\
-        '--replicas[Number of replicas]:replicas:'
+        '--replicas[Number of replicas]:replicas:' \\
+        '1:service:'
 }
 
 _mycli_config() {
@@ -84,14 +85,17 @@ _mycli_config_set() {
         '(-h --help)'{-h,--help}'[Show help]' \\
         '(-v --verbose)'{-v,--verbose}'[Enable verbose output]' \\
         '--format[Output format]:format:(json text table)' \\
-        '(-g --global)'{-g,--global}'[Set globally]'
+        '(-g --global)'{-g,--global}'[Set globally]' \\
+        '1:key:' \\
+        '2:value:'
 }
 
 _mycli_config_get() {
     _arguments \\
         '(-h --help)'{-h,--help}'[Show help]' \\
         '(-v --verbose)'{-v,--verbose}'[Enable verbose output]' \\
-        '--format[Output format]:format:(json text table)'
+        '--format[Output format]:format:(json text table)' \\
+        '1:key:'
 }
 
 if [ "$funcstack[1]" = "_mycli" ]; then

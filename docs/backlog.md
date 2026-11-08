@@ -96,7 +96,7 @@
 | | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Hecho |
 | | T-238 | Slots del tema que no tienen efecto | Requerido | Hecho |
 | | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Hecho |
-| | T-240 | Completions de bash después de un posicional | Requerido | Pendiente |
+| | T-240 | Completions de bash después de un posicional | Requerido | Hecho |
 | | T-241 | Opción enum obligatoria que falta | Requerido | Pendiente |
 | | T-242 | Error de tipos engañoso sin `description` | Requerido | Pendiente |
 | | T-243 | `help` como comando | Requerido | Pendiente |
@@ -1066,7 +1066,8 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-240 Completions de bash después de un posicional
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
+- **Resultado, 2026-11-08:** zsh tenía el mismo problema, por otra causa: sus comandos no declaraban los posicionales en `_arguments`. Se comprobó con zsh 5.9 real, quitando la línea del posicional: sin ella no ofrece nada. fish no estaba instalado en la máquina del cambio, y su prueba corre en CI.
 - **Descripción:** como persona que usa TAB, quiero que `greet hello Ana --lang <TAB>` ofrezca `en es`, como lo hace `greet hello --lang <TAB>`. Hoy no ofrece nada, ni `greet hello --times 2 --l<TAB>`: el script arma la ruta del comando con todas las palabras que no son flags, y `Ana` o `2` quedan adentro. Verificado el 2026-11-08. yargs completa bien en ese caso.
 - **Criterios de aceptación:**
   - En bash, después de un posicional o del valor de una opción, TAB sigue completando las opciones del comando y sus valores.

@@ -39,6 +39,7 @@ mycli completions zsh --instructions
 - Comandos y subcomandos.
 - Flags largas, alias cortos y `--no-*` en booleanos.
 - Valores de opciones `enum`.
+- Lo mismo después de un posicional o del valor de una opción, como `greet hello Ana --lang <TAB>` (T-240). En bash, una palabra entra en la ruta del comando solo si nombra un comando en ese punto, y se saltea la que sigue a una opción con valor, así que `--lang plain` no lleva al comando `plain`. Las listas son strings y no arrays, para que corra en el bash 3.2 de macOS. En zsh, cada comando declara sus posicionales en `_arguments`, como `'1:name:'`, porque sin eso `_arguments` no sabe dónde poner `Ana` y deja de completar. fish no lo necesita: `__fish_seen_subcommand_from` no depende de las palabras del medio.
 
 El script de zsh funciona en `fpath` y con `eval`, después de `compinit`. Las pruebas en `shells.test.ts` lo ejecutan en bash, zsh y fish reales, con TAB en una terminal para zsh, porque `zsh -n` no ve un spec roto. En CI son obligatorias en Linux, con `RUNA_REQUIRE_SHELLS`; en local, se omite el shell que falte.
 

@@ -76,6 +76,30 @@ describe.skipIf(!runs('bash'))('bash', () => {
 		expect(complete('group', '')).toEqual(['add-tag']);
 	});
 
+	// A positional or an option's value used to end up in the command path (T-240)
+	it.each([
+		[
+			['hello', 'Ana', '--lang', ''],
+			['en', 'pt'],
+		],
+		[['hello', 'Ana', '--l'], ['--lang']],
+		[['hello', '--times', '2', '--l'], ['--lang']],
+		[
+			['hello', '--times', '2', 'Ana', '--lang', ''],
+			['en', 'pt'],
+		],
+		[
+			['hello', '--lang', ''],
+			['en', 'pt'],
+		],
+	])('%j keeps completing the command', (words, expected) => {
+		expect(complete(...words)).toEqual(expected);
+	});
+
+	it('an option value with the name of a command is still a value', () => {
+		expect(complete('hello', '--lang', 'plain', '--t')).toEqual(['--times']);
+	});
+
 	it('loads through eval', () => {
 		const program = `eval "$(${process.execPath} ${cli} completions bash)"; complete -p sym`;
 		expect(spawnSync('bash', ['--norc', '-c', program]).status).toBe(0);
@@ -115,6 +139,14 @@ describe.skipIf(!runs('zsh'))('zsh', () => {
 			mkdirSync(join(path, 'completions'));
 			writeFileSync(join(path, 'completions', '_sym'), script('zsh'));
 			output = tab(path, 'sym show --', 'sym show --mode ');
+		}, 60_000);
+
+		// The same as in bash: a positional doesn't end the completion (T-240)
+		it('completes the values of an option after a positional', () => {
+			const path = join(dir, 'fpath');
+			const after = tab(path, 'sym hello Ana --lang ');
+			expect(after).toContain('en');
+			expect(after).toContain('pt');
 		}, 60_000);
 
 		it('shows a whole description, with brackets and colons', () => {
@@ -180,5 +212,11 @@ describe.skipIf(!runs('fish'))('fish', () => {
 
 	it('completes a command with a dash', () => {
 		expect(complete('sym group ')).toContain('add-tag');
+	});
+
+	// The same as in bash: a positional doesn't end the completion (T-240)
+	it('completes the values of an option after a positional', () => {
+		const values = complete('sym hello Ana --lang ').trim().split('\n');
+		expect(values.map((line) => line.split('\t')[0])).toEqual(['en', 'pt']);
 	});
 });

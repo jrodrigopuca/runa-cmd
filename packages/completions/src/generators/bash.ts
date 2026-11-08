@@ -122,6 +122,28 @@ function collectCases(
 	return entries;
 }
 
+/** Every command path, as the case patterns name them: `_group _group_add-tag`. */
+function commandPaths(commands: CommandSchema[], prefix = ''): string[] {
+	return commands.flatMap((cmd) => {
+		const path = `${prefix}_${cmd.name}`;
+		return [path, ...commandPaths(cmd.subcommands ?? [], path)];
+	});
+}
+
+/** The flags whose next word is their value, not a command: all but booleans. */
+function valueFlags(commands: CommandSchema[], globalOptions: OptionSchema[]): string[] {
+	const options = [
+		...globalOptions,
+		...commands.flatMap(function all(cmd): OptionSchema[] {
+			return [...cmd.options, ...(cmd.subcommands ?? []).flatMap(all)];
+		}),
+	];
+	const flags = options
+		.filter((opt) => opt.type !== 'boolean')
+		.flatMap((opt) => [`--${opt.flag}`, ...(opt.alias ?? [])]);
+	return [...new Set(flags)];
+}
+
 /**
  * Generate a complete bash completion script from a CLISchema.
  *
@@ -156,16 +178,27 @@ export function generateBashCompletions(schema: CLISchema, binName: string): str
 	// biome-ignore lint/suspicious/noTemplateCurlyInString: bash variable
 	lines.push('    local prev="${COMP_WORDS[COMP_CWORD-1]}"');
 	lines.push('');
-	lines.push('    # Build command path from COMP_WORDS');
+	// A word joins the path only if it names a command there: a positional, or
+	// the value of an option, as in `hello Ana --lang <TAB>`, is not one (T-240).
+	// Strings, not arrays, so it runs on the bash 3.2 of macOS.
+	lines.push('    # Build the command path from COMP_WORDS, past positionals and values');
+	lines.push(`    local paths=" ${commandPaths(commands).join(' ')} "`);
+	lines.push(`    local value_flags=" ${valueFlags(commands, globalOptions).join(' ')} "`);
 	lines.push('    local cmd_path=""');
+	lines.push('    local skip=0');
 	lines.push('    local i=1');
 	lines.push('    while [[ $i -lt $COMP_CWORD ]]; do');
 	// biome-ignore lint/suspicious/noTemplateCurlyInString: bash variable
-	lines.push('        case "${COMP_WORDS[i]}" in');
-	lines.push('            -*) ;;');
+	lines.push('        local word="${COMP_WORDS[i]}"');
+	lines.push('        if [[ $skip -eq 1 ]]; then');
+	lines.push('            skip=0');
+	lines.push('        elif [[ "$word" == -* ]]; then');
+	lines.push('            [[ "$word" != *=* && "$value_flags" == *" $word "* ]] && skip=1');
 	// biome-ignore lint/suspicious/noTemplateCurlyInString: bash variable
-	lines.push('            *) cmd_path="${cmd_path}_${COMP_WORDS[i]}" ;;');
-	lines.push('        esac');
+	lines.push('        elif [[ "$paths" == *" ${cmd_path}_${word} "* ]]; then');
+	// biome-ignore lint/suspicious/noTemplateCurlyInString: bash variable
+	lines.push('            cmd_path="${cmd_path}_${word}"');
+	lines.push('        fi');
 	lines.push('        ((i++))');
 	lines.push('    done');
 	lines.push('');

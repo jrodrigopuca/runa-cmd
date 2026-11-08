@@ -70,6 +70,17 @@ function buildArgSpecs(options: OptionSchema[], globalOptions: OptionSchema[]): 
 }
 
 /**
+ * A spec per positional. Without them, _arguments takes `Ana` in
+ * `hello Ana --lang <TAB>` as a word it can't place, and stops completing
+ * (T-240). Their values are T-232's: here they only take their place.
+ */
+function positionalSpecs(cmd: CommandSchema): string[] {
+	return cmd.args.map((arg, index) =>
+		arg.isVariadic ? `'*:${safeName(arg.name)}:'` : `'${index + 1}:${safeName(arg.name)}:'`,
+	);
+}
+
+/**
  * Recursively generate zsh functions for a command tree.
  * Returns an array of function definition strings.
  */
@@ -120,12 +131,13 @@ function generateCommandFunctions(
 			lines.push('            ;;');
 			lines.push('    esac');
 		} else {
-			// Leaf command — just _arguments with options
-			if (argSpecs.length > 0) {
+			// Leaf command — _arguments with its options and its positionals
+			const leafSpecs = [...argSpecs, ...positionalSpecs(cmd)];
+			if (leafSpecs.length > 0) {
 				lines.push('    _arguments \\');
-				for (let i = 0; i < argSpecs.length; i++) {
-					const suffix = i < argSpecs.length - 1 ? ' \\' : '';
-					lines.push(`        ${argSpecs[i]}${suffix}`);
+				for (let i = 0; i < leafSpecs.length; i++) {
+					const suffix = i < leafSpecs.length - 1 ? ' \\' : '';
+					lines.push(`        ${leafSpecs[i]}${suffix}`);
 				}
 			}
 		}
