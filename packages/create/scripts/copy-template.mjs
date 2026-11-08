@@ -16,5 +16,16 @@ for (const file of ['package.json', 'tsconfig.json', 'src/cli.ts', 'src/main.ts'
 	cpSync(join(example, file), join(template, file));
 }
 
+// A project starts with the version --version prints. `pnpm release` builds
+// without running the tests, so the build itself refuses a template where the
+// two differ, before anything is published.
+const { version } = JSON.parse(readFileSync(join(example, 'package.json'), 'utf8'));
+if (!readFileSync(join(example, 'src', 'cli.ts'), 'utf8').includes(`version: '${version}'`)) {
+	console.error(
+		`examples/getting-started: package.json says ${version}, and src/cli.ts doesn't. Make them match.`,
+	);
+	process.exit(1);
+}
+
 const core = JSON.parse(readFileSync(join(root, '..', 'core', 'package.json'), 'utf8'));
 writeFileSync(join(template, 'runa.json'), `${JSON.stringify({ core: core.version })}\n`);

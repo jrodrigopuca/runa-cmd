@@ -232,7 +232,10 @@ pnpm changeset
 ```
 
 Pick the affected package(s) and bump type, describe the change — the generated
-`.changeset/*.md` file is committed with your PR. The five published packages
+`.changeset/*.md` file is committed with your PR. Private packages, like the
+examples, are never versioned (`privatePackages: false`): `examples/getting-started`
+is the template of `@runa-cmd/create`, and a bump there would give every new
+project a version that `--version` doesn't print. The five published packages
 are a `fixed` group: they always version-bump together as one coherent
 framework release.
 

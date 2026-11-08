@@ -1,6 +1,6 @@
 {
 	"name": "badge-cli",
-	"version": "1.0.1-beta.0",
+	"version": "1.0.0",
 	"private": true,
 	"description": "The project of guides/migrate-from-commander.md",
 	"type": "module",
