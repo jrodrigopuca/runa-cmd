@@ -72,7 +72,7 @@
 | | T-309 | Fallos sin efecto por MCP | Requerido | Hecho |
 | | T-216 | Opción faltante con su variable de entorno | Opcional | Hecho |
 | | T-217 | Valor por defecto legible en la ayuda | Opcional | Hecho |
-| | T-218 | Parada limpia de un servicio | Opcional | En curso |
+| | T-218 | Parada limpia de un servicio | Opcional | Hecho |
 | | T-310 | Valores fijos que no son secretos | Opcional | Descartado |
 | | T-226 | Ruta completa en hooks y middleware | Opcional | Hecho |
 | | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
@@ -637,8 +637,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-218 Parada limpia de un servicio
 
 - **v1:** Opcional
-- **Estado:** En curso
-- **Decisión:** [ADR-0046](./adr/0046-una-parada-termina-por-la-senal.md). En Unix, después del cleanup, el proceso se reenvía la señal en vez de llamar a `exit(130)` o `exit(143)`; si `run()` terminó bien después de la señal, no es un error. Falta la evidencia de systemd: `packages/core/src/__tests__/acceptance/systemd.test.ts` corre en CI en Linux con `RUNA_REQUIRE_SYSTEMD`, con un control que sale con `exit(143)` y tiene que quedar `failed`.
+- **Estado:** Hecho
+- **Decisión:** [ADR-0046](./adr/0046-una-parada-termina-por-la-senal.md). En Unix, después del cleanup, el proceso se reenvía la señal en vez de llamar a `exit(130)` o `exit(143)`; si `run()` terminó bien después de la señal, no es un error.
+- **Resultado:** en CI, en Ubuntu con systemd, `packages/core/src/__tests__/acceptance/systemd.test.ts` pasó sus 3 casos el 2026-11-08 (run `42502103251`): el control que sale con `exit(143)` queda `failed` tras `systemctl stop`, como dice la documentación de systemd, y un servicio de Runa no, tanto si `run()` termina bien como si falla por el aborto. Corre en cada push con `RUNA_REQUIRE_SYSTEMD`.
 - **Descripción:** como autor de un servicio, quiero que Ctrl+C no parezca un error si el comando terminó ordenadamente. Es F-07 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Avance:** el 2026-11-08, el mismo servicio con commander 15.0.0 termina con exit 0 y nada en stderr: commander no maneja señales, y el autor escucha `SIGINT`. Con Runa termina con 130 e `Interrupted.`, aunque el comando terminó bien. `local-beacon` midió lo mismo con `SIGTERM` enviado a propósito, con el binario instalado de la beta.4: exit 143 a los 10 ms, `cleanup` corrió y borró el socket, y stderr dice `Interrupted.`, que es engañoso para un servicio que se detiene a propósito.
 - **Antes de decidir:** hay que comprobar si el exit 143 que hoy es contrato le sirve a un servicio. Hipótesis, sin verificar: systemd toma como parada limpia un proceso que muere por la señal `SIGTERM`, pero no uno que sale con el código 143, salvo con `SuccessExitStatus=143`; si es así, un servicio de Runa que para bien queda como `failed`. launchd, en macOS, puede tener otra regla. `local-beacon` no sirve para probarlo: lanza `lbeacon proxy` a mano, sin systemd ni launchd. Se prueba con una beta y una CLI de ejemplo con un servicio, en Linux con systemd y en macOS con un LaunchAgent: se detiene con `systemctl stop` y `launchctl`, y se mira el estado que queda.
