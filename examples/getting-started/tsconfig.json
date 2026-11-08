@@ -8,7 +8,8 @@
 		"rewriteRelativeImportExtensions": true,
 		"erasableSyntaxOnly": true,
 		"verbatimModuleSyntax": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"types": ["node"]
 	},
 	"include": ["src"],
 	"exclude": ["src/**/*.test.ts"]

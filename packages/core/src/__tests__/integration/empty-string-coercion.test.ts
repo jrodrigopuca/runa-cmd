@@ -133,19 +133,17 @@ describe('empty-string number coercion integration', () => {
 		},
 	];
 
-	it.each(
-		sourceCases,
-	)('$source: empty string → ValidationError naming the source, exit 2, never 0', async ({
-		emptyValue,
-		run,
-	}) => {
-		const { capture } = await run(emptyValue);
+	it.each(sourceCases)(
+		'$source: empty string → ValidationError naming the source, exit 2, never 0',
+		async ({ emptyValue, run }) => {
+			const { capture } = await run(emptyValue);
 
-		expect(spies.exitSpy).toHaveBeenCalledWith(2);
-		expect(stderrOutput(spies.errorSpy)).toMatch(/--port|'serve\.port'/);
-		expect(capture.ran).toBe(false);
-		expect(capture.port).not.toBe(0);
-	});
+			expect(spies.exitSpy).toHaveBeenCalledWith(2);
+			expect(stderrOutput(spies.errorSpy)).toMatch(/--port|'serve\.port'/);
+			expect(capture.ran).toBe(false);
+			expect(capture.port).not.toBe(0);
+		},
+	);
 
 	it('empty env var MUST NOT fall through to config with a coerced 0', async () => {
 		// Env provides '' while config provides a valid number — the empty env

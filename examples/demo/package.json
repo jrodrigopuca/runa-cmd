@@ -10,16 +10,16 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@runa-cmd/completions": "workspace:*",
 		"@runa-cmd/core": "workspace:*",
 		"@runa-cmd/help": "workspace:*",
 		"@runa-cmd/mcp": "workspace:*",
-		"@runa-cmd/completions": "workspace:*",
-		"zod": "^4.3.6"
+		"zod": "^4.6.7"
 	},
 	"devDependencies": {
 		"@types/node": "^25.6.0",
-		"tsx": "^4.19.4",
-		"typescript": "^6.0.2"
+		"tsx": "^4.23.15",
+		"typescript": "^7.0.2"
 	},
 	"engines": {
 		"node": ">=24.0.0"

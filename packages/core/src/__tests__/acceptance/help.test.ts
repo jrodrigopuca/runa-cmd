@@ -93,19 +93,17 @@ describe('nothing to run', () => {
 describe('a required global option', () => {
 	const env = { REQUIRED_GLOBAL: '1' };
 
-	it.each([
-		['--help'],
-		['-h'],
-		['serve', '--help'],
-		['--version'],
-	])('does not get in the way of %s', (...argv) => {
-		expect(
-			app(
-				argv.filter((token) => typeof token === 'string'),
-				env,
-			).status,
-		).toBe(0);
-	});
+	it.each([['--help'], ['-h'], ['serve', '--help'], ['--version']])(
+		'does not get in the way of %s',
+		(...argv) => {
+			expect(
+				app(
+					argv.filter((token) => typeof token === 'string'),
+					env,
+				).status,
+			).toBe(0);
+		},
+	);
 
 	it('is still required to run a command', () => {
 		const result = app(['serve'], env);

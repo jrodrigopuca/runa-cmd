@@ -347,17 +347,13 @@ describe('values', () => {
 		expect(text(await client.call('shout', { word: 'hola' }))).toBe('hola!');
 	});
 
-	it.each([
-		'-x',
-		'--help',
-		'deploy',
-		'with "quotes"',
-		'ñandú 🚀',
-		'',
-	])('passes %j intact, as data', async (word) => {
-		const client = await serve();
-		expect(text(await client.call('shout', { word }))).toBe(`${word}!`);
-	});
+	it.each(['-x', '--help', 'deploy', 'with "quotes"', 'ñandú 🚀', ''])(
+		'passes %j intact, as data',
+		async (word) => {
+			const client = await serve();
+			expect(text(await client.call('shout', { word }))).toBe(`${word}!`);
+		},
+	);
 
 	it('passes a large input', async () => {
 		const client = await serve({ MAX_OUTPUT: String(3 * 1024 * 1024) });

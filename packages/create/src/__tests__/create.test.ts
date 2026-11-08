@@ -25,6 +25,9 @@ const repo = join(here, '..', '..', '..', '..');
 const templateDir = join(repo, 'examples', 'getting-started');
 const coreDir = join(repo, 'packages', 'core');
 const require = createRequire(import.meta.url);
+// From its bin, as npm does: TypeScript 7 doesn't export bin/tsc as a path
+const typescript = dirname(require.resolve('typescript/package.json'));
+const tsc = join(typescript, require('typescript/package.json').bin.tsc);
 
 let cwd: string;
 beforeEach(() => {
@@ -98,16 +101,12 @@ describe('createProject', () => {
 		expect(() => create('empty')).not.toThrow();
 	});
 
-	it.each([
-		'My-Tool',
-		'my tool',
-		'../escape',
-		'my_tool',
-		'',
-		'-tool',
-	])('refuses %j as a name', (name) => {
-		expect(() => create(name)).toThrow(CreateError);
-	});
+	it.each(['My-Tool', 'my tool', '../escape', 'my_tool', '', '-tool'])(
+		'refuses %j as a name',
+		(name) => {
+			expect(() => create(name)).toThrow(CreateError);
+		},
+	);
 });
 
 describe('nextSteps', () => {
@@ -133,6 +132,11 @@ describe('a project it creates', () => {
 		symlinkSync(coreDir, join(dir, 'node_modules', '@runa-cmd', 'core'), 'junction');
 		const zod = dirname(createRequire(join(coreDir, 'package.json')).resolve('zod/package.json'));
 		symlinkSync(zod, join(dir, 'node_modules', 'zod'), 'junction');
+		const nodeTypes = dirname(
+			createRequire(join(templateDir, 'package.json')).resolve('@types/node/package.json'),
+		);
+		mkdirSync(join(dir, 'node_modules', '@types'));
+		symlinkSync(nodeTypes, join(dir, 'node_modules', '@types', 'node'), 'junction');
 	}
 
 	const node = (dir: string, ...args: string[]) =>
@@ -145,10 +149,22 @@ describe('a project it creates', () => {
 		expect(node(dir, 'src/main.ts', 'hello', 'Ana').stdout).toBe('Hello, Ana!\n');
 		expect(node(dir, '--test', 'src/cli.test.ts').status).toBe(0);
 
-		const tsc = require.resolve('typescript/bin/tsc');
 		const build = node(dir, tsc);
 		expect(build.status, build.stdout).toBe(0);
 		expect(node(dir, 'dist/main.js', 'hello', 'Ana').stdout).toBe('Hello, Ana!\n');
 		expect(node(dir, 'dist/main.js', '--version').stdout).toBe('1.0.0\n');
+	}, 60_000);
+
+	// Since TypeScript 6, @types/node only loads if tsconfig asks for it
+	it('builds code that uses Node', () => {
+		const { dir } = create('my-tool');
+		install(dir);
+		writeFileSync(
+			join(dir, 'src', 'files.ts'),
+			"import { readFileSync } from 'node:fs';\nexport const read = (path: string) => readFileSync(path, 'utf8');\n",
+		);
+
+		const build = node(dir, tsc);
+		expect(build.status, build.stdout).toBe(0);
 	}, 60_000);
 });

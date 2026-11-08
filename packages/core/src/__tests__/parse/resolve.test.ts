@@ -244,16 +244,12 @@ describe('coerceBooleanValue', () => {
 		expect(coerceBooleanValue(value)).toBe(expected);
 	});
 
-	it.each([
-		'',
-		'  ',
-		'quizas',
-		'2',
-		'yes',
-		'no',
-	])('returns %j unchanged (Zod rejects it)', (value) => {
-		expect(coerceBooleanValue(value)).toBe(value);
-	});
+	it.each(['', '  ', 'quizas', '2', 'yes', 'no'])(
+		'returns %j unchanged (Zod rejects it)',
+		(value) => {
+			expect(coerceBooleanValue(value)).toBe(value);
+		},
+	);
 
 	it('passes non-strings through untouched', () => {
 		expect(coerceBooleanValue(true)).toBe(true);
