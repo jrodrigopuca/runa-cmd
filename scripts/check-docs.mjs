@@ -13,6 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { codeFiles, missingForCode } from './commit-rule.mjs';
+import { peerMismatches, readFixed, readPackages } from './peers.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = join(ROOT, 'docs');
@@ -228,6 +229,12 @@ for (const file of existsSync(GUIDES) ? walk(GUIDES).filter((path) => path.endsW
 for (const name of readdirSync(join(ROOT, 'packages'))) {
 	const readme = join(ROOT, 'packages', name, 'README.md');
 	if (existsSync(readme)) checkSnippets(readme, readFileSync(readme, 'utf8'));
+}
+
+// Until 1.0 a plugin's peer of core is core's version: a lower floor installs
+// it with a core where its newer features do nothing (T-233)
+for (const { name, found, expected } of peerMismatches(readPackages(), readFixed())) {
+	fail(name, `peer of @runa-cmd/core is ${found}, expected ${expected}. Run: node scripts/peers.mjs --write`);
 }
 
 if (args.includes('--staged')) {

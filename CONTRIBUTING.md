@@ -270,15 +270,22 @@ git push --follow-tags
 ```
 
 > **Note:** the `@runa-cmd/core` peer dependency in `help`/`mcp`/`completions`
-> is an **explicit range** (`^0.2.0-beta.1`), not `workspace:*`. This is
-> deliberate: it prevents changesets from escalating every release to a major
-> bump (see `.changeset/config.json`'s `onlyUpdatePeerDependentsWhenOutOfRange`).
-> When a new minor series starts (e.g., `0.3.0`), widen these ranges manually or
-> the escalation returns. `devDependencies` still use `workspace:*` (unpublished).
+> is an **explicit range**, not `workspace:*`. This is deliberate: it prevents
+> changesets from escalating every release to a major bump (see
+> `.changeset/config.json`'s `onlyUpdatePeerDependentsWhenOutOfRange`). In
+> pre-release mode that escalation would publish `1.0.0-beta.0`.
+> `devDependencies` still use `workspace:*` (unpublished).
 >
-> **The range is also a floor.** Changesets doesn't raise it. If a plugin starts
-> using something new from `core`, raise the range before publishing: otherwise
-> npm installs the plugin with an older `core`, and it crashes at import.
+> **Until 1.0, the peer is the current version of `core`** (T-233). The range is
+> a floor, and changesets doesn't raise it: a plugin using something new from
+> `core` would install with an older one, where that feature does nothing. So
+> while the packages release together, in the `fixed` group, each plugin's peer
+> is `^` plus `core`'s version. The `Release` workflow keeps it there: it runs
+> `pnpm version-packages`, which is `changeset version` followed by
+> `node scripts/peers.mjs --write`. Changesets never sees that edit, so nothing
+> escalates. `pnpm docs:check` fails if a peer doesn't match. If you run
+> `changeset version` by hand, run `node scripts/peers.mjs --write` after it.
+> After 1.0, with independent packages, T-506 decides how each peer is kept.
 
 ### Post-Publish Verification
 

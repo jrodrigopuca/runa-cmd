@@ -89,7 +89,7 @@
 | | T-505 | Trusted Publishing | Opcional | Pendiente |
 | | T-506 | Salir de pre-release y publicar 1.0.0 | Requerido | Pendiente |
 | | T-507 | Referencia de API generada | Opcional | Pendiente |
-| 7. Revisión antes de v1 | T-233 | Peer de `help` al día con lo que usa | Requerido | Pendiente |
+| 7. Revisión antes de v1 | T-233 | Peer de `help` al día con lo que usa | Requerido | Hecho |
 | | T-234 | Lista de códigos de error y clases de MCP | Requerido | Pendiente |
 | | T-235 | Errores del archivo de config | Requerido | Pendiente |
 | | T-236 | Errores de MCP por un valor del operador | Requerido | Pendiente |
@@ -978,7 +978,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-233 Peer de `help` al día con lo que usa
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como quien instala `@runa-cmd/help`, quiero que npm me avise si mi `core` es demasiado viejo, en vez de que una función no haga nada. El peer es `^0.2.0-beta.1`, pero el plugin usa `defaultDescription` (beta.5) e `inherited` (beta.7): con `core@0.2.0-beta.1` instala sin aviso y la ayuda muestra la ruta del home que `defaultDescription` existe para ocultar. Se cumple el "Revisar si" de [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md), y al revisar la beta.5 se dijo que no hacía falta subirlo, contra lo que pide CONTRIBUTING.
 - **Decisión, 2026-11-08:** hasta la 1.0, los pisos van en lockstep. Mientras los paquetes salen juntos, en el grupo `fixed`, el peer de `core` de cada plugin es la versión actual de `core`, y `docs:check` falla si no coinciden. Es automático y no depende de saber qué usa cada plugin. Se descartó probar cada plugin contra su piso, por ahora: cuesta más CI, y el piso de una beta todavía no existe en npm cuando se prueba. Un paso en la checklist ya existía y falló. Después de la 1.0 se revisa en T-506.
 - **Criterios de aceptación:**

@@ -41,5 +41,9 @@ jobs:
         # v1 is the line for Changesets CLI v2: action v2 requires CLI v3.
         # No `publish` input and no NPM_TOKEN: this action only maintains the
         # Version Packages PR. Publishing happens locally with 2FA.
+        with:
+          # changeset version, then each plugin's peer of core to core's new
+          # version (T-233, CONTRIBUTING.md)
+          version: pnpm version-packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
