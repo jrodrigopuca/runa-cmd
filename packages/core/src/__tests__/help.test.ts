@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { commandClaims, findHelpTarget, renderHelp } from '../help.js';
 import { defineCommand } from '../index.js';
-import type { CLISchema, CommandSchema, OptionSchema } from '../types.js';
+import type { ArgSchema, CLISchema, CommandSchema, OptionSchema } from '../types.js';
 import { z } from '../zod.js';
 
 const flag = (name: string, alias?: string[]): OptionSchema => ({
@@ -58,6 +58,47 @@ describe('findHelpTarget', () => {
 		const named = { ...cli, commands: [command('serve', { options: [host] })] };
 		const target = findHelpTarget(named, ['serve']) as CommandSchema;
 		expect(target.options.find((option) => option.name === 'help')?.alias).toEqual([]);
+	});
+
+	// They work on every command, but aren't the command's own (T-227)
+	it('marks the global options of a command as inherited', () => {
+		const target = findHelpTarget(cli, ['deploy']) as CommandSchema;
+		const inherited = (name: string) => target.options.find((o) => o.name === name)?.inherited;
+		expect(inherited('force')).toBeUndefined();
+		expect(inherited('help')).toBe(true);
+	});
+
+	it('does not mark them when the command is the CLI, as with runCLI', () => {
+		const root = { ...cli, commands: [command('app')], root: 'app' };
+		const target = findHelpTarget(root, ['app']) as CommandSchema;
+		expect(target.options.find((o) => o.name === 'help')?.inherited).toBeUndefined();
+	});
+});
+
+describe('renderHelp of a command', () => {
+	it('lists the global options apart, under GLOBAL OPTIONS', () => {
+		const output = renderHelp(findHelpTarget(cli, ['deploy']));
+		expect(output).toMatch(/OPTIONS\n {2}--force\n\nGLOBAL OPTIONS\n {2}-h, --help/);
+	});
+
+	it('keeps them with the rest when the command is the CLI', () => {
+		const root = { ...cli, commands: [command('app', { options: [flag('force')] })], root: 'app' };
+		const output = renderHelp(findHelpTarget(root, ['app']));
+		expect(output).not.toContain('GLOBAL OPTIONS');
+		expect(output).toContain('-h, --help');
+	});
+
+	it('shows the values a positional enum takes', () => {
+		const target: ArgSchema = {
+			name: 'target',
+			description: 'What to build for',
+			type: 'enum',
+			required: true,
+			isVariadic: false,
+			enumValues: ['web', 'node'],
+		};
+		const output = renderHelp(command('build', { args: [target] }));
+		expect(output).toMatch(/target {2}What to build for \(web \| node\)/);
 	});
 });
 

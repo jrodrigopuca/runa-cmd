@@ -13,7 +13,8 @@ function received(...argv: string[]) {
 	return JSON.parse(result.stdout);
 }
 
-const HELP_HINT = "Run 'extras --help' for usage.";
+// The error is about `single`, so the hint points to its help (T-227)
+const HELP_HINT = "Run 'extras single --help' for usage.";
 
 beforeAll(assertFreshBuild);
 

@@ -306,6 +306,27 @@ describe('defaultRenderer — command', () => {
 		expect(output).toContain('[default: 3000]');
 	});
 
+	it('lists the global options of a command apart, under GLOBAL OPTIONS', () => {
+		const schema: CommandSchema = {
+			name: 'build',
+			description: 'Build',
+			fullPath: ['build'],
+			args: [],
+			options: [
+				{ name: 'force', flag: 'force', type: 'boolean', required: false },
+				{ name: 'mcp', flag: 'mcp', type: 'boolean', required: false, inherited: true },
+			],
+			hasOutput: false,
+		};
+
+		const output = renderRaw(schema);
+		const [own = '', globals = ''] = output.split('GLOBAL OPTIONS');
+
+		expect(own).toContain('--force');
+		expect(own).not.toContain('--mcp');
+		expect(globals).toContain('--mcp');
+	});
+
 	it('shows how to turn off a boolean that starts on, and leaves out an empty list', () => {
 		const schema: CommandSchema = {
 			name: 'build',

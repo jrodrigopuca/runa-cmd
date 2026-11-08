@@ -66,7 +66,11 @@ export function builtInOptions(globals: OptionSchema[], version?: string): Optio
 }
 
 /** Global options work on every command, so its help lists those it didn't take. */
-function withGlobals(command: CommandSchema, globals: OptionSchema[]): CommandSchema {
+function withGlobals(
+	command: CommandSchema,
+	globals: OptionSchema[],
+	isRoot: boolean,
+): CommandSchema {
 	const taken = new Set(
 		command.options.flatMap((option) => [option.name, ...(option.alias ?? []).map(bare)]),
 	);
@@ -75,6 +79,8 @@ function withGlobals(command: CommandSchema, globals: OptionSchema[]): CommandSc
 		.map((option) => ({
 			...option,
 			alias: option.alias?.filter((alias) => !taken.has(bare(alias))),
+			// The CLI's own options when the command is the CLI; else they come from above
+			...(isRoot ? {} : { inherited: true }),
 		}));
 	return { ...command, options: [...command.options, ...inherited] };
 }
@@ -101,7 +107,7 @@ export function findHelpTarget(schema: CLISchema, path: string[]): HelpTarget {
 	// With runCLI the command is the CLI, and its name is already the first word
 	const isRoot = path[0] === schema.root;
 	const commandLine = isRoot ? command.fullPath : [schema.meta.name, ...command.fullPath];
-	return { ...withGlobals(command, schema.globalOptions), commandLine };
+	return { ...withGlobals(command, schema.globalOptions, isRoot), commandLine };
 }
 
 // ─── Plain renderer ─────────────────────────────────────────
@@ -188,6 +194,12 @@ function argUsage({ name, required, isVariadic }: ArgSchema): string {
 	return required ? `<${label}>` : `[${label}]`;
 }
 
+/** An argument's description, with the values it takes if it's an enum. */
+function argDetails({ description, enumValues }: ArgSchema): string {
+	const values = enumValues?.length ? `(${enumValues.join(' | ')})` : '';
+	return [description ?? '', values].filter(Boolean).join(' ');
+}
+
 function renderCommand(command: CommandSchema): string[][] {
 	const path = (command.commandLine ?? command.fullPath).join(' ');
 	const sections = [[path]];
@@ -203,10 +215,13 @@ function renderCommand(command: CommandSchema): string[][] {
 	sections.push(['USAGE', `  ${usage.join(' ')}`]);
 
 	if (command.args.length > 0) {
-		const rows = command.args.map((arg) => [arg.name, arg.description ?? '']);
+		const rows = command.args.map((arg) => [arg.name, argDetails(arg)]);
 		sections.push(['ARGUMENTS', ...table(rows)]);
 	}
-	sections.push(...optionSections(command.options));
+	// The command's own options first; the global ones work too, and go apart
+	sections.push(...optionSections(command.options.filter((option) => !option.inherited)));
+	const globals = command.options.filter((option) => option.inherited);
+	if (globals.length > 0) sections.push(['GLOBAL OPTIONS', ...table(globals.map(optionRow))]);
 	if (hasSubcommands) sections.push(['COMMANDS', ...commandRows(command.subcommands ?? [])]);
 	return sections;
 }

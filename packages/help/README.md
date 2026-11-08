@@ -202,7 +202,7 @@ join.horizontal([
 
 ## ANSI Utilities
 
-Low-level text formatting functions:
+Low-level text formatting functions. **They write ANSI codes wherever the text goes:** `bold('x')` adds them in a pipe, a log or with `NO_COLOR` too. In a renderer, use `styled()`, which leaves them out where the output can't show them, or check `getRenderContext().colorDepth` before calling these.
 
 ```ts
 import {

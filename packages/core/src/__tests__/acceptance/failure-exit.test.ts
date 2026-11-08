@@ -159,14 +159,13 @@ describe('usage errors', () => {
 });
 
 describe('the next step after a usage error', () => {
-	const HELP_HINT = "Run 'app --help' for usage.";
-
+	// The help of the command the error is about; the CLI's when no command was found
 	it.each([
-		['an unknown option', ['strict', '--nope']],
-		['an unknown command', ['missing']],
-		['a missing argument', ['required', '--token', 'x']],
-	])('points to --help after %s', (_case, argv) => {
-		expect(app(argv).stderr.trim().endsWith(HELP_HINT)).toBe(true);
+		['an unknown option', ['strict', '--nope'], "Run 'app strict --help' for usage."],
+		['an unknown command', ['missing'], "Run 'app --help' for usage."],
+		['a missing argument', ['required', '--token', 'x'], "Run 'app required --help' for usage."],
+	])('points to --help after %s', (_case, argv, hint) => {
+		expect(app(argv).stderr.trim().endsWith(hint)).toBe(true);
 	});
 
 	it('does not point to --help when the command itself failed', () => {

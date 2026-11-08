@@ -517,6 +517,12 @@ export interface OptionSchema {
 	deprecated?: string;
 	/** The values a z.enum() allows */
 	enumValues?: string[];
+	/**
+	 * A global option, in the help of a command: it works there, but isn't the
+	 * command's own, so help lists it under GLOBAL OPTIONS. Not set when the
+	 * command is the CLI, as with runCLI()
+	 */
+	inherited?: boolean;
 }
 
 // ─── Schema Walker Output ───────────────────────────────────

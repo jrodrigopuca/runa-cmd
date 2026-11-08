@@ -1034,7 +1034,10 @@ async function runCLILifecycle(
 		if (!hookCtx.handled) {
 			const subject = hookCtx.command?.name ?? config.meta.name;
 			// An agent cannot use a hint for people, unless the operator asked for details.
-			const helpCommand = report ? undefined : config.meta.name;
+			// The help that answers it is the command's, unless the command is the CLI.
+			const path = hookCtx.command?.path;
+			const ownHelp = path && path[0] !== rootName ? [config.meta.name, ...path] : undefined;
+			const helpCommand = report ? undefined : (ownHelp?.join(' ') ?? config.meta.name);
 			console.error(
 				report && !debug
 					? failureReason(lifecycleError, subject)

@@ -125,9 +125,19 @@ function renderCommand(cmd: CommandSchema, theme: ResolvedTheme, ctx: RenderCont
 		sections.push(join.vertical([sectionTitle('ARGUMENTS', theme, ctx), indent(table(argRows))]));
 	}
 
-	// Options (grouped)
-	if (cmd.options.length > 0) {
-		sections.push(renderOptionsSection(cmd.options, theme, ctx));
+	// Options (grouped). The global ones work too, but aren't the command's own
+	const own = cmd.options.filter((opt) => !opt.inherited);
+	const globals = cmd.options.filter((opt) => opt.inherited);
+	if (own.length > 0) {
+		sections.push(renderOptionsSection(own, theme, ctx));
+	}
+	if (globals.length > 0) {
+		sections.push(
+			join.vertical([
+				sectionTitle('GLOBAL OPTIONS', theme, ctx),
+				indent(renderOptionsTable(globals, theme, ctx)),
+			]),
+		);
 	}
 
 	// Subcommands

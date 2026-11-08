@@ -300,7 +300,9 @@ You choose the name. A convention that helps:
 
 ### `--help`
 
-Every CLI has `--help` and `-h`, with no plugin: `tool --help` shows the CLI or the root command, and `tool db migrate --help` shows that command, with the global options that work on it.
+Every CLI has `--help` and `-h`, with no plugin: `tool --help` shows the CLI or the root command, and `tool db migrate --help` shows that command. Its own options come first, and the global options that work on it, as `--help` or `--mcp`, go apart under `GLOBAL OPTIONS`; a custom renderer tells them apart by `inherited` on each option. With `runCLI`, the command is the CLI, so they're its own options.
+
+After a usage error, the hint points to the help that answers it: `tool build --limit 0` ends with `Run 'tool build --help' for usage.`
 
 Each flag yields separately. If a command declares `-h`, for `--host` say, it keeps it and `--help` still shows help. For themes and layout, add `@runa-cmd/help`. To show help your own way from a plugin, declare the `replaceHelp` capability:
 

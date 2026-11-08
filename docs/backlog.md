@@ -75,11 +75,12 @@
 | | T-218 | Parada limpia de un servicio | Opcional | Hecho |
 | | T-310 | Valores fijos que no son secretos | Opcional | Descartado |
 | | T-226 | Ruta completa en hooks y middleware | Opcional | Hecho |
-| | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
+| | T-227 | Detalles de ayuda y errores | Opcional | Hecho |
 | | T-228 | `format` recibe las opciones | Opcional | Hecho |
 | | T-229 | Ejecutar una CLI sin terminar el proceso | Opcional | Descartado |
 | | T-230 | `testCLI()` y una CLI sin archivo de config | Opcional | Hecho |
 | | T-231 | Middleware que no llama o no espera `next()` | Opcional | Hecho |
+| | T-232 | Completions de un posicional enum | Opcional | Pendiente |
 | | T-208 | Retirar el modo implícito | Requerido | Hecho |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
@@ -765,7 +766,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-227 Detalles de ayuda y errores
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que usa una CLI, quiero mensajes uniformes y una ayuda sin ruido. Reúne los menores de [la evaluación](./research/2026-10-first-use-evaluation.md).
 - **Avance:** contrastados el 2026-11-08 sobre el código de la beta.5, y contra commander 15.0.0:
   - **Se descartan, con motivo:** `nada` sugiere `add` y `-t=a` guarda `=a`. commander hace lo mismo en los dos casos, y `util.parseArgs` de Node también guarda `=a`: lo que sigue a una flag corta es su valor, como en POSIX.
@@ -777,6 +778,13 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - **Una lista con default vacío mostraba `(default: )`:** las dos ayudas lo omiten.
   - **Las completions ofrecían `--no-` para todo booleano:** bash, zsh y fish lo ofrecen solo para uno con default `true`, así que desaparecen `--no-help`, `--no-version` y `--no-mcp`, y queda `--no-cache`.
 - **Pendientes, opcionales:** `--mcp` y `--version` en la ayuda de cada comando; los valores de un posicional enum en las completions, que no aparecen; la ayuda de `core` no muestra esos valores, y el plugin sí; y `bold()`, `fg()` y los demás códigos de `help` escriben ANSI sin mirar la salida.
+- **Análisis de impacto de los cuatro pendientes, 2026-11-08,** hecho por el agente de producto, que corrió las pruebas y leyó el código; lo central se volvió a comprobar. `gh` separa las opciones heredadas en `INHERITED FLAGS`, y `cargo build --help` no muestra `--version`. La prueba de qr-plus "--help and --version" exige los dos en su ayuda, que con `runCLI` es la de la raíz. De ahí salió también que el error de un subcomando mandaba a `Run 'tool --help'`, y no a la ayuda del comando.
+- **Resueltos el 2026-11-08, segunda tanda:**
+  - **`--mcp`, `--help` y `--version` en la ayuda de cada comando:** van aparte, bajo `GLOBAL OPTIONS`, en las dos ayudas, porque funcionan ahí y esconderlos callaría flags que sirven. `OptionSchema` suma `inherited`, opcional, así que un renderer propio sigue recibiendo todas las opciones. Con `runCLI` el comando es la CLI, y siguen en `OPTIONS`: se comprobó con una CLI de la forma de qr-plus.
+  - **El error de un subcomando manda a su ayuda:** `tool build --limit 0` termina con `Run 'tool build --help' for usage.`; sin comando encontrado, o con `runCLI`, sigue siendo la de la CLI.
+  - **La ayuda de `core` muestra los valores de un posicional enum:** `target  What to build for (web | node)`, como el plugin.
+  - **`bold()`, `fg()` y los demás:** se documentó en su JSDoc y en el README que escriben ANSI siempre, y que `styled()` respeta la salida. No se cambió su comportamiento: es un export público, y lo que hace en la 1.0 queda fijo.
+- **Queda fuera:** las completions de un posicional enum pasan a [T-232](#t-232-completions-de-un-posicional-enum), para 1.x.
 - **Criterios de aceptación:**
   - Se contrasta cada menor, y lo confirmado se corrige o se descarta con motivo.
   - Un error de validación no expone a Zod ni la clave interna.
@@ -830,6 +838,17 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Un middleware sin `next()` hace fallar la corrida, y el mensaje dice que el comando no corrió.
   - Un middleware sin `await` no deja correr `afterRun` ni `cleanup` antes de que el comando termine.
   - Lanzar un error sigue siendo la forma de frenar un comando, también con exit 0.
+
+### T-232 Completions de un posicional enum
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI con completions, quiero que TAB me ofrezca los valores de un argumento que solo acepta algunos, como `tool build <TAB>` con `web node`. Hoy los generadores de bash, zsh y fish solo completan opciones, no posicionales. El caso más visible es del propio plugin: `tool completions <TAB>` no ofrece `bash zsh fish`. Sale de T-227.
+- **Por qué en 1.x:** es una comodidad aditiva, el error de un valor inválido ya lista los válidos, y ningún usuario conocido tiene un posicional enum ni usa las completions. Lo propuso el análisis de impacto del 2026-11-08.
+- **Criterios de aceptación:**
+  - En bash, zsh y fish, TAB ofrece los valores de un posicional enum en su posición.
+  - `tool completions <TAB>` ofrece `bash zsh fish`.
+  - Lo prueban los tests con shells reales de `shells.test.ts`.
 
 ### T-208 Retirar el modo implícito
 

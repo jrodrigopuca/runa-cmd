@@ -3,6 +3,10 @@
  *
  * Low-level helpers for applying text styles via ANSI escape sequences.
  * These produce raw escape strings — color downsampling is handled by downsample.ts.
+ *
+ * They never look at the output: bold(), dim(), italic() and underline()
+ * always write their codes, even in a pipe or with NO_COLOR. To respect where
+ * the text goes, use styled(), or check getRenderContext().colorDepth first.
  */
 
 const ESC = '\x1b[';
@@ -10,22 +14,22 @@ const ESC = '\x1b[';
 /** ANSI reset — clears all styles */
 export const reset = `${ESC}0m`;
 
-/** Apply bold style */
+/** Apply bold style. Always writes the code: use styled() to respect the output */
 export function bold(text: string): string {
 	return `${ESC}1m${text}${reset}`;
 }
 
-/** Apply dim style */
+/** Apply dim style. Always writes the code: use styled() to respect the output */
 export function dim(text: string): string {
 	return `${ESC}2m${text}${reset}`;
 }
 
-/** Apply italic style */
+/** Apply italic style. Always writes the code: use styled() to respect the output */
 export function italic(text: string): string {
 	return `${ESC}3m${text}${reset}`;
 }
 
-/** Apply underline style */
+/** Apply underline style. Always writes the code: use styled() to respect the output */
 export function underline(text: string): string {
 	return `${ESC}4m${text}${reset}`;
 }
@@ -33,7 +37,8 @@ export function underline(text: string): string {
 /**
  * Apply foreground color.
  * Accepts a pre-computed ANSI escape string (from downsample.ts).
- * If empty string (no color mode), returns text unchanged.
+ * If empty string (no color mode), returns text unchanged. It doesn't look at
+ * the output itself: a color resolved for a terminal is written anywhere.
  */
 export function fg(text: string, ansiColor: string): string {
 	if (!ansiColor) return text;
