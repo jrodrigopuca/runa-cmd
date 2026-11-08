@@ -278,6 +278,24 @@ function rangeText(issue: ZodIssue): string | undefined {
 	return undefined;
 }
 
+/** What a value has to be, as a person writes it: a boolean is `true` or `false`. */
+function expectedText(issue: ZodIssue): string {
+	const expected = String((issue as unknown as { expected: unknown }).expected);
+	return expected === 'boolean' ? 'expected true or false' : `expected ${expected}`;
+}
+
+/**
+ * Why a value is wrong, in the words the terminal uses, wherever the value
+ * came from (T-235).
+ */
+function valueReason(issue: ZodIssue, enumValues: readonly string[] | undefined): string {
+	if (issue.code === 'invalid_value' && enumValues) {
+		return `expected one of: ${enumValues.join(', ')}`;
+	}
+	if (issue.code === 'invalid_type') return expectedText(issue);
+	return rangeText(issue) ?? issue.message;
+}
+
 /**
  * Any other rule of a schema, as .regex() or .refine(): name the value as a
  * person typed it, and keep the message, unless the message already names it.
@@ -327,10 +345,9 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 
 		// Wrong type (e.g. expected number, got string)
 		if (issue.code === 'invalid_type') {
-			const { expected } = issue as unknown as { expected: unknown };
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for <${name}>: expected ${String(expected)}`,
+				message: `Invalid value for <${name}>: ${expectedText(issue)}`,
 				path: issue.path,
 			};
 		}
@@ -373,10 +390,9 @@ function humanizeOptionIssues(
 
 		// Wrong type (e.g. expected number, got string)
 		if (issue.code === 'invalid_type') {
-			const expected = (issue as unknown as Record<string, unknown>).expected;
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for ${longFlag(name)}: expected ${String(expected)}`,
+				message: `Invalid value for ${longFlag(name)}: ${expectedText(issue)}`,
 				path: issue.path,
 			};
 		}
@@ -386,11 +402,15 @@ function humanizeOptionIssues(
 }
 
 /** No flag was typed: the person has to find the value in the file, by its key. */
-function configIssue(issue: ZodIssue, { filePath, path }: ConfigSource): ZodIssue {
+function configIssue(
+	issue: ZodIssue,
+	{ filePath, path }: ConfigSource,
+	enumValues: readonly string[] | undefined,
+): ZodIssue {
 	const key = [...path, String(issue.path[0])].join('.');
 	return {
 		code: 'custom' as const,
-		message: `${filePath}: invalid value for '${key}': ${issue.message}`,
+		message: `${filePath}: invalid value for '${key}': ${valueReason(issue, enumValues)}`,
 		path: [],
 	};
 }
@@ -548,12 +568,14 @@ function validateOptions(
 	} catch (err) {
 		if (err instanceof ZodError) {
 			const humanized = humanizeOptionIssues(err.issues, optionSchemas, optionsMeta);
+			const enumsByName = new Map(walkSchema(optionSchemas).map((m) => [m.name, m.enumValues]));
 			throw new ValidationError(
-				err.issues.map((issue, index) =>
-					configSource && sources[String(issue.path[0])] === 'config'
-						? configIssue(issue, configSource)
-						: (humanized[index] as ZodIssue),
-				),
+				err.issues.map((issue, index) => {
+					const name = String(issue.path[0]);
+					return configSource && sources[name] === 'config'
+						? configIssue(issue, configSource, enumsByName.get(name))
+						: (humanized[index] as ZodIssue);
+				}),
 			);
 		}
 		throw err;

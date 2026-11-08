@@ -12,10 +12,14 @@ export type { ConfigLoader } from '../types.js';
 
 // ─── Public API ─────────────────────────────────────────────
 
+/** One line: Node quotes the file inside a JSON error, newlines included. */
+const reasonOf = (err: unknown): string =>
+	(err instanceof Error ? err.message : String(err)).replace(/\s*\n\s*/g, ' ');
+
 /**
  * Built-in JSON config file loader.
- * Reads the file and parses it with JSON.parse().
- * Wraps parse errors with a descriptive message including file path.
+ * Reads the file and parses it with JSON.parse(). Its errors name the file
+ * first, as every config error does: `my-tool.config.json: invalid JSON: …`.
  */
 export function jsonLoader(): ConfigLoader {
 	return {
@@ -25,17 +29,14 @@ export function jsonLoader(): ConfigLoader {
 			try {
 				content = await readFile(filePath, 'utf-8');
 			} catch (err) {
-				throw new Error(
-					`Failed to read config file '${filePath}': ${err instanceof Error ? err.message : String(err)}`,
-				);
+				throw new Error(`${filePath}: can't be read: ${reasonOf(err)}`);
 			}
 
 			try {
-				return JSON.parse(content) as unknown;
+				// Trailing whitespace means nothing to JSON, and Node would quote it in the error
+				return JSON.parse(content.trimEnd()) as unknown;
 			} catch (err) {
-				throw new Error(
-					`Invalid JSON in config file '${filePath}': ${err instanceof Error ? err.message : String(err)}`,
-				);
+				throw new Error(`${filePath}: invalid JSON: ${reasonOf(err)}`);
 			}
 		},
 	};

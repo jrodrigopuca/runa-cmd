@@ -49,8 +49,20 @@ describe('jsonLoader', () => {
 		mockedReadFile.mockResolvedValueOnce('{ invalid json }');
 
 		await expect(loader.load('/path/to/bad.json')).rejects.toThrow(
-			/Invalid JSON in config file '\/path\/to\/bad\.json'/,
+			/^\/path\/to\/bad\.json: invalid JSON: /,
 		);
+	});
+
+	// Node quotes the file around the error, newlines included: one line is enough
+	it('says what is wrong with the JSON in one line', async () => {
+		const loader = jsonLoader();
+		mockedReadFile.mockResolvedValueOnce('{\n  "force": tru\n}\n');
+
+		const error = await loader.load('/path/to/bad.json').catch((err: Error) => err);
+
+		expect((error as Error).message).not.toContain('\n');
+		// The newline that ends the file isn't quoted as a space
+		expect((error as Error).message).not.toMatch(/\s" is not valid JSON$/);
 	});
 
 	it('throws descriptive error on file read failure', async () => {
@@ -58,7 +70,7 @@ describe('jsonLoader', () => {
 		mockedReadFile.mockRejectedValueOnce(new Error('ENOENT: no such file'));
 
 		await expect(loader.load('/path/to/missing.json')).rejects.toThrow(
-			/Failed to read config file '\/path\/to\/missing\.json'/,
+			/^\/path\/to\/missing\.json: can't be read: ENOENT/,
 		);
 	});
 

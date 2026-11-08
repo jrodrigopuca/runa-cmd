@@ -67,7 +67,7 @@ describe('environment variables', () => {
 		const result = show([], { MINIFY: value });
 		expect(result.status).toBe(2);
 		expect(result.stderr).toContain('--minify');
-		expect(result.stderr).toContain('expected boolean');
+		expect(result.stderr).toContain('expected true or false');
 	});
 });
 

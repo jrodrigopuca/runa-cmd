@@ -91,7 +91,7 @@
 | | T-507 | Referencia de API generada | Opcional | Pendiente |
 | 7. Revisión antes de v1 | T-233 | Peer de `help` al día con lo que usa | Requerido | Hecho |
 | | T-234 | Lista de códigos de error y clases de MCP | Requerido | Hecho |
-| | T-235 | Errores del archivo de config | Requerido | Pendiente |
+| | T-235 | Errores del archivo de config | Requerido | Hecho |
 | | T-236 | Errores de MCP por un valor del operador | Requerido | Pendiente |
 | | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Pendiente |
 | | T-238 | Slots del tema que no tienen efecto | Requerido | Pendiente |
@@ -1005,7 +1005,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-235 Errores del archivo de config
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que escribe el config de una CLI, quiero que un error en el archivo me diga siempre lo mismo: qué archivo, qué clave y qué está mal. Hoy un valor inválido es `ValidationError` con el texto de Zod y el hint de `--help`, una clave desconocida es `ConfigError` sin hint, y un JSON roto tiene un tercer formato. Además `"force": 1` se rechaza y `"force": "1"` no, contra [ADR-0028](./adr/0028-coercion-booleana.md).
 - **Decisión, 2026-11-08:** el `code` dice qué falló, y el mensaje dice dónde. Un valor que no cumple el schema es `ValidationError` con `VALIDATION_ERROR`, venga de la terminal, de una variable de entorno o del archivo. Un archivo mal armado, sea un JSON roto, una clave que no existe o algo que no es un objeto, es `ConfigError` con `INVALID_CONFIG`. Se descartó usar un código según el origen: el mismo valor malo tendría dos códigos según de dónde venga. Si alguien necesita saber el origen, se suma de forma aditiva, sin renombrar.
 - **Criterios de aceptación:**

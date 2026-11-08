@@ -450,7 +450,17 @@ A key at the root is a global option, or a command. Groups nest, and an option u
 
 A value only reaches the command it's under. With `runCLI` there's no command to name, so its options go at the root.
 
-Nothing is ignored. An unknown key exits with 2, naming the file and the key, and `$schema` is the only exception. A global option can't share a name with a command when the CLI has a config file: that fails at startup, for you to rename one.
+A value can be its JSON type, or the text you'd type at the terminal: `"limit": 5` and `"limit": "5"` are the same, and so are `"force": true` and `"force": "true"`. Text is accepted because a loader may only produce text, as one for an INI file. A number is not a boolean: `"force": 1` is an error that says `expected true or false`.
+
+Nothing is ignored. Every error names the file first, and says what's wrong with the words the terminal uses:
+
+```
+my-tool.config.json: invalid value for 'clear.limit': must be greater than 0
+my-tool.config.json: unknown key 'clear.limt'. Did you mean 'limit'?
+my-tool.config.json: invalid JSON: Unexpected token '}', ..."force":tru}}" is not valid JSON
+```
+
+All exit with 2. The code says what failed, and the message says where: a value that breaks its schema is a `VALIDATION_ERROR`, as it would be from the terminal or from env, and a file that can't be read as config, with broken JSON or an unknown key, is an `INVALID_CONFIG`. `$schema` is the only key that isn't checked. A global option can't share a name with a command when the CLI has a config file: that fails at startup, for you to rename one.
 
 **The current directory comes first:** a file in `.` can set options, like `force` above, for anyone who runs your CLI there. To protect one option, set `meta.options.force.configurable` to `false`: only the terminal can set it, and the file gets an error. To protect them all, use `searchPaths: ['~']`.
 

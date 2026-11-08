@@ -117,7 +117,7 @@ Una clave de la raíz es una global, o un comando o grupo, que se anidan: `{"sto
 
 Las globales respetan CLI, env, config y default, igual que las opciones de un comando, incluidas las de un plugin.
 
-Una clave desconocida, un valor inválido o un JSON roto dan exit 2 y nombran el archivo. `$schema` se acepta. El archivo se lee cuando hace falta un valor, así que uno roto no impide `--help` ni `--version`. Una global con el nombre de un comando falla al arrancar con `CONFIG_COLLISION`, si la CLI declara `config`. Una opción con `configurable: false` solo se fija desde la terminal: el archivo recibe un error, y es lo que usa `--mcp`.
+Una clave desconocida, un valor inválido o un JSON roto dan exit 2, y nombran primero el archivo, con el formato `archivo: qué pasó 'clave': por qué`. Un valor inválido usa las mismas palabras que la terminal, porque las dos pasan por `valueReason` en `parse/resolve.ts`, y lleva `VALIDATION_ERROR` venga de donde venga; un archivo mal armado lleva `INVALID_CONFIG` (T-235). Cada valor puede ser su tipo JSON, o el texto que se escribiría en la terminal, como `"5"` o `"true"`, porque un loader puede producir solo texto. Un número no es un booleano: `1` da `expected true or false`. `$schema` se acepta. El archivo se lee cuando hace falta un valor, así que uno roto no impide `--help` ni `--version`. Una global con el nombre de un comando falla al arrancar con `CONFIG_COLLISION`, si la CLI declara `config`. Una opción con `configurable: false` solo se fija desde la terminal: el archivo recibe un error, y es lo que usa `--mcp`.
 
 `api.getConfigValues()` devuelve el archivo, y `api.getConfigValues(path)` los valores de un comando. `@runa-cmd/mcp` usa la segunda forma para fijar opciones por tool.
 
