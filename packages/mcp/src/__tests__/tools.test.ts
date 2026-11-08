@@ -488,6 +488,9 @@ describe('values the operator fixed', () => {
 		const result = await client.call('operated', { service: 'api', token: 'made-up' });
 		expect(result.isError).toBe(true);
 		expect(text(result)).toContain('Missing required option: --token');
+		// Who operates the server learns what to set, and the made-up value isn't echoed
+		expect(text(result)).toContain('TEST_TOKEN');
+		expect(text(result)).not.toContain('made-up');
 	});
 
 	it('hides what env and config provide', async () => {

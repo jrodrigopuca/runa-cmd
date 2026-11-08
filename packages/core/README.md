@@ -97,7 +97,7 @@ Operational metadata lives in `meta.options`, separate from the Zod schema:
 | Property | Type | Description |
 |---|---|---|
 | `alias` | `string[]` | Short flags, e.g. `['-e']` (must include dash prefix) |
-| `env` | `string` | Environment variable name, e.g. `'DEPLOY_ENV'` |
+| `env` | `string` | Environment variable name, e.g. `'DEPLOY_ENV'`. If a required option is missing, the error names it: `Missing required option: --env, or set DEPLOY_ENV` |
 | `configurable` | `boolean` | `false` if a config file can't set it, as with a guardrail. Default: `true` |
 | `group` | `string` | Group name for help display, e.g. `'Scaling'` |
 | `valueName` | `string` | What help calls the value, e.g. `'hex'` for `--color <hex>`. Defaults to its type |

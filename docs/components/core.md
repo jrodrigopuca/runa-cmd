@@ -103,6 +103,8 @@ interface CLIConfig {
 
 ## Resolución de valores
 
+Si falta una opción obligatoria que declara `env`, el error nombra la variable: `Missing required option: --upstream, or set OLLAMA_URL`. Es un nombre, nunca un valor, así que por MCP también le dice a quien opera qué setear (T-216).
+
 La prioridad es **CLI, env, config y default de Zod**. El detalle está en [parseo](../flows/argument-parsing.md). Los booleanos aceptan `true`, `1`, `false` y `0` desde cualquier fuente, incluido `--flag=false`.
 
 ## Config

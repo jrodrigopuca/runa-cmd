@@ -298,6 +298,7 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 function humanizeOptionIssues(
 	issues: ZodIssue[],
 	optionsSchemas: Record<string, ZodType>,
+	optionsMeta: Record<string, OptionMeta> | undefined,
 ): ZodIssue[] {
 	const metadata = walkSchema(optionsSchemas);
 	const metaByName = new Map(metadata.map((m) => [m.name, m]));
@@ -307,11 +308,12 @@ function humanizeOptionIssues(
 		if (typeof name !== 'string') return issue;
 		const param = metaByName.get(name);
 
-		// Missing required option
+		// Missing required option. Its variable is a name, never a value (T-216)
 		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
+			const envName = optionsMeta?.[name]?.env;
 			return {
 				code: 'custom' as const,
-				message: `Missing required option: ${longFlag(name)}`,
+				message: `Missing required option: ${longFlag(name)}${envName ? `, or set ${envName}` : ''}`,
 				path: issue.path,
 			};
 		}
@@ -501,7 +503,7 @@ function validateOptions(
 		return z.object(optionSchemas).parse(rawOptions) as Record<string, unknown>;
 	} catch (err) {
 		if (err instanceof ZodError) {
-			const humanized = humanizeOptionIssues(err.issues, optionSchemas);
+			const humanized = humanizeOptionIssues(err.issues, optionSchemas, optionsMeta);
 			throw new ValidationError(
 				err.issues.map((issue, index) =>
 					configSource && sources[String(issue.path[0])] === 'config'

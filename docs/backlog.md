@@ -70,7 +70,7 @@
 | | T-214 | La ayuda de un subcomando muestra la CLI | Requerido | Hecho |
 | | T-215 | README y changelog en npm | Requerido | Hecho |
 | | T-309 | Fallos sin efecto por MCP | Requerido | Hecho |
-| | T-216 | Opción faltante con su variable de entorno | Opcional | Pendiente |
+| | T-216 | Opción faltante con su variable de entorno | Opcional | Hecho |
 | | T-217 | Valor por defecto legible en la ayuda | Opcional | Hecho |
 | | T-218 | Parada limpia de un servicio | Opcional | Pendiente |
 | | T-310 | Valores fijos que no son secretos | Opcional | Pendiente |
@@ -616,7 +616,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-216 Opción faltante con su variable de entorno
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** Hecho
+- **Resultado:** `Missing required option: --upstream, or set OLLAMA_URL`, en opciones de comando y globales. El mensaje empieza igual que antes, y el texto de los errores no es contrato ([VERSIONING.md](../VERSIONING.md)). Por MCP, el error le dice a quien opera qué variable falta y no repite lo que mandó el modelo.
 - **Descripción:** como persona que usa una CLI, quiero saber que una opción obligatoria también se puede dar por env. Es F-08 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Avance:** el 2026-11-08, commander 15.0.0 tampoco nombra la variable en el error (`required option '--token <token>' not specified`), y los dos la muestran en la ayuda (`[env: API_TOKEN]` en Runa). Sirve más con MCP: ahí la opción es de quien opera ([ADR-0032](./adr/0032-postura-sobre-secretos.md)), y el error le dice qué variable falta.
 - **Criterios de aceptación:**
@@ -831,6 +832,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Hay una guía de migración desde commander, basada en qr-plus.
   - Se resuelven las contradicciones de [la evaluación](./research/2026-10-first-use-evaluation.md): `-h` propio, `db migrate --help`, `rawArgs`, y se documentan los variádicos y `ctx.invocation`.
   - Se explica lo que faltó en [la validación](./research/2026-11-local-beacon-real-model.md): `--json` imprime lo que devuelve `run()`, `testCLI()` necesita importar la CLI sin arrancarla, y para un modelo solo cuenta el texto del error: `_meta` puede no llegarle.
+  - La guía de MCP explica qué hacer con un comando que no termina, como un servidor o un `watch`: una tool es un subproceso que tiene que terminar. `local-beacon` lo resuelve con `exclude: ['proxy', 'watch']`, y con `instructions` que le dicen al modelo que el proxy tiene que estar corriendo; confirmó el 2026-11-08 que es una decisión suya, sin fricción.
   - La guía de inicio explica cómo empaquetar una CLI: Node no ejecuta TypeScript dentro de `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`), así que hay que compilar antes de publicar o instalar. Lo encontró `local-beacon` al instalarse global con `0.2.0-beta.4`.
   - Los ejemplos corren en CI o se verifican en cada release.
   - Una guía muestra cómo se arranca una CLI con Runa y con otras herramientas, con las diferencias bien marcadas, apoyada en [la comparación](./research/2026-11-ease-of-use.md). Se escribe después de T-605, para incluir el generador.
