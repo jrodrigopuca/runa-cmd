@@ -102,7 +102,7 @@
 | | T-243 | `help` como comando | Requerido | Hecho |
 | | T-244 | Alias mal escritos al arrancar | Requerido | Hecho |
 | | T-245 | Guías de comparación honestas | Requerido | Hecho |
-| | T-246 | El valor recibido en los errores | Opcional | Pendiente |
+| | T-246 | El valor recibido en los errores | Opcional | Hecho |
 | | T-247 | Sugerir dónde va una clave del config | Opcional | Pendiente |
 | | T-248 | Alias y env junto al schema | Opcional | Pendiente |
 | | T-249 | Docs internas al día | Opcional | Hecho |
@@ -1132,7 +1132,8 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-246 El valor recibido en los errores
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** Hecho
+- **Resultado, 2026-11-08:** se repite el valor escrito en la terminal o mandado por un modelo, también en los errores de rango y de reglas, cortado a los 40 caracteres y en una línea. Nunca uno de env ni del archivo de config, ni el de una opción que declara `env` aunque se haya escrito: suelen ser secretos y un error puede terminar en un log de CI. El formato del config ya se había unificado en T-235.
 - **Descripción:** como persona que se equivocó, quiero ver qué escribí: `Invalid value for --times: expected int` no muestra `abc`, y commander y oclif sí. El config, además, usa otro formato que la terminal para el mismo error.
 - **Criterios de aceptación:**
   - Un error de tipo o de enum repite el valor recibido, sin mostrar un valor que venga de env.

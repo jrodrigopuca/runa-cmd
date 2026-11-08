@@ -39,21 +39,24 @@ const firstLine = async (argv: string[]) => {
 
 describe('a value that breaks a rule of its schema', () => {
 	it.each([
-		[['--limit', '0'], 'Invalid value for --limit: must be greater than 0'],
-		[['--retries', '0'], 'Invalid value for --retries: must be at least 1'],
-		[['--retries', '9'], 'Invalid value for --retries: must be at most 5'],
-		[['--below', '10'], 'Invalid value for --below: must be less than 10'],
-		[['--name', 'ab'], 'Invalid value for --name: must have at least 3 characters'],
-		[['--name', 'abcdefghij'], 'Invalid value for --name: must have at most 8 characters'],
-		[['0'], 'Invalid value for <count>: must be at least 1'],
+		[['--limit', '0'], "Invalid value '0' for --limit: must be greater than 0"],
+		[['--retries', '0'], "Invalid value '0' for --retries: must be at least 1"],
+		[['--retries', '9'], "Invalid value '9' for --retries: must be at most 5"],
+		[['--below', '10'], "Invalid value '10' for --below: must be less than 10"],
+		[['--name', 'ab'], "Invalid value 'ab' for --name: must have at least 3 characters"],
+		[
+			['--name', 'abcdefghij'],
+			"Invalid value 'abcdefghij' for --name: must have at most 8 characters",
+		],
+		[['0'], "Invalid value '0' for <count>: must be at least 1"],
 	])('%j says it in words', async (argv, message) => {
 		expect(await firstLine(argv)).toBe(message);
 	});
 
 	it('names the flag for any other rule, with the message it has', async () => {
-		expect(await firstLine(['--code', 'abc'])).toMatch(/^Invalid value for --code: /);
+		expect(await firstLine(['--code', 'abc'])).toMatch(/^Invalid value 'abc' for --code: /);
 		expect(await firstLine(['--region', 'mars'])).toBe(
-			'Invalid value for --region: Not a region we deploy to',
+			"Invalid value 'mars' for --region: Not a region we deploy to",
 		);
 	});
 

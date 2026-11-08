@@ -130,7 +130,8 @@ describe('runToolCall', () => {
 			});
 
 			expect(exitSpy).toHaveBeenCalledWith(2);
-			expect(stderr()).toContain("Invalid value for 'size': expected number");
+			// What the model sent is repeated: it can't be a secret of the operator (T-246)
+			expect(stderr()).toContain("Invalid value 'big' for 'size': expected number");
 		});
 
 		it('rejects a key the command does not declare', async () => {

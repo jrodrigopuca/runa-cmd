@@ -275,7 +275,9 @@ Write `darkColor` in code and `--dark-color` at the terminal. `run()`, config fi
 
 `--darkColor` is a usage error that points to `--dark-color`. `--no-dark-mode` negates `darkMode`. A boolean whose default is `true` shows in help as `--[no-]dark-mode`, and is the only kind that shell completions offer a `--no-` for: one that starts off has nothing to turn off.
 
-A value that breaks a rule of its schema names the flag and says what's wrong: `.positive()` gives `Invalid value for --limit: must be greater than 0`, and `.min(3)` on a string `must have at least 3 characters`. Write your own message for other rules, as with `.regex(re, '--color must start with #')`, and it's shown as you wrote it.
+A value that breaks a rule of its schema names the flag, repeats what was typed, and says what's wrong: `.positive()` gives `Invalid value '0' for --limit: must be greater than 0`, and `.min(3)` on a string `must have at least 3 characters`. Write your own message for other rules, as with `.regex(re, '--color must start with #')`, and it's shown as you wrote it.
+
+The value is only repeated if it was typed at the terminal or sent by a model, and cut after 40 characters. A value from env or from the config file is never shown, nor the value of an option that declares `env`, even typed: those often hold a secret, and an error can end up in a CI log.
 
 A boolean named `noCache` stops the CLI at startup, because `--no-cache` already negates `cache`. Declare `cache` with `.default(true)` instead.
 

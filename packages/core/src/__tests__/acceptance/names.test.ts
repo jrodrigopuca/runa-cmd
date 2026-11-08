@@ -84,7 +84,7 @@ describe('every message names the flag', () => {
 
 	it('an invalid value', () => {
 		expect(names(['paint', '--retry-count', 'x']).stderr).toContain(
-			'Invalid value for --retry-count',
+			"Invalid value 'x' for --retry-count",
 		);
 	});
 

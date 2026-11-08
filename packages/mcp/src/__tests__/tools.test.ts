@@ -276,8 +276,8 @@ describe('a value the operator has to give', () => {
 // The model sends keys, not flags: an error names what it sent (T-236)
 describe('an input error names the key of the schema', () => {
 	it.each([
-		['deploy', { service: 'api', replicas: 'many' }, "Invalid value for 'replicas'"],
-		['deploy', { service: 'api', env: 'mars' }, "Invalid value for 'env'"],
+		['deploy', { service: 'api', replicas: 'many' }, "Invalid value 'many' for 'replicas'"],
+		['deploy', { service: 'api', env: 'mars' }, "Invalid value 'mars' for 'env'"],
 		['deploy', {}, "Missing required argument: 'service'"],
 		['paint', {}, "Missing required option: 'darkColor'"],
 	])('%s %j', async (tool, input, expected) => {

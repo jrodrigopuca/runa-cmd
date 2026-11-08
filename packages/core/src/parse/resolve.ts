@@ -296,20 +296,39 @@ function valueReason(issue: ZodIssue, enumValues: readonly string[] | undefined)
 	return rangeText(issue) ?? issue.message;
 }
 
+/** Long values are cut, so an error stays one line. */
+const MAX_SHOWN = 40;
+
+/**
+ * A value as an error repeats it: one line, escaped as JSON, and cut. Only a
+ * plain value: a list or an object says nothing short.
+ */
+function shownValue(value: unknown): string | undefined {
+	if (!['string', 'number', 'boolean'].includes(typeof value)) return undefined;
+	const text = JSON.stringify(String(value)).slice(1, -1);
+	return text.length > MAX_SHOWN ? `${text.slice(0, MAX_SHOWN - 3)}...` : text;
+}
+
+/** The value a person typed or a model sent, if it can be repeated (T-246). */
+type ShowValue = (name: string) => string | undefined;
+
+/** `Invalid value 'abc' for --times`, or without the value when it can't be shown. */
+function invalidValue(label: string, value: string | undefined): string {
+	return value === undefined
+		? `Invalid value for ${label}`
+		: `Invalid value '${value}' for ${label}`;
+}
+
 /**
  * Any other rule of a schema, as .regex() or .refine(): name the value as a
  * person typed it, and keep the message, unless the message already names it.
  */
-function ruleIssue(issue: ZodIssue, label: string): ZodIssue {
+function ruleIssue(issue: ZodIssue, label: string, value: string | undefined): ZodIssue {
 	const range = rangeText(issue);
-	if (range)
-		return { code: 'custom', message: `Invalid value for ${label}: ${range}`, path: issue.path };
+	const subject = invalidValue(label, value);
+	if (range) return { code: 'custom', message: `${subject}: ${range}`, path: issue.path };
 	if (issue.message.includes(label)) return issue;
-	return {
-		code: 'custom',
-		message: `Invalid value for ${label}: ${issue.message}`,
-		path: issue.path,
-	};
+	return { code: 'custom', message: `${subject}: ${issue.message}`, path: issue.path };
 }
 
 /** How an error names a value: as it's typed, or as the key a tool call sends. */
@@ -346,6 +365,8 @@ function humanizeArgIssues(
 		const name = issue.path[0];
 		if (typeof name !== 'string') return issue;
 		const param = metaByName.get(name);
+		// An argument only comes from the terminal or a tool call: it can be repeated
+		const subject = invalidValue(nameIt(name), shownValue(values[name]));
 
 		// Missing required arg, of any type
 		if (isMissing(issue, values)) {
@@ -360,7 +381,7 @@ function humanizeArgIssues(
 		if (issue.code === 'invalid_value' && param?.enumValues) {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for ${nameIt(name)}. Expected one of: ${param.enumValues.join(', ')}`,
+				message: `${subject}. Expected one of: ${param.enumValues.join(', ')}`,
 				path: issue.path,
 			};
 		}
@@ -369,12 +390,12 @@ function humanizeArgIssues(
 		if (issue.code === 'invalid_type') {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for ${nameIt(name)}: ${expectedText(issue)}`,
+				message: `${subject}: ${expectedText(issue)}`,
 				path: issue.path,
 			};
 		}
 
-		return ruleIssue(issue, nameIt(name));
+		return ruleIssue(issue, nameIt(name), shownValue(values[name]));
 	});
 }
 
@@ -384,6 +405,7 @@ function humanizeOptionIssues(
 	optionsMeta: Record<string, OptionMeta> | undefined,
 	values: Record<string, unknown>,
 	nameIt: NameIt = optionAtTerminal,
+	show: ShowValue = () => undefined,
 ): ZodIssue[] {
 	const metadata = walkSchema(optionsSchemas);
 	const metaByName = new Map(metadata.map((m) => [m.name, m]));
@@ -407,11 +429,13 @@ function humanizeOptionIssues(
 			};
 		}
 
+		const subject = invalidValue(nameIt(name), show(name));
+
 		// Invalid enum value
 		if (issue.code === 'invalid_value' && param?.enumValues) {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for ${nameIt(name)}. Expected one of: ${param.enumValues.join(', ')}`,
+				message: `${subject}. Expected one of: ${param.enumValues.join(', ')}`,
 				path: issue.path,
 			};
 		}
@@ -420,12 +444,12 @@ function humanizeOptionIssues(
 		if (issue.code === 'invalid_type') {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for ${nameIt(name)}: ${expectedText(issue)}`,
+				message: `${subject}: ${expectedText(issue)}`,
 				path: issue.path,
 			};
 		}
 
-		return ruleIssue(issue, nameIt(name));
+		return ruleIssue(issue, nameIt(name), show(name));
 	});
 }
 
@@ -597,12 +621,19 @@ function validateOptions(
 	} catch (err) {
 		if (err instanceof ZodError) {
 			const nameIt = directSource === 'input' ? inputKey : optionAtTerminal;
+			// Only what was typed or sent: env and the config file can hold secrets,
+			// and so can an option that declares env, even when typed (T-246)
+			const show: ShowValue = (name) =>
+				sources[name] === directSource && optionsMeta?.[name]?.env === undefined
+					? shownValue(rawOptions[name])
+					: undefined;
 			const humanized = humanizeOptionIssues(
 				err.issues,
 				optionSchemas,
 				optionsMeta,
 				rawOptions,
 				nameIt,
+				show,
 			);
 			const enumsByName = new Map(walkSchema(optionSchemas).map((m) => [m.name, m.enumValues]));
 			throw new ValidationError(

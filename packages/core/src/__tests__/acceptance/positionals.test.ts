@@ -48,16 +48,17 @@ describe('a positional gets the type of its schema', () => {
 });
 
 describe('an invalid value', () => {
+	// The value typed is repeated (T-246), except for a list, which says nothing short
 	it.each([
-		['a word for a number', ['number', 'abc'], '<id>'],
-		['an empty string, never read as 0', ['number', ''], '<id>'],
-		['a word for a boolean', ['flag', 'maybe'], '<on>'],
-		['a bad item of a variadic', ['list', '1', 'x'], '<ids>'],
-	])('rejects %s, naming the argument', (_name, argv, name) => {
+		['a word for a number', ['number', 'abc'], "Invalid value 'abc' for <id>"],
+		['an empty string, never read as 0', ['number', ''], "Invalid value '' for <id>"],
+		['a word for a boolean', ['flag', 'maybe'], "Invalid value 'maybe' for <on>"],
+		['a bad item of a variadic', ['list', '1', 'x'], 'Invalid value for <ids>'],
+	])('rejects %s, naming the argument', (_name, argv, message) => {
 		const { status, stderr, stdout } = positionals(...argv);
 		expect(status).toBe(2);
 		expect(stdout).toBe('');
-		expect(stderr).toContain(`Invalid value for ${name}`);
+		expect(stderr).toContain(message);
 		expect(stderr).not.toContain('Invalid input');
 	});
 
