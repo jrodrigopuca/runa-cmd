@@ -69,33 +69,38 @@ Colors are automatically downsampled to match terminal capabilities: truecolor, 
 
 ### Layer 3: Custom Renderer
 
-Full control — use the layout primitives to build your own help output:
+Full control — use the layout primitives to build your own help output. `render` gets the help of the CLI and of each command, so check which one `schema` is, and hand what you don't draw to `defaultRenderer`:
 
+<!-- file: examples/custom-help/src/render.ts -->
 ```ts
-import { helpPlugin, box, styled, table, join, bold, fg } from '@runa-cmd/help';
+import { box, defaultRenderer, join, type RenderFnCtx, styled, table } from '@runa-cmd/help';
 
-plugins: [
-  helpPlugin({
-    render({ schema, theme, termWidth }) {
-      return join.vertical([
-        box({
-          content: `${bold(schema.meta.name)} v${schema.meta.version}`,
-          border: 'rounded',
-          borderColor: theme.primary,
-        }),
-        styled(schema.meta.description ?? '', { color: theme.muted }),
-        table(
-          schema.commands.map((cmd) => [
-            styled(cmd.name, { bold: true, color: theme.primary }),
-            styled(cmd.description, { color: theme.muted }),
-          ]),
-          { headers: ['Command', 'Description'] },
-        ),
-      ]);
-    },
-  }),
-]
+/** The help of the CLI drawn your way. A command's help keeps the default one. */
+export function renderHelp(ctx: RenderFnCtx): string {
+	const { schema, theme } = ctx;
+	// `schema` is the CLI, or the command whose help was asked for
+	if (!('meta' in schema)) return defaultRenderer(ctx);
+
+	// styled(), not bold(): it leaves out ANSI codes where the output can't show them
+	return join.vertical([
+		box({
+			content: `${styled(schema.meta.name, { bold: true })} v${schema.meta.version}`,
+			border: 'rounded',
+			borderColor: theme.primary,
+		}),
+		styled(schema.meta.description ?? '', { color: theme.muted }),
+		table(
+			schema.commands.map((cmd) => [
+				styled(cmd.name, { bold: true, color: theme.primary }),
+				styled(cmd.description, { color: theme.muted }),
+			]),
+			{ headers: ['Command', 'Description'] },
+		),
+	]);
+}
 ```
+
+Then pass it to the plugin: `helpPlugin({ render: renderHelp })`. This example, with its tests, is [`examples/custom-help`](https://github.com/jrodrigopuca/runa-cmd/tree/main/examples/custom-help).
 
 ## Layout Primitives
 

@@ -28,7 +28,7 @@ _mycli_completions() {
                 return ;;
             esac
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=($(compgen -W '--help --no-help -h --verbose --no-verbose -v --format' -- "$cur"))
+                COMPREPLY=($(compgen -W '--help -h --verbose -v --format' -- "$cur"))
             else
                 COMPREPLY=($(compgen -W 'deploy config' -- "$cur"))
             fi
@@ -43,7 +43,7 @@ _mycli_completions() {
                 return ;;
             esac
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=($(compgen -W '--environment -e --force --no-force --replicas --help --no-help -h --verbose --no-verbose -v --format' -- "$cur"))
+                COMPREPLY=($(compgen -W '--environment -e --force --replicas --help -h --verbose -v --format' -- "$cur"))
             fi
             ;;
         "_config")
@@ -53,7 +53,7 @@ _mycli_completions() {
                 return ;;
             esac
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=($(compgen -W '--help --no-help -h --verbose --no-verbose -v --format' -- "$cur"))
+                COMPREPLY=($(compgen -W '--help -h --verbose -v --format' -- "$cur"))
             else
                 COMPREPLY=($(compgen -W 'set get' -- "$cur"))
             fi
@@ -65,7 +65,7 @@ _mycli_completions() {
                 return ;;
             esac
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=($(compgen -W '--global --no-global -g --help --no-help -h --verbose --no-verbose -v --format' -- "$cur"))
+                COMPREPLY=($(compgen -W '--global -g --help -h --verbose -v --format' -- "$cur"))
             fi
             ;;
         "_config_get")
@@ -75,7 +75,7 @@ _mycli_completions() {
                 return ;;
             esac
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=($(compgen -W '--help --no-help -h --verbose --no-verbose -v --format' -- "$cur"))
+                COMPREPLY=($(compgen -W '--help -h --verbose -v --format' -- "$cur"))
             fi
             ;;
     esac

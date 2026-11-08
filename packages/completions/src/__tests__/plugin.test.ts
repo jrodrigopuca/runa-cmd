@@ -34,6 +34,34 @@ describe('option names', () => {
 	});
 });
 
+// --no-x only turns off what is on: offering it for a flag that starts off, as
+// --no-help or --no-force, gives TAB a choice that does nothing (T-227)
+describe('the --no- form of a boolean', () => {
+	const schema = getSchema({
+		meta: { name: 'mycli', version: '1.0.0' },
+		commands: {
+			build: defineCommand({
+				meta: { name: 'build', description: 'Build' },
+				options: { cache: z.boolean().default(true), force: z.boolean().default(false) },
+				run() {},
+			}),
+		},
+		globalOptions: { help: z.boolean().default(false), mcp: z.boolean().optional() },
+	});
+
+	it.each([
+		['bash', generateBashCompletions, '--', '--no-'],
+		['zsh', generateZshCompletions, '--', '--no-'],
+		['fish', generateFishCompletions, '-l ', '-l no-'],
+	])('%s offers it only for a boolean that starts on', (_shell, generate, flag, negated) => {
+		const script = generate(schema, 'mycli');
+
+		expect(script).toContain(`${negated}cache`);
+		expect(script).toContain(`${flag}force`);
+		for (const off of ['force', 'help', 'mcp']) expect(script).not.toContain(`${negated}${off}`);
+	});
+});
+
 describe('options that repeat', () => {
 	const schema = getSchema({
 		meta: { name: 'mycli' },

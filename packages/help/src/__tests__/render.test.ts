@@ -306,6 +306,27 @@ describe('defaultRenderer — command', () => {
 		expect(output).toContain('[default: 3000]');
 	});
 
+	it('shows how to turn off a boolean that starts on, and leaves out an empty list', () => {
+		const schema: CommandSchema = {
+			name: 'build',
+			description: 'Build',
+			fullPath: ['build'],
+			args: [],
+			options: [
+				{ name: 'cache', flag: 'cache', type: 'boolean', required: false, defaultValue: true },
+				{ name: 'force', flag: 'force', type: 'boolean', required: false, defaultValue: false },
+				{ name: 'tags', flag: 'tags', type: 'array', required: false, defaultValue: [] },
+			],
+			hasOutput: false,
+		};
+
+		const output = renderRaw(schema);
+
+		expect(output).toContain('--[no-]cache');
+		expect(output).not.toContain('--[no-]force');
+		expect(output).not.toContain('[default: ]');
+	});
+
 	it('shows defaultDescription instead of the value it stands for', () => {
 		const schema: CommandSchema = {
 			name: 'status',

@@ -7,6 +7,7 @@
 
 import type { CLISchema, CommandSchema, OptionSchema } from '@runa-cmd/core';
 import { escapeFish, escapeFishValue } from './escape.js';
+import { offersNegation } from './negation.js';
 
 /** Generate complete directives for a single option */
 function optionDirectives(binName: string, opt: OptionSchema, condition: string): string[] {
@@ -21,8 +22,10 @@ function optionDirectives(binName: string, opt: OptionSchema, condition: string)
 	if (opt.type === 'boolean') {
 		// Boolean flags don't take values — no -r
 		lines.push(`complete -c ${binName}${condPart}` + ` -l ${opt.flag}${shortFlag}${desc}`);
-		// --no-* variant
-		lines.push(`complete -c ${binName}${condPart}` + ` -l no-${opt.flag}${desc}`);
+		// --no-* variant, only for a boolean that starts on
+		if (offersNegation(opt)) {
+			lines.push(`complete -c ${binName}${condPart}` + ` -l no-${opt.flag}${desc}`);
+		}
 	} else if (opt.enumValues?.length) {
 		const vals = opt.enumValues.map((v) => escapeFishValue(v)).join(' ');
 		lines.push(

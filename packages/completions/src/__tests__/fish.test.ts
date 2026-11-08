@@ -174,8 +174,8 @@ describe('generateFishCompletions', () => {
 		expect(output).toContain("-a 'staging prod'");
 	});
 
-	it('includes --no-force as separate directive', () => {
-		expect(output).toContain('-l no-force');
+	it('offers no --no-force for a boolean that starts off', () => {
+		expect(output).not.toContain('-l no-force');
 	});
 
 	it('includes global options without -n condition', () => {

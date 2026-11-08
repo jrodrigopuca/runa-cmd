@@ -7,16 +7,17 @@
 
 import type { CLISchema, CommandSchema, OptionSchema } from '@runa-cmd/core';
 import { escapeBash } from './escape.js';
+import { offersNegation } from './negation.js';
 
 /** Replace non-identifier characters with underscores */
 function safeName(name: string): string {
 	return name.replace(/[^a-zA-Z0-9_]/g, '_');
 }
 
-/** Build --long option names for an option, including --no-* for booleans */
+/** Build --long option names for an option, including --no-* for a boolean that starts on */
 function optionFlags(opt: OptionSchema): string[] {
 	const flags: string[] = [`--${opt.flag}`];
-	if (opt.type === 'boolean') {
+	if (offersNegation(opt)) {
 		flags.push(`--no-${opt.flag}`);
 	}
 	if (opt.alias) {

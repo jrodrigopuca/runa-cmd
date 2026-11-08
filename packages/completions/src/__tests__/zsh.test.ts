@@ -161,8 +161,9 @@ describe('generateZshCompletions', () => {
 		expect(output).toContain(':(staging prod)');
 	});
 
-	it('includes --no-verbose for boolean option', () => {
-		expect(output).toContain('--no-verbose');
+	it('offers no --no-verbose for a boolean that starts off', () => {
+		expect(output).toContain('--verbose');
+		expect(output).not.toContain('--no-verbose');
 	});
 
 	it('generates nested function for config subcommands', () => {

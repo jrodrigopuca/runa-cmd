@@ -122,17 +122,27 @@ function optionFlags(option: OptionSchema): string {
 		option.type === 'boolean'
 			? ''
 			: ` <${option.valueName ?? option.enumValues?.join('|') ?? kind}>${isList ? '...' : ''}`;
-	return `${[...aliases, `--${option.flag}`].join(', ')}${value}`;
+	// A boolean that starts on is turned off with --no-x: the flag says so
+	const long = startsOn(option) ? `--[no-]${option.flag}` : `--${option.flag}`;
+	return `${[...aliases, long].join(', ')}${value}`;
+}
+
+/** A boolean whose default is true: what a person can do with it is turn it off. */
+function startsOn(option: OptionSchema): boolean {
+	return option.type === 'boolean' && option.defaultValue === true;
 }
 
 /**
  * The default as help shows it: the author's text if there is one, else the
- * value. A false default says nothing a flag doesn't, so it isn't shown.
+ * value. A false default or an empty list says nothing a flag doesn't, so
+ * neither is shown.
  */
 function defaultShown(option: OptionSchema): string | undefined {
 	if (option.defaultDescription !== undefined) return option.defaultDescription;
-	if (option.defaultValue === undefined || option.defaultValue === false) return undefined;
-	return String(option.defaultValue);
+	const { defaultValue } = option;
+	if (defaultValue === undefined || defaultValue === false) return undefined;
+	if (Array.isArray(defaultValue) && defaultValue.length === 0) return undefined;
+	return String(defaultValue);
 }
 
 function optionDetails(option: OptionSchema): string {

@@ -770,6 +770,13 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Avance:** contrastados el 2026-11-08 sobre el código de la beta.5, y contra commander 15.0.0:
   - **Se descartan, con motivo:** `nada` sugiere `add` y `-t=a` guarda `=a`. commander hace lo mismo en los dos casos, y `util.parseArgs` de Node también guarda `=a`: lo que sigue a una flag corta es su valor, como en POSIX.
   - **Siguen:** `--limit 0` da `limit: Too small: expected number to be >0`. Las completions de zsh ofrecen `--no-help`, `--no-version` y también `--no-mcp`. La ayuda de cada comando lista `--mcp` y `--version`, que solo tienen sentido en la raíz; esto último lo reportó `local-beacon` con la beta.3 y no estaba en la lista.
+- **Resueltos el 2026-11-08,** medidos con el código actual, cada uno con su prueba:
+  - **El ejemplo de Layer 3 del README de `help` no compilaba (H5):** usaba `schema.meta` y `schema.commands`, que no existen en la ayuda de un comando. Ahora es `examples/custom-help`, con typecheck y pruebas, delega la ayuda de un comando en `defaultRenderer`, y `docs:check` compara los bloques de los READMEs de los paquetes con sus archivos. Al probarlo apareció que `bold()` escribe ANSI aunque la salida no lo muestre; el ejemplo usa `styled()`, que sí lo respeta.
+  - **Un booleano con default `true` no decía cómo apagarlo:** las dos ayudas lo muestran como `--[no-]cache`, la convención de oclif.
+  - **Una regla de Zod mostraba la clave interna y el texto de Zod:** `--limit 0` da `Invalid value for --limit: must be greater than 0`. Los rangos de números, textos y listas se dicen con palabras; cualquier otra regla nombra el flag y conserva su mensaje, y un mensaje del autor que ya lo nombra queda igual. Vale también para posicionales.
+  - **Una lista con default vacío mostraba `(default: )`:** las dos ayudas lo omiten.
+  - **Las completions ofrecían `--no-` para todo booleano:** bash, zsh y fish lo ofrecen solo para uno con default `true`, así que desaparecen `--no-help`, `--no-version` y `--no-mcp`, y queda `--no-cache`.
+- **Pendientes, opcionales:** `--mcp` y `--version` en la ayuda de cada comando; los valores de un posicional enum en las completions, que no aparecen; la ayuda de `core` no muestra esos valores, y el plugin sí; y `bold()`, `fg()` y los demás códigos de `help` escriben ANSI sin mirar la salida.
 - **Criterios de aceptación:**
   - Se contrasta cada menor, y lo confirmado se corrige o se descarta con motivo.
   - Un error de validación no expone a Zod ni la clave interna.

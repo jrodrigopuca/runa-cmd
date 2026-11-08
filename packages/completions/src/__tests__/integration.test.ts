@@ -86,7 +86,8 @@ describe('integration: completionsPlugin with real CLI schema', () => {
 		// Options
 		expect(result).toContain('--env');
 		expect(result).toContain('--force');
-		expect(result).toContain('--no-force');
+		// It starts off, so there's nothing for --no-force to turn off
+		expect(result).not.toContain('--no-force');
 
 		// Enum values
 		expect(result).toContain('staging');

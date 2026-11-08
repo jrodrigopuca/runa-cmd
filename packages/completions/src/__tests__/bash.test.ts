@@ -167,9 +167,9 @@ describe('generateBashCompletions', () => {
 		expect(output).toContain("'staging prod'");
 	});
 
-	it('includes both --force and --no-force for booleans', () => {
+	it('offers --force, and no --no-force for a boolean that starts off', () => {
 		expect(output).toContain('--force');
-		expect(output).toContain('--no-force');
+		expect(output).not.toContain('--no-force');
 	});
 
 	it('includes global options --help, --verbose, --format everywhere', () => {

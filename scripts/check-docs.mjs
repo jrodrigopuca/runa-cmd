@@ -223,6 +223,13 @@ for (const file of existsSync(GUIDES) ? walk(GUIDES).filter((path) => path.endsW
 	checkSnippets(file, raw);
 }
 
+// A package README marks its examples the same way, so they can't drift from
+// the code that runs them (T-227: the custom renderer example didn't compile)
+for (const name of readdirSync(join(ROOT, 'packages'))) {
+	const readme = join(ROOT, 'packages', name, 'README.md');
+	if (existsSync(readme)) checkSnippets(readme, readFileSync(readme, 'utf8'));
+}
+
 if (args.includes('--staged')) {
 	const files = git('diff', '--cached', '--name-only').split('\n').filter(Boolean);
 	const messageFile = option('--message');

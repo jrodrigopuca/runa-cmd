@@ -251,6 +251,50 @@ function resolveOptionValues(
 type ZodIssue = z.core.$ZodIssue;
 
 /**
+ * A range rule in words, from what Zod 4 reports for too_small and too_big:
+ * `must be greater than 0` instead of `Too small: expected number to be >0`.
+ */
+function rangeText(issue: ZodIssue): string | undefined {
+	if (issue.code !== 'too_small' && issue.code !== 'too_big') return undefined;
+	const small = issue.code === 'too_small';
+	const { origin, inclusive, minimum, maximum } = issue as unknown as {
+		origin?: string;
+		inclusive?: boolean;
+		minimum?: number | bigint;
+		maximum?: number | bigint;
+	};
+	const bound = Number(small ? minimum : maximum);
+	if (origin === 'number' || origin === 'bigint') {
+		if (small) return inclusive ? `must be at least ${bound}` : `must be greater than ${bound}`;
+		return inclusive ? `must be at most ${bound}` : `must be less than ${bound}`;
+	}
+	// A length or a count: say the closest number that's allowed
+	const count = inclusive ? bound : small ? bound + 1 : bound - 1;
+	const most = small ? 'at least' : 'at most';
+	if (origin === 'string') return `must have ${most} ${count} character${count === 1 ? '' : 's'}`;
+	if (origin === 'array' || origin === 'set') {
+		return `needs ${most} ${count} value${count === 1 ? '' : 's'}`;
+	}
+	return undefined;
+}
+
+/**
+ * Any other rule of a schema, as .regex() or .refine(): name the value as a
+ * person typed it, and keep the message, unless the message already names it.
+ */
+function ruleIssue(issue: ZodIssue, label: string): ZodIssue {
+	const range = rangeText(issue);
+	if (range)
+		return { code: 'custom', message: `Invalid value for ${label}: ${range}`, path: issue.path };
+	if (issue.message.includes(label)) return issue;
+	return {
+		code: 'custom',
+		message: `Invalid value for ${label}: ${issue.message}`,
+		path: issue.path,
+	};
+}
+
+/**
  * Rewrite Zod issues into user-friendly CLI error messages.
  * Handles common cases: missing required args/options, invalid enums, wrong types.
  */
@@ -291,7 +335,7 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 			};
 		}
 
-		return issue;
+		return ruleIssue(issue, `<${name}>`);
 	});
 }
 
@@ -337,7 +381,7 @@ function humanizeOptionIssues(
 			};
 		}
 
-		return issue;
+		return ruleIssue(issue, longFlag(name));
 	});
 }
 

@@ -160,6 +160,28 @@ describe('renderHelp', () => {
 		expect(renderHelp(command('deploy', { options: [off] }))).not.toContain('default');
 	});
 
+	// A boolean that starts on is turned off with --no-x: say so where people look (T-227)
+	it('shows how to turn off a boolean that starts on', () => {
+		const on = { ...flag('cache', ['-c']), defaultValue: true };
+		const off = { ...flag('force'), defaultValue: false };
+		const output = renderHelp(command('build', { options: [on, off] }));
+
+		expect(output).toContain('-c, --[no-]cache');
+		expect(output).toMatch(/^ {2}--force\b/m);
+		expect(output).not.toContain('--[no-]force');
+	});
+
+	it('leaves out an empty list as a default, instead of showing (default: )', () => {
+		const tags: OptionSchema = {
+			name: 'tags',
+			flag: 'tags',
+			type: 'array',
+			required: false,
+			defaultValue: [],
+		};
+		expect(renderHelp(command('build', { options: [tags] }))).not.toContain('default');
+	});
+
 	it('shows the commands of a group', () => {
 		const output = renderHelp(db);
 		expect(output).toContain('db <command> [options]');

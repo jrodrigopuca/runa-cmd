@@ -213,7 +213,9 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 			}
 		}
 	}
-	flags.push(`--${opt.flag}`);
+	// A boolean that starts on is turned off with --no-x: the flag says so
+	const startsOn = opt.type === 'boolean' && opt.defaultValue === true;
+	flags.push(startsOn ? `--[no-]${opt.flag}` : `--${opt.flag}`);
 	const flagStr = styled(flags.join(', '), { color: 'yellow' }, ctx);
 
 	// Type column
@@ -232,10 +234,12 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 	const descParts: string[] = [];
 	if (opt.description) descParts.push(opt.description);
 	if (opt.required) descParts.push(fg('(required)', theme.secondary));
-	// The author's text stands for the value; a false default says nothing a flag doesn't
+	// The author's text stands for the value; a false default or an empty list
+	// says nothing a flag doesn't
+	const emptyList = Array.isArray(opt.defaultValue) && opt.defaultValue.length === 0;
 	if (opt.defaultDescription !== undefined)
 		descParts.push(fg(`[default: ${opt.defaultDescription}]`, theme.muted));
-	else if (opt.defaultValue !== undefined && opt.defaultValue !== false)
+	else if (opt.defaultValue !== undefined && opt.defaultValue !== false && !emptyList)
 		descParts.push(fg(`[default: ${String(opt.defaultValue)}]`, theme.muted));
 	if (opt.deprecated) descParts.push(fg(`(deprecated: ${opt.deprecated})`, theme.warning));
 	if (opt.env) descParts.push(fg(`[env: ${opt.env}]`, theme.muted));

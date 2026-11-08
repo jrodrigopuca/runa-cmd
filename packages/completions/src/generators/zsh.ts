@@ -7,6 +7,7 @@
 
 import type { CLISchema, CommandSchema, OptionSchema } from '@runa-cmd/core';
 import { escapeZsh, escapeZshExplanation, escapeZshValue } from './escape.js';
+import { offersNegation } from './negation.js';
 
 /** Replace non-identifier characters with underscores */
 function safeName(name: string): string {
@@ -31,11 +32,11 @@ function formatOptionSpec(opt: OptionSchema): string[] {
 			specs.push(
 				`'(${shortAlias} --${opt.flag})'` + `{${shortAlias},--${opt.flag}}` + `'[${desc}]'`,
 			);
-			specs.push(`'--no-${opt.flag}[${desc}]'`);
 		} else {
 			specs.push(`'--${opt.flag}[${desc}]'`);
-			specs.push(`'--no-${opt.flag}[${desc}]'`);
 		}
+		// Only a boolean that starts on has a --no- worth offering
+		if (offersNegation(opt)) specs.push(`'--no-${opt.flag}[${desc}]'`);
 	} else if (opt.type === 'enum' && opt.enumValues?.length) {
 		const vals = opt.enumValues.map((v) => escapeZshValue(v)).join(' ');
 		if (shortAlias) {
