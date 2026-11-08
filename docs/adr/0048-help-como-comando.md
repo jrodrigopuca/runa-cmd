@@ -1,0 +1,10 @@
+# ADR-0048: `help` donde va un comando es `--help`
+
+- **Estado:** aceptada
+- **Amplía:** [ADR-0021](./0021-help-y-version-en-core.md) y [ADR-0034](./0034-sin-nada-que-correr-es-un-error-de-uso.md)
+- **Drivers:** `tool help` daba `Command not found: 'help'. Did you mean 'hello'?` y exit 127, verificado el 2026-11-08 en la revisión antes de v1. commander, yargs, cac y oclif lo aceptan. Lo escriben las personas por costumbre, como en `git help` y `npm help`, y los modelos: uno que prueba `tool help` y recibe 127 gasta un turno, y la sugerencia lo manda a otro comando.
+- **Decisión:** donde se espera el nombre de un comando, en la raíz o en un grupo, `help` es `--help`. `tool help` es `tool --help`; `tool help db migrate`, `tool db migrate --help`; `tool db help`, `tool db --help`. Sale por stdout con exit 0. Si la CLI tiene un comando propio llamado `help` en ese punto, gana ese, como ADR-0021 dice para `--help`. En un comando hoja `help` es un valor: `tool greet help` se lo pasa al argumento. Con `runCLI` tampoco cambia nada, porque el comando es la CLI y toma todas las palabras. Un nombre que no existe después de `help` se informa como cualquier otro: `tool help deplo` da 127 y sugiere `deploy`. Si el comando tomó `--help` como opción, se usa `-h`. No es un comando: no es una tool de MCP, no aparece en la lista de comandos ni en las completions.
+- **Alternativas descartadas:** sugerir `--help` en el error de 127 hace que la persona o el agente intente dos veces. Registrarlo como un comando de verdad lo haría aparecer en la ayuda, en MCP y en las completions, y chocaría con un comando `help` del autor.
+- **Costo aceptado:** `help` no se puede usar como valor donde va un comando, por ejemplo con un posicional de `runCLI` en una CLI con subcomandos. Es aditivo: reemplaza un error 127.
+- **Revisar si:** una CLI real carga comandos dinámicamente y uno se llama `help`, o un usuario espera que `tool help` sea un error.
+- **Código:** `packages/core/src/cli.ts` (`helpAsFlag`)

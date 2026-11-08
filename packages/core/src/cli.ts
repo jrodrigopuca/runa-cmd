@@ -870,6 +870,12 @@ async function runCLILifecycle(
 					i++;
 				}
 			}
+			// Once, on the words left without globals: `tool --verbose help` too
+			commandArgv.splice(
+				0,
+				commandArgv.length,
+				...helpAsFlag(mutableCommands, commandArgv, rootName),
+			);
 
 			// Now parse ONLY the extracted global tokens with parseArgs
 			const globalParseResult = parseArgs({
@@ -923,6 +929,8 @@ async function runCLILifecycle(
 
 			// Pass remaining argv (command tokens only) to command parsing
 			hookCtx.rawArgs = commandArgv;
+		} else {
+			hookCtx.rawArgs = helpAsFlag(mutableCommands, head, rootName);
 		}
 
 		hookCtx.globalOptions = parsedGlobalOptions;
@@ -1079,6 +1087,41 @@ function resolveCommandFromTree(
 	}
 
 	return resolveCommand(commands, argv);
+}
+
+/**
+ * `help` where a command name goes is `--help` (ADR-0048): `tool help db
+ * migrate` is `tool db migrate --help`, and `tool db help` is `tool db --help`.
+ * A command named help wins, and inside a command help is a value. With
+ * runCLI, the command takes every word, so nothing changes.
+ */
+function helpAsFlag(commands: CommandTree, argv: string[], rootName?: string): string[] {
+	if (rootName !== undefined) return argv;
+
+	let current: CommandTree = commands;
+	for (const [index, token] of argv.entries()) {
+		if (token.startsWith('-')) return argv;
+
+		if (token === 'help' && !Object.hasOwn(current, 'help')) {
+			const target = [...argv.slice(0, index), ...argv.slice(index + 1)];
+			let command: Command | undefined;
+			try {
+				command = resolveCommand(commands, target).command;
+			} catch (err) {
+				if (!(err instanceof RouteNotFoundError)) throw err;
+				// `tool nope --help` shows the root's help: let the 127 name `nope`
+				if (!err.isIncomplete && !err.flag) return target;
+			}
+			// A command that took --help as an option yields -h, if it's free
+			const flag = HELP_TOKENS.find((token) => !(command && commandClaims(command, token)));
+			return flag ? [...target, flag] : argv;
+		}
+
+		const entry = current[token];
+		if (!entry || isCommand(entry)) return argv;
+		current = entry;
+	}
+	return argv;
 }
 
 function findRoute(commands: CommandTree, argv: string[], rootName?: string): Route {

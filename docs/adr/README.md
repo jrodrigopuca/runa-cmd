@@ -62,3 +62,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0045](./0045-registro-de-la-ejecucion.md) | El ciclo de vida registra lo que hace, sin exponer secretos | Aceptada, pendiente de código |
 | [0046](./0046-una-parada-termina-por-la-senal.md) | Una parada termina por la señal, y no con su código | Aceptada |
 | [0047](./0047-ningun-plugin-termina-el-proceso-con-la-ayuda.md) | Ningún plugin termina el proceso al mostrar la ayuda | Aceptada |
+| [0048](./0048-help-como-comando.md) | `help` donde va un comando es `--help` | Aceptada |

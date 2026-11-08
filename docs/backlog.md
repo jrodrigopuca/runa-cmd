@@ -99,7 +99,7 @@
 | | T-240 | Completions de bash después de un posicional | Requerido | Hecho |
 | | T-241 | Opción enum obligatoria que falta | Requerido | Hecho |
 | | T-242 | Error de tipos engañoso sin `description` | Requerido | Hecho |
-| | T-243 | `help` como comando | Requerido | Pendiente |
+| | T-243 | `help` como comando | Requerido | Hecho |
 | | T-244 | Alias mal escritos al arrancar | Requerido | Pendiente |
 | | T-245 | Guías de comparación honestas | Requerido | Pendiente |
 | | T-246 | El valor recibido en los errores | Opcional | Pendiente |
@@ -1096,7 +1096,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-243 `help` como comando
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que escribe `tool help`, quiero ver la ayuda, como en commander, yargs, cac y oclif. Hoy da `Command not found: 'help'. Did you mean 'hello'?` y exit 127. Verificado el 2026-11-08.
 - **Decisión, 2026-11-08:** `help` es un alias de `--help` donde se espera un nombre de comando, en la raíz o en un grupo. Si la CLI tiene un comando propio llamado `help`, gana ese, como dice ADR-0021 para `--help`. No es una tool de MCP ni aparece en la lista de comandos. Es aditivo, porque reemplaza un error 127. Se descartó solo sugerir `--help`: la persona o el agente igual tiene que intentar dos veces. Va en un ADR nuevo que amplía ADR-0021 y ADR-0034.
 - **Criterios de aceptación:**
