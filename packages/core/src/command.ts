@@ -72,7 +72,9 @@ export function defineCommand<
 	TArgs extends Record<string, ZodType> = Record<string, ZodType>,
 	TOptions extends Record<string, ZodType> = Record<string, ZodType>,
 	TOutput extends ZodType | undefined = undefined,
-	TResult = void,
+	// Not void: when a field fails, TypeScript falls back to the defaults, and
+	// void made run() look wrong too, as in a missing description (T-242)
+	TResult = unknown,
 >(config: CommandConfig<TArgs, TOptions, TOutput, TResult>): Command {
 	// Validate variadic args at definition time
 	if (config.args) {

@@ -98,7 +98,7 @@
 | | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Hecho |
 | | T-240 | Completions de bash después de un posicional | Requerido | Hecho |
 | | T-241 | Opción enum obligatoria que falta | Requerido | Hecho |
-| | T-242 | Error de tipos engañoso sin `description` | Requerido | Pendiente |
+| | T-242 | Error de tipos engañoso sin `description` | Requerido | Hecho |
 | | T-243 | `help` como comando | Requerido | Pendiente |
 | | T-244 | Alias mal escritos al arrancar | Requerido | Pendiente |
 | | T-245 | Guías de comparación honestas | Requerido | Pendiente |
@@ -1085,7 +1085,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-242 Error de tipos engañoso sin `description`
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como dev que copia un ejemplo con `meta: { name }`, quiero un solo error claro si falta `description`. Hoy TypeScript suma `Type 'string' is not assignable to type 'void | Promise<void>'` sobre `run`, que parece un problema de lo que devuelve el comando.
 - **Decisión, 2026-11-08:** `description` sigue obligatoria, porque es lo que lee un modelo para elegir una tool. El default de `TResult` en `defineCommand` pasa de `void` a `unknown`. La causa del error engañoso: cuando un campo falla, TypeScript no infiere los genéricos y usa los defaults, y con `void` exige que `run` no devuelva nada. Se probó en un spike sobre los tipos de la beta.6, con TypeScript 7.0.2: con `unknown` queda un solo error, y siguen fallando un `output` mal devuelto y una clave de `meta.options` que no existe. `NoInfer` en `meta` no cambió nada, y un genérico propio para `meta` perdía el chequeo de claves. **Revisar si:** algún type test depende del default `void`.
 - **Criterios de aceptación:**

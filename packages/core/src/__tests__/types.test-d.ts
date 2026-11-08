@@ -216,16 +216,57 @@ describe('type-level tests', () => {
 				run: () => {},
 			});
 
-			// The following should be a type error if uncommented:
-			// defineCommand({
-			//   meta: {
-			//     name: 'test',
-			//     description: 'Test',
-			//     options: { nonExistent: { alias: ['-n'] } },
-			//   },
-			//   options: { env: z.string() },
-			//   run: () => {},
-			// })
+			defineCommand({
+				meta: {
+					name: 'test',
+					description: 'Test',
+					// @ts-expect-error nonExistent is not an option of the command
+					options: { nonExistent: { alias: ['-n'] } },
+				},
+				options: { env: z.string() },
+				run: () => {},
+			});
+		});
+	});
+
+	// Without description, TypeScript gave a second error on run(), as if it
+	// were what it returns: the defaults of a failed inference made it void (T-242)
+	describe('a command without description', () => {
+		it('has one error, the one that says description is missing', () => {
+			defineCommand({
+				// @ts-expect-error description is missing, and that's the only error
+				meta: { name: 'greet' },
+				args: { name: z.string() },
+				run: ({ args }) => `Hello ${args.name}`,
+			});
+		});
+
+		it('has one error with an async run() too', () => {
+			defineCommand({
+				// @ts-expect-error description is missing
+				meta: {},
+				run: async () => 42,
+			});
+		});
+
+		it('still checks what run() returns against output', () => {
+			defineCommand({
+				meta: { description: 'Deploy' },
+				output: z.object({ url: z.string() }),
+				// @ts-expect-error url must be a string
+				run: () => ({ url: 1 }),
+			});
+		});
+
+		it('still types format with what run() returns', () => {
+			defineCommand({
+				meta: { description: 'Count' },
+				run: () => ({ n: 1 }),
+				format: (result) => {
+					expectTypeOf(result).toEqualTypeOf<{ n: number }>();
+					return String(result.n);
+				},
+			});
 		});
 	});
 
