@@ -62,3 +62,57 @@ describe('a missing required option', () => {
 		expect(firstLine(stderr)).toBe('Missing required option: --store, or set TOOL_STORE');
 	});
 });
+
+// A missing value is missing whatever its type: an enum or a literal said
+// "Invalid value ... Expected one of" instead (T-241)
+describe('a missing required value of any type', () => {
+	// The main example of the core README, as it is
+	const deploy = defineCommand({
+		meta: {
+			name: 'deploy',
+			description: 'Deploy to an environment',
+			options: { env: { alias: ['-e'], env: 'DEPLOY_ENV' }, replicas: { group: 'Scaling' } },
+		},
+		args: { service: z.string().describe('Service to deploy') },
+		options: {
+			env: z.enum(['staging', 'production']).describe('Target environment'),
+			replicas: z.number().default(1).describe('Number of replicas'),
+			dryRun: z.boolean().default(false).describe('Preview without deploying'),
+		},
+		output: z.object({ url: z.string(), replicas: z.number() }),
+		run: ({ args, options }) => ({
+			url: `https://${options.env}.example.com/${args.service}`,
+			replicas: options.replicas,
+		}),
+	});
+
+	it('the deploy example of the README says what its page promises', async () => {
+		const { code, stderr } = await testCLI(deploy, ['api'], { env: {} });
+
+		expect(code).toBe(2);
+		expect(firstLine(stderr)).toBe('Missing required option: --env, or set DEPLOY_ENV');
+	});
+
+	it('a wrong enum value is still an invalid value', async () => {
+		const { stderr } = await testCLI(deploy, ['api', '--env', 'mars'], { env: {} });
+		expect(firstLine(stderr)).toBe('Invalid value for --env. Expected one of: staging, production');
+	});
+
+	const kinds = defineCommand({
+		meta: { name: 'tool', description: 'Values of every kind' },
+		args: { shell: z.enum(['bash', 'zsh']) },
+		options: { mode: z.literal('fast'), level: z.enum(['low', 'high']) },
+		run: () => 'ok',
+	});
+
+	it.each([
+		[[], 'Missing required argument: <shell>'],
+		[['bash', '--level', 'low'], 'Missing required option: --mode'],
+		[['bash', '--mode', 'fast'], 'Missing required option: --level'],
+	])('%j is missing, not invalid', async (argv, message) => {
+		const { code, stderr } = await testCLI(kinds, argv, { env: {} });
+
+		expect(code).toBe(2);
+		expect(firstLine(stderr)).toBe(message);
+	});
+});

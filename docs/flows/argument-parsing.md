@@ -73,14 +73,16 @@ Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte q
 
 | Caso | Mensaje |
 |---|---|
-| Falta un argumento | `Missing required argument: <name>` |
-| Falta una opción | `Missing required option: --name` |
+| Falta un argumento, de cualquier tipo | `Missing required argument: <name>` |
+| Falta una opción, de cualquier tipo | `Missing required option: --name`, y `, or set NAME` si declara `env` |
 | Enum inválido | `Invalid value for --name. Expected one of: a, b` |
 | Tipo inválido | `Invalid value for --name: expected number` |
 | Booleano inválido | `Invalid value for --name: expected true or false` |
 | Flag desconocida, antes o después del comando | `Unknown option: --name. Did you mean '--other'?` |
 | Falta el valor | `Option -n, --name requires a value` |
 | Posicional de más | `Unexpected positional argument: 'x'` |
+
+Que algo falta se decide por el valor que llegó, no por el issue de Zod: un `z.enum` o un `z.literal` ausente da `invalid_value`, no `invalid_type`, y antes se mostraba como un valor inválido (T-241). `isMissing` en `parse/resolve.ts` lo resuelve para argumentos y opciones.
 
 En una llamada de tool, el modelo mandó claves, no flags: los mensajes nombran la clave, como `Missing required argument: 'name'` o `Invalid value for 'name': expected number`. Una opción con `env` que falta sigue diciendo `Missing required option: --name, or set NAME`, porque esa línea es para quien opera el servidor (T-236).
 

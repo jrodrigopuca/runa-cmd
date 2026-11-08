@@ -97,7 +97,7 @@
 | | T-238 | Slots del tema que no tienen efecto | Requerido | Hecho |
 | | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Hecho |
 | | T-240 | Completions de bash después de un posicional | Requerido | Hecho |
-| | T-241 | Opción enum obligatoria que falta | Requerido | Pendiente |
+| | T-241 | Opción enum obligatoria que falta | Requerido | Hecho |
 | | T-242 | Error de tipos engañoso sin `description` | Requerido | Pendiente |
 | | T-243 | `help` como comando | Requerido | Pendiente |
 | | T-244 | Alias mal escritos al arrancar | Requerido | Pendiente |
@@ -1076,7 +1076,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-241 Opción enum obligatoria que falta
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como quien opera una CLI, quiero que si falta una opción obligatoria que declara `env`, el error lo diga y nombre la variable, también si es un `z.enum`. Hoy, el ejemplo principal del README de `core` da `Invalid value for --env. Expected one of: staging, production`, y no `Missing required option: --env, or set DEPLOY_ENV`, como promete la misma página. Pasa igual con `z.literal` y con argumentos enum: `completions` sin shell dice `Invalid value for <shell>`. Verificado el 2026-11-08.
 - **Criterios de aceptación:**
   - Una opción o un argumento obligatorio que falta da `Missing required …`, sea del tipo que sea, y nombra su variable si la declara.

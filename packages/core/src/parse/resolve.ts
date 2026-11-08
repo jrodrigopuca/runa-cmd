@@ -321,12 +321,22 @@ const optionAtTerminal: NameIt = longFlag;
 const inputKey: NameIt = (name) => `'${name}'`;
 
 /**
+ * A value that never came is missing, whatever its type. Zod says so with a
+ * different issue per type, as `invalid_value` for an enum or a literal, so
+ * this looks at what arrived instead (T-241).
+ */
+function isMissing(issue: ZodIssue, values: Record<string, unknown>): boolean {
+	return issue.path.length === 1 && values[String(issue.path[0])] === undefined;
+}
+
+/**
  * Rewrite Zod issues into user-friendly CLI error messages.
  * Handles common cases: missing required args/options, invalid enums, wrong types.
  */
 function humanizeArgIssues(
 	issues: ZodIssue[],
 	argsSchemas: Record<string, ZodType>,
+	values: Record<string, unknown>,
 	nameIt: NameIt = argAtTerminal,
 ): ZodIssue[] {
 	const metadata = walkSchema(argsSchemas);
@@ -337,8 +347,8 @@ function humanizeArgIssues(
 		if (typeof name !== 'string') return issue;
 		const param = metaByName.get(name);
 
-		// Missing required arg: Zod v4 produces "Invalid input: expected X, received undefined"
-		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
+		// Missing required arg, of any type
+		if (isMissing(issue, values)) {
 			return {
 				code: 'custom' as const,
 				message: `Missing required argument: ${nameIt(name)}`,
@@ -372,6 +382,7 @@ function humanizeOptionIssues(
 	issues: ZodIssue[],
 	optionsSchemas: Record<string, ZodType>,
 	optionsMeta: Record<string, OptionMeta> | undefined,
+	values: Record<string, unknown>,
 	nameIt: NameIt = optionAtTerminal,
 ): ZodIssue[] {
 	const metadata = walkSchema(optionsSchemas);
@@ -383,8 +394,9 @@ function humanizeOptionIssues(
 		const param = metaByName.get(name);
 
 		// Missing required option. Its variable is a name, never a value (T-216).
-		// One with env is the operator's to set, who knows it by its flag and variable
-		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
+		// One with env is the operator's to set, who knows it by its flag and variable.
+		// Of any type: an enum or a literal too (T-241)
+		if (isMissing(issue, values)) {
 			const envName = optionsMeta?.[name]?.env;
 			return {
 				code: 'custom' as const,
@@ -549,7 +561,7 @@ function validateArgs(
 		return z.object(argSchemas).parse(coerced) as Record<string, unknown>;
 	} catch (err) {
 		if (err instanceof ZodError) {
-			throw new ValidationError(humanizeArgIssues(err.issues, argSchemas, nameIt));
+			throw new ValidationError(humanizeArgIssues(err.issues, argSchemas, coerced, nameIt));
 		}
 		throw err;
 	}
@@ -585,7 +597,13 @@ function validateOptions(
 	} catch (err) {
 		if (err instanceof ZodError) {
 			const nameIt = directSource === 'input' ? inputKey : optionAtTerminal;
-			const humanized = humanizeOptionIssues(err.issues, optionSchemas, optionsMeta, nameIt);
+			const humanized = humanizeOptionIssues(
+				err.issues,
+				optionSchemas,
+				optionsMeta,
+				rawOptions,
+				nameIt,
+			);
 			const enumsByName = new Map(walkSchema(optionSchemas).map((m) => [m.name, m.enumValues]));
 			throw new ValidationError(
 				err.issues.map((issue, index) => {
