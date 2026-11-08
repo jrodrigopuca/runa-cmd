@@ -105,7 +105,7 @@
 | | T-246 | El valor recibido en los errores | Opcional | Pendiente |
 | | T-247 | Sugerir dónde va una clave del config | Opcional | Pendiente |
 | | T-248 | Alias y env junto al schema | Opcional | Pendiente |
-| | T-249 | Docs internas al día | Opcional | Pendiente |
+| | T-249 | Docs internas al día | Opcional | Hecho |
 | | T-250 | Detalles de coherencia | Opcional | En curso |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
@@ -1156,7 +1156,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-249 Docs internas al día
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como quien lee `docs/`, que es la fuente de verdad, quiero que diga lo que el código hace. El índice de ADRs marca "pendiente de código" a 0021, 0024, 0025 y 0040 a 0045, ya implementados; `architecture.md` todavía nombra el modo implícito; y `components/core.md` dice en un lugar que una parada pasa por `onError` y en otro lo contrario.
 - **Criterios de aceptación:**
   - El índice de ADRs, `architecture.md` y `components/core.md` coinciden con el código.

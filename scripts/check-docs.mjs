@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { adrStatusMismatch, implementationTasks } from './adr-status.mjs';
 import { codeFiles, missingForCode } from './commit-rule.mjs';
 import { peerMismatches, readFixed, readPackages } from './peers.mjs';
 
@@ -116,7 +117,7 @@ function checkPaths(file, text) {
 	}
 }
 
-function checkAdrs() {
+function checkAdrs(taskStates) {
 	const dir = join(DOCS, 'adr');
 	const index = readFileSync(join(dir, 'README.md'), 'utf8');
 	const files = readdirSync(dir).filter((name) => /^\d{4}-.+\.md$/.test(name));
@@ -131,22 +132,30 @@ function checkAdrs() {
 		for (const field of ADR_FIELDS) {
 			if (!text.includes(`**${field}:**`)) fail(`docs/adr/${name}`, `missing field ${field}`);
 		}
+		const row = index.split('\n').find((line) => line.includes(`(./${name})`)) ?? '';
+		const mismatch = adrStatusMismatch(
+			implementationTasks(text),
+			row.includes('pendiente de código'),
+			taskStates,
+		);
+		if (mismatch) fail(`docs/adr/README.md`, `ADR-${number}: ${mismatch}`);
 	}
 	for (const [, name] of index.matchAll(/\(\.\/(\d{4}-[^)]+\.md)\)/g)) {
 		if (!files.includes(name)) fail('docs/adr/README.md', `lists a missing ADR ${name}`);
 	}
 }
 
+/** Every task, with its state. */
 function checkBacklog() {
 	const text = readFileSync(join(DOCS, 'backlog.md'), 'utf8');
-	const ids = new Set();
+	const ids = new Map();
 	const sections = text.split(/^### (?=T-\d{3} )/m).slice(1);
 	for (const section of sections) {
 		const id = section.slice(0, 5);
 		if (ids.has(id)) fail('docs/backlog.md', `repeated task ${id}`);
-		ids.add(id);
 		const v1 = section.match(/\*\*v1:\*\* (.+)/)?.[1];
 		const state = section.match(/\*\*Estado:\*\* (.+)/)?.[1];
+		ids.set(id, state);
 		if (!V1_VALUES.includes(v1)) fail('docs/backlog.md', `${id} has invalid v1: ${v1}`);
 		if (!TASK_STATES.includes(state)) fail('docs/backlog.md', `${id} has invalid state: ${state}`);
 		if (!section.includes('**Criterios de aceptación:**')) {
@@ -209,14 +218,15 @@ const option = (name) => {
 	return index === -1 ? undefined : args[index + 1];
 };
 
-const issues = checkKnownIssues(checkBacklog());
+const taskStates = checkBacklog();
+const issues = checkKnownIssues(taskStates);
 for (const file of [...walk(DOCS).filter((path) => path.endsWith('.md')), join(ROOT, 'AGENTS.md')]) {
 	const text = withoutFences(readFileSync(file, 'utf8'));
 	checkLinks(file, text);
 	checkPaths(file, text);
 	checkIssueReferences(file, text, issues);
 }
-checkAdrs();
+checkAdrs(taskStates);
 
 for (const file of existsSync(GUIDES) ? walk(GUIDES).filter((path) => path.endsWith('.md')) : []) {
 	const raw = readFileSync(file, 'utf8');

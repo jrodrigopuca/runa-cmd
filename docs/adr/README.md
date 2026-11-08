@@ -8,7 +8,7 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 - Un ADR aceptado no se edita. Si cambia la decisión, se crea uno nuevo con `Reemplaza: ADR-n`, y en el viejo solo cambia el estado. La excepción es una línea `Nota` que apunta a un known issue: se quita cuando el problema se resuelve.
 - Un cambio de implementación que respeta la decisión no necesita ADR.
 - "Revisar si" es una condición que se puede comprobar, no una fecha.
-- Si `Implementación` nombra una tarea, la decisión está aceptada pero el código todavía no la refleja.
+- `Implementación` nombra las tareas que llevan la decisión al código. Mientras alguna no esté en Hecho, el índice dice "pendiente de código"; cuando todas lo están, dice "Aceptada". `pnpm docs:check` falla si el índice y el backlog no coinciden.
 - `pnpm docs:check` exige que todo ADR figure en este índice, y al revés.
 
 ## Índice
@@ -35,11 +35,11 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0018](./0018-bloques-y-primitivas-de-layout.md) | `Block` es un string, y las primitivas son independientes | Aceptada |
 | [0019](./0019-completions-como-comando.md) | Completions como comando, con generadores puros | Aceptada |
 | [0020](./0020-un-comando-para-personas-y-agentes.md) | Un comando, para personas y agentes | Aceptada |
-| [0021](./0021-help-y-version-en-core.md) | `--help` y `--version` en `core`, cediendo ante el usuario | Aceptada, pendiente de código |
+| [0021](./0021-help-y-version-en-core.md) | `--help` y `--version` en `core`, cediendo ante el usuario | Aceptada |
 | [0022](./0022-separador-llena-posicionales.md) | `--` llena posicionales; lo que sobra va a `ctx.rest` | Reemplazada por ADR-0036 |
 | [0023](./0023-runcli-y-modo-raiz.md) | `runCLI` con plugins y modo raíz explícito | Aceptada |
-| [0024](./0024-kebab-case.md) | Kebab-case en la terminal, camelCase en el código | Aceptada, pendiente de código |
-| [0025](./0025-control-de-mcp-en-el-plugin.md) | El control de tools MCP vive en el plugin | Aceptada, pendiente de código |
+| [0024](./0024-kebab-case.md) | Kebab-case en la terminal, camelCase en el código | Aceptada |
+| [0025](./0025-control-de-mcp-en-el-plugin.md) | El control de tools MCP vive en el plugin | Aceptada |
 | [0026](./0026-docs-como-fuente-de-verdad.md) | `docs/` como fuente de verdad | Aceptada |
 | [0027](./0027-toda-salida-explica-el-motivo.md) | Toda salida por error explica el motivo | Aceptada |
 | [0028](./0028-coercion-booleana.md) | Los booleanos aceptan solo true, false, 1 y 0 | Aceptada |
@@ -54,12 +54,12 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0037](./0037-politica-de-versiones.md) | Lo que es contrato se puede usar en un programa | Aceptada |
 | [0038](./0038-ventana-de-estabilidad.md) | La ventana de estabilidad mide uso sobre una versión publicada | Aceptada |
 | [0039](./0039-paquetes-independientes-desde-1-0.md) | Los paquetes se versionan juntos hasta la 1.0.0, y por separado después | Aceptada, pendiente de código |
-| [0040](./0040-forma-del-archivo-de-config.md) | La raíz del config tiene las globales y los comandos | Aceptada, pendiente de código |
-| [0041](./0041-funcion-de-pruebas.md) | Una función de pruebas envuelve la CLI | Aceptada, pendiente de código |
-| [0042](./0042-lo-devuelto-llega-a-la-terminal.md) | Lo que devuelve un comando llega a la terminal | Aceptada, pendiente de código |
-| [0043](./0043-nombre-unico-de-comando.md) | Un comando se escribe de una sola forma | Aceptada, pendiente de código |
-| [0044](./0044-runa-no-opina-sobre-reintentos.md) | Runa informa lo que ocurrió, y no opina sobre reintentos | Aceptada, pendiente de código |
-| [0045](./0045-registro-de-la-ejecucion.md) | El ciclo de vida registra lo que hace, sin exponer secretos | Aceptada, pendiente de código |
+| [0040](./0040-forma-del-archivo-de-config.md) | La raíz del config tiene las globales y los comandos | Aceptada |
+| [0041](./0041-funcion-de-pruebas.md) | Una función de pruebas envuelve la CLI | Aceptada |
+| [0042](./0042-lo-devuelto-llega-a-la-terminal.md) | Lo que devuelve un comando llega a la terminal | Aceptada |
+| [0043](./0043-nombre-unico-de-comando.md) | Un comando se escribe de una sola forma | Aceptada |
+| [0044](./0044-runa-no-opina-sobre-reintentos.md) | Runa informa lo que ocurrió, y no opina sobre reintentos | Aceptada |
+| [0045](./0045-registro-de-la-ejecucion.md) | El ciclo de vida registra lo que hace, sin exponer secretos | Aceptada |
 | [0046](./0046-una-parada-termina-por-la-senal.md) | Una parada termina por la señal, y no con su código | Aceptada |
 | [0047](./0047-ningun-plugin-termina-el-proceso-con-la-ayuda.md) | Ningún plugin termina el proceso al mostrar la ayuda | Aceptada |
 | [0048](./0048-help-como-comando.md) | `help` donde va un comando es `--help` | Aceptada |

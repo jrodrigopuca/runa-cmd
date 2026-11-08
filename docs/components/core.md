@@ -174,7 +174,7 @@ Fallan al arrancar un booleano `noCache`, con `INVALID_OPTION_NAME`, porque `--n
 
 ### Cómo se detiene una ejecución
 
-La parada de [ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md) entra por un solo camino: `SIGINT`, `SIGTERM` o el corte del canal con el servidor. Dispara `ctx.signal`, disponible en `run()` y en los hooks, y termina como un error más, con `onError` y `cleanup`.
+La parada de [ADR-0033](../adr/0033-parar-recorre-el-arbol-de-procesos.md) entra por un solo camino: `SIGINT`, `SIGTERM` o el corte del canal con el servidor. Dispara `ctx.signal`, disponible en `run()` y en los hooks. Si `run()` falla por el aborto, o no termina a tiempo, la parada es un error más, con `onError` y `cleanup`. Si termina bien después de la señal, no es un error: corren `afterRun` y `cleanup`, sin `onError` ([ADR-0046](../adr/0046-una-parada-termina-por-la-senal.md)).
 
 ```ts
 defineCommand({

@@ -70,7 +70,6 @@ Los principios y sus razones están en los ADRs. Los que más condicionan el dis
 
 ## Puntos débiles conocidos
 
-- **`defineCLI` todavía tiene un modo implícito de comando único.** Depende de que `commands` tenga una sola clave. `runCLI` ya usa un modo raíz explícito.
-- **`isCommand` está cuatro veces:** `cli.ts`, `plugin.ts`, `introspect.ts` y `mcp/src/schema.ts`.
+- **`isCommand` está cuatro veces:** `cli.ts`, `introspect.ts` y `config/scope.ts` en `core`, y `schema.ts` en `mcp`, además de `isCommandNode` en `plugin.ts`. Hacen lo mismo: mirar la marca `_type`.
 
-Los tres primeros se resuelven con [ADR-0021](./adr/0021-help-y-version-en-core.md), [ADR-0023](./adr/0023-runcli-y-modo-raiz.md) y [ADR-0024](./adr/0024-kebab-case.md).
+El modo implícito de comando único de `defineCLI` ya no existe: se retiró en `0.2.0-beta.4` (T-208), y una CLI de un comando usa `runCLI`, con su modo raíz ([ADR-0023](./adr/0023-runcli-y-modo-raiz.md)).
