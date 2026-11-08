@@ -95,7 +95,7 @@
 | | T-236 | Errores de MCP por un valor del operador | Requerido | Hecho |
 | | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Hecho |
 | | T-238 | Slots del tema que no tienen efecto | Requerido | Hecho |
-| | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Pendiente |
+| | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Hecho |
 | | T-240 | Completions de bash después de un posicional | Requerido | Pendiente |
 | | T-241 | Opción enum obligatoria que falta | Requerido | Pendiente |
 | | T-242 | Error de tipos engañoso sin `description` | Requerido | Pendiente |
@@ -1055,7 +1055,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-239 La CLI del generador sigue las reglas de Runa
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que corre `npm create @runa-cmd`, quiero que se comporte como una CLI hecha con Runa. Tiene `-v, --version`, que [ADR-0021](./adr/0021-help-y-version-en-core.md) descarta; sus errores de uso salen sin hint y con el texto de `parseArgs`; y VERSIONING.md hace contrato sus argumentos y exit codes, que su README no lista.
 - **Decisión, 2026-11-08:** el generador tiene `-h, --help` y `--version`, sin `-v`, como dice ADR-0021 para las CLIs de Runa. Sigue sin dependencias: se descartó construirlo con Runa, porque traería Zod a cada `npm create`. Sacar `-v` es incompatible para su CLI y entra en la `0.2.0-beta.7`, que ya reinicia la ventana.
 - **Criterios de aceptación:**

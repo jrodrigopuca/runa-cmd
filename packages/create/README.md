@@ -13,6 +13,28 @@ Until Runa reaches 1.0, add `@beta`, as above.
 
 It works with pnpm, yarn and bun too, as `pnpm create @runa-cmd@beta my-tool`, and the next steps it prints use the one you ran it with.
 
+## Usage
+
+```
+npm create @runa-cmd <name>
+```
+
+| Argument | What it does |
+|---|---|
+| `<name>` | The folder, the package and the command, as in `my-tool` |
+| `-h`, `--help` | Shows how to use it |
+| `--version` | Shows its version |
+
+npm reads its own flags first: to reach these, put them after `--`, as in `npm create @runa-cmd -- --help`.
+
+| Exit | When |
+|---|---|
+| `0` | The project was created, or it showed the help or the version |
+| `2` | A usage error, with what's wrong: an unknown option, no name or more than one, a name that can't be one, or a folder that already has files |
+| `1` | Something else failed, as a file it couldn't write |
+
+Like any CLI made with Runa, there's no `-v`, which other tools use for `--verbose`.
+
 ## What you get
 
 | File | What it is |
