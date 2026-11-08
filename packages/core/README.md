@@ -487,7 +487,7 @@ On `SIGINT` or `SIGTERM`, Runa aborts `ctx.signal` and runs `cleanup`, and the p
 
 If `run()` ends well after the signal, as a server that closes when told to, that's not an error: nothing is printed and `onError` doesn't run. If it fails because of the abort, or doesn't end in time, stderr says `Interrupted.`.
 
-Ending by the signal, instead of with exit code 143, is what makes a stop clean for a service manager: systemd counts death by `SIGTERM` as clean, and exit 143 as a failure. A program that starts your CLI with `spawn` sees `signal: 'SIGTERM'`, not `code: 143`. On Windows, which has no signals, it exits with the code. Under launchd, stop a service with `launchctl bootout`: with `KeepAlive` → `SuccessfulExit: false`, a `launchctl kill` restarts it, as it does with any daemon that dies by the signal.
+Ending by the signal, instead of with exit code 143, is what makes a stop clean for a service manager: systemd counts death by `SIGTERM` as clean, and exit 143 as a failure. A program that starts your CLI with `spawn` sees `signal: 'SIGTERM'`, not `code: 143`, and gets the number a shell shows with `code ?? 128 + os.constants.signals[signal]`. On Windows, which has no signals, it exits with the code. Under launchd, stop a service with `launchctl bootout`: with `KeepAlive` → `SuccessfulExit: false`, a `launchctl kill` restarts it, as it does with any daemon that dies by the signal.
 
 Pass `signal` to whatever the command starts, so the stop reaches it too:
 

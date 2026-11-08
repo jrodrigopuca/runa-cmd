@@ -8,6 +8,8 @@
 
   If `run()` ends well after the signal, it's no longer reported as an error: no `Interrupted.` and no `onError`. A command that fails because of the abort, or doesn't end in time, still prints `Interrupted.`.
 
+  **Breaking for code that starts a Runa CLI with `spawn` and reads `code`:** after a signal it's now `null`, with the signal in `signal`. To get the number a shell shows, use `code ?? 128 + os.constants.signals[signal]`. Scripts that read `$?` are not affected. (Added after the release: the published entry didn't say it.)
+
 ## 0.2.0-beta.5
 
 ### Minor Changes
