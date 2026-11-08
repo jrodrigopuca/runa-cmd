@@ -18,6 +18,7 @@ import {
 import { RunaError } from '@runa-cmd/core';
 import type { ToolReport } from '@runa-cmd/core/internal';
 import { type ZodType, z } from 'zod';
+import { ERROR_CLASSES, type ErrorClass, MCP_ERROR_CODES } from './errors.js';
 import type { ChildOutcome, RunOptions } from './runner.js';
 import { childrenFinished, runChild } from './runner.js';
 import type { ToolRegistration } from './schema.js';
@@ -55,17 +56,7 @@ const success = (text: string): CallToolResult => ({ content: [{ type: 'text', t
 type Effect = 'none' | 'completed' | 'unknown';
 
 interface ToolFailure {
-	class:
-		| 'unknown_tool'
-		| 'invalid_input'
-		| 'rejected'
-		| 'not_run'
-		| 'command_failed'
-		| 'crashed'
-		| 'invalid_output'
-		| 'output_too_large'
-		| 'after_run_failed'
-		| 'cancelled';
+	class: ErrorClass;
 	effect: Effect;
 }
 
@@ -83,23 +74,26 @@ function findFailure({ reports, status, cancelled }: ChildOutcome): ToolFailure 
 	const reached = (kind: ToolReport['kind']) => reports.some((report) => report.kind === kind);
 	const failed = reports.find((report) => report.kind === 'failed');
 
-	if (cancelled) return { class: 'cancelled', effect: 'unknown' };
-	if (reached('oversized')) return { class: 'output_too_large', effect: 'completed' };
+	const { AFTER_RUN_FAILED, CANCELLED, COMMAND_FAILED, CRASHED, INVALID_INPUT } = ERROR_CLASSES;
+	const { INVALID_OUTPUT, NOT_RUN, OUTPUT_TOO_LARGE, REJECTED } = ERROR_CLASSES;
+
+	if (cancelled) return { class: CANCELLED, effect: 'unknown' };
+	if (reached('oversized')) return { class: OUTPUT_TOO_LARGE, effect: 'completed' };
 	if (reached('result')) {
 		if (!failed && status === 0) return undefined;
-		return { class: 'after_run_failed', effect: 'completed' };
+		return { class: AFTER_RUN_FAILED, effect: 'completed' };
 	}
 	if (reached('ran')) {
 		const invalid = failed?.reason === 'output';
-		return { class: invalid ? 'invalid_output' : 'after_run_failed', effect: 'completed' };
+		return { class: invalid ? INVALID_OUTPUT : AFTER_RUN_FAILED, effect: 'completed' };
 	}
 	if (reached('running')) {
-		return { class: failed ? 'command_failed' : 'crashed', effect: 'unknown' };
+		return { class: failed ? COMMAND_FAILED : CRASHED, effect: 'unknown' };
 	}
 	if (failed) {
-		return { class: failed.reason === 'input' ? 'invalid_input' : 'rejected', effect: 'none' };
+		return { class: failed.reason === 'input' ? INVALID_INPUT : REJECTED, effect: 'none' };
 	}
-	return { class: status === 0 ? 'not_run' : 'crashed', effect: 'none' };
+	return { class: status === 0 ? NOT_RUN : CRASHED, effect: 'none' };
 }
 
 /** Anything the model has to read goes in the text: `_meta` is for the client. */
@@ -109,7 +103,10 @@ const failure = (reason: string, found: ToolFailure): CallToolResult => ({
 	content: [
 		{
 			type: 'text',
-			text: found.class === 'command_failed' ? reason : `${reason}\n\n${EFFECT_TEXT[found.effect]}`,
+			text:
+				found.class === ERROR_CLASSES.COMMAND_FAILED
+					? reason
+					: `${reason}\n\n${EFFECT_TEXT[found.effect]}`,
 		},
 	],
 	_meta: { 'runa/error': found },
@@ -134,7 +131,7 @@ function failedChild(
 }
 
 function silentFailure(reg: ToolRegistration, outcome: ChildOutcome, found: ToolFailure): string {
-	if (found.class === 'cancelled') return `Command '${reg.name}' was cancelled.`;
+	if (found.class === ERROR_CLASSES.CANCELLED) return `Command '${reg.name}' was cancelled.`;
 	if (outcome.status !== 0) return `Command '${reg.name}' exited with code ${outcome.status}.`;
 	return `Command '${reg.name}' did not ${found.effect === 'none' ? 'run' : 'finish'}.`;
 }
@@ -181,7 +178,7 @@ async function assertCanRunItself(options: RunOptions): Promise<void> {
 	throw new RunaError(
 		`Cannot run this CLI as a subprocess with: ${options.selfCommand.join(' ')}. ` +
 			'If it is a compiled binary, set mcpPlugin({ selfCommand }).',
-		{ code: 'MCP_SELF_CHECK_FAILED' },
+		{ code: MCP_ERROR_CODES.MCP_SELF_CHECK_FAILED },
 	);
 }
 
@@ -198,7 +195,10 @@ export function createMcpServer(registrations: ToolRegistration[], options: Serv
 	server.setRequestHandler(CallToolRequestSchema, async ({ params }, extra) => {
 		const reg = registrations.find((candidate) => candidate.name === params.name);
 		if (!reg) {
-			return failure(`Unknown tool: ${params.name}`, { class: 'unknown_tool', effect: 'none' });
+			return failure(`Unknown tool: ${params.name}`, {
+				class: ERROR_CLASSES.UNKNOWN_TOOL,
+				effect: 'none',
+			});
 		}
 
 		// A fixed option stays what the operator set, whatever the call says

@@ -7,7 +7,7 @@
  */
 import type { ZodType } from 'zod';
 import { JSON_OPTION } from './command.js';
-import { RunaError } from './errors.js';
+import { ERROR_CODES, RunaError } from './errors.js';
 import { flagName, longFlag } from './flag-name.js';
 import { walkSchema } from './parse/schema-walker.js';
 import type {
@@ -33,13 +33,13 @@ import type {
 export function definePlugin(config: PluginConfig): PluginConfig {
 	if (!config.meta?.name) {
 		throw new RunaError('Plugin must have meta.name defined.', {
-			code: 'INVALID_PLUGIN',
+			code: ERROR_CODES.INVALID_PLUGIN,
 			exitCode: 1,
 		});
 	}
 	if (typeof config.setup !== 'function') {
 		throw new RunaError(`Plugin '${config.meta.name}' must have a setup() function.`, {
-			code: 'INVALID_PLUGIN',
+			code: ERROR_CODES.INVALID_PLUGIN,
 			exitCode: 1,
 		});
 	}
@@ -63,7 +63,7 @@ export async function resolvePlugins(plugins: PluginInput[]): Promise<PluginConf
 				const mod = await plugin();
 				if (!mod.default) {
 					throw new RunaError('Lazy-loaded plugin module does not have a default export.', {
-						code: 'PLUGIN_LOAD_ERROR',
+						code: ERROR_CODES.PLUGIN_LOAD_ERROR,
 						exitCode: 1,
 					});
 				}
@@ -72,7 +72,7 @@ export async function resolvePlugins(plugins: PluginInput[]): Promise<PluginConf
 				if (err instanceof RunaError) throw err;
 				throw new RunaError(
 					`Failed to load lazy plugin: ${err instanceof Error ? err.message : String(err)}`,
-					{ code: 'PLUGIN_LOAD_ERROR', exitCode: 1 },
+					{ code: ERROR_CODES.PLUGIN_LOAD_ERROR, exitCode: 1 },
 				);
 			}
 		} else {
@@ -109,7 +109,7 @@ export function topologicalSort(plugins: PluginConfig[]): PluginConfig[] {
 		for (const dep of plugin.meta.dependencies ?? []) {
 			if (!byName.has(dep)) {
 				throw new RunaError(`Plugin '${name}' depends on '${dep}', which is not registered.`, {
-					code: 'PLUGIN_MISSING_DEPENDENCY',
+					code: ERROR_CODES.PLUGIN_MISSING_DEPENDENCY,
 					exitCode: 1,
 				});
 			}
@@ -150,7 +150,7 @@ export function topologicalSort(plugins: PluginConfig[]): PluginConfig[] {
 			.map((p) => `'${p.meta.name}'`)
 			.join(', ');
 		throw new RunaError(`Circular dependency detected among plugins: ${remaining}.`, {
-			code: 'PLUGIN_CIRCULAR_DEPENDENCY',
+			code: ERROR_CODES.PLUGIN_CIRCULAR_DEPENDENCY,
 			exitCode: 1,
 		});
 	}
@@ -200,7 +200,7 @@ export function createPluginAPI(
 			if (!caps.addCommands) {
 				throw new RunaError(
 					`Plugin '${pluginName}' called addCommand() but did not declare addCommands capability.`,
-					{ code: 'PLUGIN_CAPABILITY_VIOLATION', exitCode: 1 },
+					{ code: ERROR_CODES.PLUGIN_CAPABILITY_VIOLATION, exitCode: 1 },
 				);
 			}
 			refs.commands[name] = command;
@@ -210,7 +210,7 @@ export function createPluginAPI(
 			if (!caps.addGlobalOptions) {
 				throw new RunaError(
 					`Plugin '${pluginName}' called addGlobalOption() but did not declare addGlobalOptions capability.`,
-					{ code: 'PLUGIN_CAPABILITY_VIOLATION', exitCode: 1 },
+					{ code: ERROR_CODES.PLUGIN_CAPABILITY_VIOLATION, exitCode: 1 },
 				);
 			}
 			refs.globalOptions[name] = schema;
@@ -234,7 +234,7 @@ export function createPluginAPI(
 			if (!caps.addMiddleware) {
 				throw new RunaError(
 					`Plugin '${pluginName}' called addMiddleware() but did not declare addMiddleware capability.`,
-					{ code: 'PLUGIN_CAPABILITY_VIOLATION', exitCode: 1 },
+					{ code: ERROR_CODES.PLUGIN_CAPABILITY_VIOLATION, exitCode: 1 },
 				);
 			}
 			refs.middleware.push(middleware);
@@ -261,13 +261,13 @@ export function createPluginAPI(
 			if (!caps.replaceHelp) {
 				throw new RunaError(
 					`Plugin '${pluginName}' called replaceHelp() but did not declare replaceHelp capability.`,
-					{ code: 'PLUGIN_CAPABILITY_VIOLATION', exitCode: 1 },
+					{ code: ERROR_CODES.PLUGIN_CAPABILITY_VIOLATION, exitCode: 1 },
 				);
 			}
 			if (refs.help.owner) {
 				throw new RunaError(
 					`Plugins '${refs.help.owner}' and '${pluginName}' both replace the help.`,
-					{ code: 'HELP_ALREADY_REPLACED', exitCode: 1 },
+					{ code: ERROR_CODES.HELP_ALREADY_REPLACED, exitCode: 1 },
 				);
 			}
 			refs.help.owner = pluginName;
@@ -307,7 +307,7 @@ function assertUsableNames(options: Record<string, ZodType>, owner: string): voi
 		const other = keysByFlag.get(flag);
 		if (other) {
 			throw new RunaError(`Options '${other}' and '${name}' of ${owner} are both '--${flag}'.`, {
-				code: 'OPTION_NAME',
+				code: ERROR_CODES.OPTION_COLLISION,
 				exitCode: 1,
 			});
 		}
@@ -319,7 +319,7 @@ function assertUsableNames(options: Record<string, ZodType>, owner: string): voi
 			throw new RunaError(
 				`Boolean option '${name}' of ${owner} would clash with '--no-${flagName(key)}', ` +
 					`which already negates '${key}'. Declare '${key}' instead, with .default(true).`,
-				{ code: 'OPTION_NAME', exitCode: 1 },
+				{ code: ERROR_CODES.INVALID_OPTION_NAME, exitCode: 1 },
 			);
 		}
 	}
@@ -353,7 +353,7 @@ const COMMAND_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
  */
 export function validateCommandNames(commands: CommandTree, rootName?: string): void {
 	const invalid = (message: string): RunaError =>
-		new RunaError(message, { code: 'INVALID_COMMAND_NAME', exitCode: 1 });
+		new RunaError(message, { code: ERROR_CODES.INVALID_COMMAND_NAME, exitCode: 1 });
 
 	const walk = (tree: CommandTree, path: string[]): void => {
 		for (const [key, entry] of Object.entries(tree)) {
@@ -445,7 +445,7 @@ export function validateOptionCollisions(
 					.join(' and ');
 				throw new RunaError(
 					`Global option '${renderLong(name)}' is registered by both ${labels}.`,
-					{ code: 'OPTION_COLLISION', exitCode: 1 },
+					{ code: ERROR_CODES.OPTION_COLLISION, exitCode: 1 },
 				);
 			}
 		}
@@ -468,7 +468,7 @@ export function validateOptionCollisions(
 				`Global option '${renderLong(owner.canonical)}' (${sourceLabel(sources?.get(owner.canonical)?.[0])}) ` +
 					`collides with global option '${renderLong(existing.canonical)}' (${sourceLabel(sources?.get(existing.canonical)?.[0])}): ` +
 					`both use '${owner.token}'.`,
-				{ code: 'OPTION_COLLISION', exitCode: 1 },
+				{ code: ERROR_CODES.OPTION_COLLISION, exitCode: 1 },
 			);
 		}
 		map.set(key, owner);
@@ -513,7 +513,7 @@ export function validateOptionCollisions(
 					throw new RunaError(
 						`Global option '${renderLong(owner.canonical)}' (${sourceLabel(sources?.get(owner.canonical)?.[0])}) ` +
 							`collides with option '${renderLong(optName)}' of command '${commandPath}'.${viaAlias}`,
-						{ code: 'OPTION_COLLISION', exitCode: 1 },
+						{ code: ERROR_CODES.OPTION_COLLISION, exitCode: 1 },
 					);
 				};
 

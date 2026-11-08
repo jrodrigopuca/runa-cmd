@@ -469,6 +469,51 @@ import {
 throw new CommandError('Deployment failed', { code: 'DEPLOY_FAILED', exitCode: 3 });
 ```
 
+#### Error codes
+
+Tell errors apart by their `code`, not by the message: codes are part of the [contract](../../VERSIONING.md), and messages change. `isRunaError(error, code?)` checks both, and works even when two copies of `@runa-cmd/core` are installed, where `instanceof` fails. `ERROR_CODES` lists Runa's codes, and a `CommandError` takes your own:
+
+```ts
+import { ERROR_CODES, isRunaError } from '@runa-cmd/core';
+
+if (isRunaError(error, ERROR_CODES.INVALID_CONFIG)) { /* the config file is wrong */ }
+if (isRunaError(error, 'DEPLOY_FAILED')) { /* your own code */ }
+```
+
+The value that's wrong has one code wherever it comes from, terminal, env or config file, and the message says where. These come up while someone runs the CLI:
+
+| Code | Exit | When |
+|---|---|---|
+| `VALIDATION_ERROR` | 2 | An argument or option is missing, or breaks its schema. `ValidationError` |
+| `INVALID_CONFIG` | 2 | The config file can't be used: broken JSON, an unknown key, or a value where an object goes. `ConfigError` |
+| `COMMAND_NOT_FOUND` | 127 | No command has that name. `CommandNotFoundError` |
+| `COMMAND_ERROR` | 1 | A `CommandError` without its own code |
+| `INTERRUPTED` | The signal's | `SIGINT` or `SIGTERM` stopped the run, and `run()` failed because of it or didn't end in time |
+| `INVALID_OUTPUT` | 1 | `run()` returned a value its `output` schema rejects |
+| `MISSING_RESULT` | 1 | The command declares `format`, and `run()` returned nothing |
+| `MIDDLEWARE_DID_NOT_CALL_NEXT` | 1 | A middleware returned without calling `next()`, so the command didn't run |
+| `MIDDLEWARE_DID_NOT_AWAIT_NEXT` | 1 | A middleware called `next()` without awaiting it |
+
+These stop the CLI at startup, all with exit 1. They point at the CLI's code, so its author sees them the first time it runs:
+
+| Code | When |
+|---|---|
+| `OPTION_COLLISION` | Two options end up as the same flag or alias: two keys of a command, two globals, a global and a command's option, or an option where `format` adds `--json` |
+| `INVALID_OPTION_NAME` | A boolean `noCache` would clash with `--no-cache`, which already negates `cache` |
+| `INVALID_META_OPTIONS` | `meta.options` names a key that `options` doesn't have |
+| `INVALID_VARIADIC_ARGS` | A command has more than one list argument |
+| `INVALID_VARIADIC_POSITION` | The list argument isn't the last one |
+| `INVALID_COMMAND_NAME` | A command key isn't lowercase words joined by dashes, or doesn't match its `meta.name` |
+| `CONFIG_COLLISION` | A global option and a command share a name, so a config file can't tell them apart |
+| `INVALID_PLUGIN` | A plugin without `meta.name` or `setup()` |
+| `PLUGIN_LOAD_ERROR` | A lazy plugin failed to load, or its module has no default export |
+| `PLUGIN_MISSING_DEPENDENCY` | A plugin depends on one that isn't registered |
+| `PLUGIN_CIRCULAR_DEPENDENCY` | Plugins depend on each other in a cycle |
+| `PLUGIN_CAPABILITY_VIOLATION` | A plugin used part of the API without declaring its capability |
+| `HELP_ALREADY_REPLACED` | Two plugins replace the help |
+
+`@runa-cmd/mcp` adds its own, listed in [its README](../mcp/README.md#errors).
+
 #### How a failed run ends
 
 No failure exits silently. The reason goes to stderr, `cleanup` runs, and then the process exits.
@@ -508,7 +553,9 @@ A command that blocks the event loop can't react to a signal until it yields. Us
 ### Constants
 
 ```ts
-import { HOOK_NAMES, PARAM_TYPES } from '@runa-cmd/core';
+import { ERROR_CODES, HOOK_NAMES, PARAM_TYPES } from '@runa-cmd/core';
+
+ERROR_CODES.VALIDATION_ERROR // 'VALIDATION_ERROR', and every code in Error codes
 
 HOOK_NAMES.BEFORE_PARSE   // 'beforeParse'
 HOOK_NAMES.ON_GLOBAL_FLAGS // 'onGlobalFlags'

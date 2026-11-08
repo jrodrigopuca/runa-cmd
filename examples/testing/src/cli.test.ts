@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { isRunaError } from '@runa-cmd/core';
 import { testCLI } from '@runa-cmd/core/testing';
 import { audit, cli, deploy } from './cli.ts';
 
@@ -49,7 +50,7 @@ test('tells errors apart by their code, not by their message', async () => {
 	const result = await testCLI(cli, ['deploy', 'api', '--target', 'production'], { env });
 
 	assert.equal(result.code, 3);
-	assert.equal((result.error as { code?: string }).code, 'TOO_FEW_REPLICAS');
+	assert.ok(isRunaError(result.error, 'TOO_FEW_REPLICAS'));
 });
 
 test('runs a single command with the middleware it will have', async () => {

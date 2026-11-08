@@ -126,13 +126,15 @@ Una clave desconocida, un valor inválido o un JSON roto dan exit 2 y nombran el
 | Error | Código | Exit |
 |---|---|---|
 | `ValidationError` | `VALIDATION_ERROR` | 2 |
-| `ConfigError` | `CONFIG_INVALID` | 2 |
+| `ConfigError` | `INVALID_CONFIG` | 2 |
 | `CommandNotFoundError` | `COMMAND_NOT_FOUND` | 127 |
-| `CommandError` | Configurable | Configurable, 1 por defecto |
+| `CommandError` | Configurable, `COMMAND_ERROR` por defecto | Configurable, 1 por defecto |
 | `RunaError` | Configurable | 1 por defecto |
 | Otro error | No aplica | 1 |
 
-Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION`, `INVALID_OUTPUT`, `MIDDLEWARE_DID_NOT_CALL_NEXT` y `MIDDLEWARE_DID_NOT_AWAIT_NEXT`. Los dos últimos salen con 1 cuando un middleware no llama a `next()`, y el comando no corrió, o lo llama sin esperarlo; en ese caso Runa espera a que el comando termine antes de `afterRun` y `cleanup`, y su error queda como `cause` (T-231).
+Cada `code` de `core` está en `ERROR_CODES`, en `packages/core/src/errors.ts`, y el README de `core` los lista con su exit code y cuándo salen (T-234). Una prueba falla si el código usa un `code` literal, o si la constante y la tabla del README no coinciden. `isRunaError(error, code?)` reconoce un `RunaError` por una marca con `Symbol.for`, así que funciona con dos copias de `core` instaladas, donde `instanceof` falla.
+
+Los middleware que no llaman a `next()` (`MIDDLEWARE_DID_NOT_CALL_NEXT`, y el comando no corrió) o que lo llaman sin esperarlo (`MIDDLEWARE_DID_NOT_AWAIT_NEXT`) salen con 1. En el segundo caso Runa espera a que el comando termine antes de `afterRun` y `cleanup`, y su error queda como `cause` (T-231).
 
 ### Opciones que se repiten
 
@@ -164,7 +166,7 @@ En el código, `darkColor`; en la terminal, `--dark-color` ([ADR-0024](../adr/00
 - **Lo que no es una terminal conserva la clave:** las tools MCP y los archivos de config usan `darkColor`.
 - **Un plural de siglas no se separa bien:** `baseURLs` da `--base-ur-ls`. Para esos casos, escribí la clave con guiones: `'base-urls'`.
 
-Fallan al arrancar, con `OPTION_NAME`, un booleano `noCache`, porque `--no-cache` ya niega `cache`, y dos claves que dan la misma flag.
+Fallan al arrancar un booleano `noCache`, con `INVALID_OPTION_NAME`, porque `--no-cache` ya niega `cache`, y dos claves que dan la misma flag, con `OPTION_COLLISION`.
 
 ### Ayuda
 

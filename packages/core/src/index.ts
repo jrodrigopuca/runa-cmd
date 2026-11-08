@@ -15,6 +15,9 @@ export {
 	CommandError,
 	CommandNotFoundError,
 	ConfigError,
+	ERROR_CODES,
+	type ErrorCode,
+	isRunaError,
 	RunaError,
 	ValidationError,
 } from './errors.js';

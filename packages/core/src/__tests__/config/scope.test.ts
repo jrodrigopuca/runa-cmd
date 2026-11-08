@@ -46,7 +46,7 @@ describe('assertValidConfig', () => {
 			check({ nope: 1 });
 			expect.unreachable();
 		} catch (err) {
-			expect(err).toMatchObject({ code: 'CONFIG_INVALID', exitCode: 2 });
+			expect(err).toMatchObject({ code: 'INVALID_CONFIG', exitCode: 2 });
 		}
 	});
 

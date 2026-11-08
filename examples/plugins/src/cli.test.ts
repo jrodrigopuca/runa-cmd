@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { isRunaError } from '@runa-cmd/core';
 import { testCLI } from '@runa-cmd/core/testing';
 import { cli } from './cli.ts';
 
@@ -19,7 +20,7 @@ test('the middleware stops a command that writes, and says why', async () => {
 	const result = await testCLI(cli, ['task', 'remove', '1'], { env: { READ_ONLY: '1' } });
 
 	assert.equal(result.code, 3);
-	assert.equal((result.error as { code?: string }).code, 'READ_ONLY');
+	assert.ok(isRunaError(result.error, 'READ_ONLY'));
 	assert.match(result.stderr, /'task remove' changes data/);
 });
 

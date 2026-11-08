@@ -9,6 +9,7 @@
  */
 import { type OptionMeta, RunaError } from '@runa-cmd/core';
 import { longFlag } from '@runa-cmd/core/internal';
+import { MCP_ERROR_CODES } from './errors.js';
 import type { ToolRegistration } from './schema.js';
 import type { McpPluginOptions, ToolOptions } from './types.js';
 
@@ -28,7 +29,7 @@ export interface OperatorValues {
 type ExposureOptions = Pick<McpPluginOptions, 'exclude' | 'tools' | 'maxOutput'>;
 
 function invalidTools(message: string): RunaError {
-	return new RunaError(`mcpPlugin: ${message}`, { code: 'MCP_INVALID_TOOLS' });
+	return new RunaError(`mcpPlugin: ${message}`, { code: MCP_ERROR_CODES.MCP_INVALID_TOOLS });
 }
 
 function assertValidLimit(limit: number | undefined, owner: string): void {

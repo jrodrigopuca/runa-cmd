@@ -23,8 +23,10 @@ import {
 import {
 	CommandNotFoundError,
 	describeFailure,
+	ERROR_CODES,
 	failureReason,
 	isDebugEnabled,
+	isRunaError,
 	isUsageError,
 	ProcessExit,
 	RunaError,
@@ -162,14 +164,12 @@ function resolveCommand(commands: CommandTree, tokens: string[]): ResolvedComman
 
 // ─── Output Validation ──────────────────────────────────────
 
-/** A command returning the wrong shape is an author defect, reported by field. */
-const INVALID_OUTPUT = 'INVALID_OUTPUT';
-
 /** The key names a command, so that's its name once a run reaches it (ADR-0043). */
 function namedMeta(command: Command, path: string[]): NamedCommandMeta {
 	return { ...command.meta, name: path.at(-1) as string, path: [...path] };
 }
 
+/** A command returning the wrong shape is an author defect, reported by field. */
 function assertValidOutput(name: string, output: ZodType, result: unknown): void {
 	const parsed = output.safeParse(result);
 	if (parsed.success) return;
@@ -178,7 +178,7 @@ function assertValidOutput(name: string, output: ZodType, result: unknown): void
 		(issue) => `  ${issue.path.join('.') || '(root)'}: ${issue.message}`,
 	);
 	throw new RunaError(`Command '${name}' returned invalid output:\n${issues.join('\n')}`, {
-		code: INVALID_OUTPUT,
+		code: ERROR_CODES.INVALID_OUTPUT,
 		exitCode: 1,
 	});
 }
@@ -196,7 +196,7 @@ function resultText(command: Command, result: unknown, run: ResultDisplay): stri
 	if (result === undefined) {
 		if (!command.format) return undefined;
 		throw new RunaError(`Command '${run.name}' declares format but returned nothing.`, {
-			code: 'MISSING_RESULT',
+			code: ERROR_CODES.MISSING_RESULT,
 			exitCode: 1,
 		});
 	}
@@ -214,7 +214,7 @@ function printResult(command: Command, result: unknown, run: ResultDisplay): voi
 
 function toolFailureReason(error: Error): ToolFailureReason {
 	if (isUsageError(error)) return 'input';
-	return error instanceof RunaError && error.code === INVALID_OUTPUT ? 'output' : 'other';
+	return isRunaError(error, ERROR_CODES.INVALID_OUTPUT) ? 'output' : 'other';
 }
 
 // ─── Middleware Composition ─────────────────────────────────
@@ -275,7 +275,7 @@ function composeMiddleware(
 		if (!running) {
 			throw new RunaError(
 				`A middleware returned without calling next(): '${name}' didn't run. Call await next(), or throw an error to stop the command.`,
-				{ code: 'MIDDLEWARE_DID_NOT_CALL_NEXT', exitCode: 1 },
+				{ code: ERROR_CODES.MIDDLEWARE_DID_NOT_CALL_NEXT, exitCode: 1 },
 			);
 		}
 		if (!settled) {
@@ -286,7 +286,7 @@ function composeMiddleware(
 			});
 			throw new RunaError(
 				`A middleware didn't await next(): '${name}' was still running when it returned. Use await next().`,
-				{ code: 'MIDDLEWARE_DID_NOT_AWAIT_NEXT', exitCode: 1, cause },
+				{ code: ERROR_CODES.MIDDLEWARE_DID_NOT_AWAIT_NEXT, exitCode: 1, cause },
 			);
 		}
 	};

@@ -6,7 +6,7 @@
  * definition time.
  */
 import { type ZodType, z } from 'zod';
-import { RunaError } from './errors.js';
+import { ERROR_CODES, RunaError } from './errors.js';
 import { validateVariadicArgs } from './parse/variadic.js';
 import type { Command, CommandConfig, CommandMeta, OptionMeta, RunContext } from './types.js';
 
@@ -33,7 +33,7 @@ function validateMetaOptionsKeys<TOptions extends Record<string, ZodType>>(
 			throw new RunaError(
 				`meta.options contains key '${key}' that is not defined in options. ` +
 					`Available keys: ${optionKeys.size > 0 ? [...optionKeys].map((k) => `'${k}'`).join(', ') : '(none)'}.`,
-				{ code: 'INVALID_META_OPTIONS', exitCode: 1 },
+				{ code: ERROR_CODES.INVALID_META_OPTIONS, exitCode: 1 },
 			);
 		}
 	}
@@ -51,7 +51,7 @@ function validateJsonFlag<TOptions extends Record<string, ZodType>>(
 
 	if (claimed) {
 		throw new RunaError(`A command with format already has --${JSON_OPTION}. Rename its option.`, {
-			code: 'OPTION_COLLISION',
+			code: ERROR_CODES.OPTION_COLLISION,
 			exitCode: 1,
 		});
 	}

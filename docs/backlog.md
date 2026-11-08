@@ -90,7 +90,7 @@
 | | T-506 | Salir de pre-release y publicar 1.0.0 | Requerido | Pendiente |
 | | T-507 | Referencia de API generada | Opcional | Pendiente |
 | 7. Revisión antes de v1 | T-233 | Peer de `help` al día con lo que usa | Requerido | Hecho |
-| | T-234 | Lista de códigos de error y clases de MCP | Requerido | Pendiente |
+| | T-234 | Lista de códigos de error y clases de MCP | Requerido | Hecho |
 | | T-235 | Errores del archivo de config | Requerido | Pendiente |
 | | T-236 | Errores de MCP por un valor del operador | Requerido | Pendiente |
 | | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Pendiente |
@@ -989,12 +989,12 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-234 Lista de códigos de error y clases de MCP
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor que distingue errores por su `code`, como piden la guía de testing y VERSIONING.md, quiero saber cuáles existen. Son contrato, y hay 24 `code` en el código y 2 en la documentación; 10 `class` de MCP y 1 documentada, y `guides/mcp.md` remite a una lista que el README de `mcp` no tiene.
 - **Decisión, 2026-11-08:** todos los `code` siguen siendo contrato, también los que salen al arrancar. Se descartó hacer informativos esos 15: lo que nada obliga a documentar se desactualiza. La lista pasa a ser código: constantes exportadas y un helper. Antes de fijarla se renombran los tres nombres que engañan o desentonan, y como un `code` es contrato, el mantenedor decidió reiniciar la ventana de estabilidad desde la beta que lo publique, la `0.2.0-beta.7`. Cuesta pocos días porque la ventana se había reiniciado ese mismo día. `VALIDATION_ERROR` y `COMMAND_ERROR` no cambian: son los que más se leen. El `code` solo llega a código JS (`onError`, `testCLI()`, plugins): ni stderr ni MCP lo muestran, porque MCP usa `class`.
 - **Criterios de aceptación:**
-  - `core` exporta `ErrorCode`, un objeto `as const` con cada uno de sus `code`, y el tipo `ErrorCode`, y todo `RunaError` de `core` usa esas constantes.
-  - `core` exporta `isRunaError(error, code?)`, que reconoce un `RunaError` por `name` y `code`, así que funciona también con dos copias de `core` instaladas, donde `instanceof` falla. Acepta códigos propios, como los de un `CommandError`, sin perder el autocompletado de los de Runa.
+  - `core` exporta `ERROR_CODES`, un objeto `as const` con cada uno de sus `code`, como `HOOK_NAMES` y `PARAM_TYPES`, y el tipo `ErrorCode`, y todo `RunaError` de `core` usa esas constantes.
+  - `core` exporta `isRunaError(error, code?)`, que reconoce un `RunaError` por una marca con `Symbol.for`, no por `name`, que una subclase puede cambiar. Así funciona también con dos copias de `core` instaladas, donde `instanceof` falla. Acepta códigos propios, como los de un `CommandError`, sin perder el autocompletado de los de Runa.
   - `RunaError.code` sigue aceptando cualquier string.
   - `mcp` exporta sus propios `code` (`MCP_*`) y sus `class`, porque `core` no conoce a sus plugins.
   - Se renombra `CONFIG_INVALID` a `INVALID_CONFIG`. `OPTION_NAME` se divide: si dos opciones dan el mismo `--flag`, pasa a `OPTION_COLLISION`, el código que ya usa ese caso con las globales; si un booleano `noX` choca con `--no-x`, pasa a `INVALID_OPTION_NAME`.

@@ -6,7 +6,7 @@
  * These checks run at definition time (when defineCommand() is called).
  */
 import type { ZodType } from 'zod';
-import { RunaError } from '../errors.js';
+import { ERROR_CODES, RunaError } from '../errors.js';
 import { defaultAdapter } from './schema-adapter.js';
 
 // ─── Public API ─────────────────────────────────────────────
@@ -49,7 +49,7 @@ export function validateVariadicArgs(args: Record<string, ZodType>): void {
 	if (arrayIndices.length > 1) {
 		const names = arrayIndices.map((a) => `'${a.name}'`).join(', ');
 		throw new RunaError(`Only one variadic arg is allowed per command. Found: ${names}.`, {
-			code: 'INVALID_VARIADIC_ARGS',
+			code: ERROR_CODES.INVALID_VARIADIC_ARGS,
 			exitCode: 1,
 		});
 	}
@@ -60,7 +60,7 @@ export function validateVariadicArgs(args: Record<string, ZodType>): void {
 		throw new RunaError(
 			`Variadic arg '${arrayEntry.name}' must be the last positional argument. ` +
 				`Found at position ${arrayEntry.index} of ${keys.length}.`,
-			{ code: 'INVALID_VARIADIC_POSITION', exitCode: 1 },
+			{ code: ERROR_CODES.INVALID_VARIADIC_POSITION, exitCode: 1 },
 		);
 	}
 

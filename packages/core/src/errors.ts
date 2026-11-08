@@ -14,6 +14,85 @@ const captureStackTrace =
 	// biome-ignore lint/complexity/noBannedTypes: V8's captureStackTrace expects Function for the constructor argument
 	(Error as { captureStackTrace?: (target: object, ctor: Function) => void }).captureStackTrace;
 
+// ─── Error codes ────────────────────────────────────────────
+
+/**
+ * Every code Runa's core throws. They're contract: tell errors apart by them,
+ * with {@link isRunaError}. The README lists when each one comes up.
+ */
+export const ERROR_CODES = {
+	// While someone runs the CLI
+	/** An argument or option is missing, or breaks its schema. Exit 2 */
+	VALIDATION_ERROR: 'VALIDATION_ERROR',
+	/** The config file can't be used: broken JSON, an unknown key. Exit 2 */
+	INVALID_CONFIG: 'INVALID_CONFIG',
+	/** No command has that name. Exit 127 */
+	COMMAND_NOT_FOUND: 'COMMAND_NOT_FOUND',
+	/** A CommandError without its own code. Exit 1 */
+	COMMAND_ERROR: 'COMMAND_ERROR',
+	/** SIGINT or SIGTERM stopped the run, and run() failed or didn't end in time */
+	INTERRUPTED: 'INTERRUPTED',
+	/** run() returned a value its output schema rejects. Exit 1 */
+	INVALID_OUTPUT: 'INVALID_OUTPUT',
+	/** The command declares format, and run() returned nothing. Exit 1 */
+	MISSING_RESULT: 'MISSING_RESULT',
+	/** A middleware returned without calling next(). Exit 1 */
+	MIDDLEWARE_DID_NOT_CALL_NEXT: 'MIDDLEWARE_DID_NOT_CALL_NEXT',
+	/** A middleware called next() without awaiting it. Exit 1 */
+	MIDDLEWARE_DID_NOT_AWAIT_NEXT: 'MIDDLEWARE_DID_NOT_AWAIT_NEXT',
+
+	// At startup, from the CLI's code. All exit 1
+	/** Two options end up as the same flag or alias */
+	OPTION_COLLISION: 'OPTION_COLLISION',
+	/** A boolean `noCache` would clash with `--no-cache` */
+	INVALID_OPTION_NAME: 'INVALID_OPTION_NAME',
+	/** meta.options names a key that options doesn't have */
+	INVALID_META_OPTIONS: 'INVALID_META_OPTIONS',
+	/** A command has more than one list argument */
+	INVALID_VARIADIC_ARGS: 'INVALID_VARIADIC_ARGS',
+	/** The list argument isn't the last one */
+	INVALID_VARIADIC_POSITION: 'INVALID_VARIADIC_POSITION',
+	/** A command key isn't kebab-case, or doesn't match its meta.name */
+	INVALID_COMMAND_NAME: 'INVALID_COMMAND_NAME',
+	/** A global option and a command share a name */
+	CONFIG_COLLISION: 'CONFIG_COLLISION',
+	/** A plugin without meta.name or setup() */
+	INVALID_PLUGIN: 'INVALID_PLUGIN',
+	/** A lazy plugin failed to load, or has no default export */
+	PLUGIN_LOAD_ERROR: 'PLUGIN_LOAD_ERROR',
+	/** A plugin depends on one that isn't registered */
+	PLUGIN_MISSING_DEPENDENCY: 'PLUGIN_MISSING_DEPENDENCY',
+	/** Plugins depend on each other in a cycle */
+	PLUGIN_CIRCULAR_DEPENDENCY: 'PLUGIN_CIRCULAR_DEPENDENCY',
+	/** A plugin used part of the API without declaring its capability */
+	PLUGIN_CAPABILITY_VIOLATION: 'PLUGIN_CAPABILITY_VIOLATION',
+	/** Two plugins replace the help */
+	HELP_ALREADY_REPLACED: 'HELP_ALREADY_REPLACED',
+} as const;
+
+/** One of Runa's error codes. */
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+/**
+ * Marks a RunaError. Symbol.for is global, so two copies of core installed
+ * side by side mark their errors the same, and instanceof doesn't have to agree.
+ */
+const RUNA_ERROR = Symbol.for('@runa-cmd/core:RunaError');
+
+/**
+ * Whether `error` is a RunaError, and has `code` if you give one. Unlike
+ * instanceof, it works when a plugin and the CLI each install their own core.
+ *
+ * @example
+ * if (isRunaError(error, ERROR_CODES.INVALID_CONFIG)) { ... }
+ * if (isRunaError(error, 'DEPLOY_FAILED')) { ... } // a CommandError's own code
+ */
+export function isRunaError(error: unknown, code?: ErrorCode | (string & {})): error is RunaError {
+	if (!(error instanceof Error)) return false;
+	const marked = error instanceof RunaError || RUNA_ERROR in error;
+	return marked && (code === undefined || (error as RunaError).code === code);
+}
+
 // ─── RunaError ──────────────────────────────────────────────
 
 /**
@@ -28,6 +107,8 @@ export class RunaError extends Error {
 
 	constructor(message: string, options: { code: string; exitCode?: number; cause?: unknown }) {
 		super(message, options.cause === undefined ? undefined : { cause: options.cause });
+		// Not enumerable: the mark isRunaError() reads stays out of logs and comparisons
+		Object.defineProperty(this, RUNA_ERROR, { value: true });
 		this.name = 'RunaError';
 		this.code = options.code;
 		this.exitCode = options.exitCode ?? 1;
@@ -56,7 +137,7 @@ export class ValidationError extends RunaError {
 	constructor(issues: ZodIssue[]) {
 		const message = issues.map(formatIssue).join('\n');
 
-		super(message, { code: 'VALIDATION_ERROR', exitCode: 2 });
+		super(message, { code: ERROR_CODES.VALIDATION_ERROR, exitCode: 2 });
 		this.name = 'ValidationError';
 		this.issues = issues;
 
@@ -74,7 +155,7 @@ export class ValidationError extends RunaError {
  */
 export class ConfigError extends RunaError {
 	constructor(message: string) {
-		super(message, { code: 'CONFIG_INVALID', exitCode: 2 });
+		super(message, { code: ERROR_CODES.INVALID_CONFIG, exitCode: 2 });
 		this.name = 'ConfigError';
 
 		if (captureStackTrace) {
@@ -95,7 +176,7 @@ export class CommandNotFoundError extends RunaError {
 			? `Command not found: '${commandName}'. Did you mean '${suggestion}'?`
 			: `Command not found: '${commandName}'.`;
 
-		super(message, { code: 'COMMAND_NOT_FOUND', exitCode: 127 });
+		super(message, { code: ERROR_CODES.COMMAND_NOT_FOUND, exitCode: 127 });
 		this.name = 'CommandNotFoundError';
 		this.suggestion = suggestion;
 
@@ -115,7 +196,7 @@ export class CommandNotFoundError extends RunaError {
 export class CommandError extends RunaError {
 	constructor(message: string, options?: { code?: string; exitCode?: number }) {
 		super(message, {
-			code: options?.code ?? 'COMMAND_ERROR',
+			code: options?.code ?? ERROR_CODES.COMMAND_ERROR,
 			exitCode: options?.exitCode ?? 1,
 		});
 		this.name = 'CommandError';
@@ -159,7 +240,7 @@ function debugDetails(error: Error): string[] {
 /** The run was stopped from outside. Its exit code comes from what stopped it. */
 export class InterruptedError extends RunaError {
 	constructor(message: string) {
-		super(message, { code: 'INTERRUPTED' });
+		super(message, { code: ERROR_CODES.INTERRUPTED });
 		this.name = 'InterruptedError';
 	}
 }

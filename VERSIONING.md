@@ -14,7 +14,7 @@ A change here needs a major version.
 | Project generator | `npm create @runa-cmd <name>`: its arguments and exit codes. The files it creates follow the getting started guide, and change with it |
 | Exit codes | `0` success, `1` failure, `2` usage error, `127` command not found, `130` `SIGINT`, `143` `SIGTERM`, and the case each one covers. On Unix, `130` and `143` are what the shell shows for a process that died by that signal: Runa ends by the signal itself, so `spawn` reports `signal`, not `code` (ADR-0046) |
 | Streams | Results go to stdout. Errors, warnings and the help of a run with nothing to do go to stderr |
-| Error codes | The `code` of each `RunaError`: use it, not the message, to tell errors apart |
+| Error codes | The `code` of each `RunaError`, listed in `ERROR_CODES` and in the READMEs of [`core`](./packages/core/README.md#error-codes) and [`mcp`](./packages/mcp/README.md#errors): use it, not the message, to tell errors apart |
 | Flags | How a key becomes a flag: `darkColor` is `--dark-color` |
 | Values | The order CLI, env, config and default, and the accepted forms of booleans and lists |
 | Config file | Its shape: where a global and a command's option go, and that an unknown key is an error |

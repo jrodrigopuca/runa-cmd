@@ -111,6 +111,34 @@ A failed call says what happened, not what to do next. `_meta['runa/error']` tel
 
 A `CommandError` is the exception: the model reads your message as you wrote it, with `effect: "unknown"`, because only you know what the command did. To guide the model, say it there: `throw new CommandError('The proxy is off. Start it first.')`.
 
+The `class` says what failed. Each one is part of the [contract](../../VERSIONING.md), and `ERROR_CLASSES` lists them:
+
+| `class` | `effect` | When |
+|---|---|---|
+| `unknown_tool` | `none` | No tool has that name, or it's excluded |
+| `invalid_input` | `none` | An argument or option the model sent is missing or breaks its schema |
+| `rejected` | `none` | The call failed before `run()`, as in a hook or a middleware |
+| `not_run` | `none` | The call ended well without running the command, because a hook or a middleware skipped it |
+| `command_failed` | `unknown` | `run()` threw |
+| `crashed` | `none` or `unknown` | The process ended without saying why: before `run()` started, or while it ran |
+| `invalid_output` | `completed` | `run()` returned a value its `output` schema rejects |
+| `output_too_large` | `completed` | The result is over `maxOutput` |
+| `after_run_failed` | `completed` | Something failed after `run()` returned, as an `afterRun` hook |
+| `cancelled` | `unknown` | The client cancelled the call, or the server closed |
+
+```ts
+import { ERROR_CLASSES, type ErrorClass } from '@runa-cmd/mcp';
+
+const retryable = (found: ErrorClass) => found === ERROR_CLASSES.CANCELLED;
+```
+
+These stop the server at startup, with exit 1, and `MCP_ERROR_CODES` lists them. The rest of the codes are [core's](../core/README.md#error-codes):
+
+| Code | When |
+|---|---|
+| `MCP_INVALID_TOOLS` | The tool settings can't be met: `exclude` or `tools` names a tool or option that doesn't exist, an excluded tool has settings, a tool is read-only and destructive, an option is exposed and server-only, a `maxOutput` isn't a positive number, or a server-only option has no value |
+| `MCP_SELF_CHECK_FAILED` | The CLI can't start itself as a subprocess, as a compiled binary without `selfCommand` |
+
 **Retrying is up to you and whoever approves the calls.** Runa knows how far a command got, not whether repeating it is a good idea. If a command fails partway, a model only sees `unknown` and may run it again, so make that safe, or say so in your message.
 
 ### Cancellation

@@ -9,7 +9,7 @@
  * find, because the program would just behave as if the file didn't say it.
  */
 import type { ZodType } from 'zod';
-import { ConfigError, RunaError } from '../errors.js';
+import { ConfigError, ERROR_CODES, RunaError } from '../errors.js';
 import { findSuggestion } from '../suggest.js';
 import type { Command, CommandTree, OptionMeta } from '../types.js';
 import type { ConfigFile } from './merge.js';
@@ -149,7 +149,7 @@ export function assertConfigNames(target: ConfigTarget): void {
 		if (settable.includes(name)) {
 			throw new RunaError(
 				`Option '${name}' and command '${name}' share a name, so a config file can't tell them apart. Rename one.`,
-				{ code: 'CONFIG_COLLISION', exitCode: 1 },
+				{ code: ERROR_CODES.CONFIG_COLLISION, exitCode: 1 },
 			);
 		}
 	}
