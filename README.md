@@ -75,7 +75,7 @@ pnpm add @runa-cmd/completions@beta  # Shell completions
 
 Zod is required: it's how you define commands.
 
-**New to Runa?** [Getting started](./guides/getting-started.md) goes from an empty folder to a CLI you can test, install and publish. [Runa and the alternatives](./guides/runa-compared.md) builds the same CLI with commander, yargs, citty and cac, and marks the differences. Coming from commander? [Migrating from commander](./guides/migrate-from-commander.md).
+**New to Runa?** [Getting started](./guides/getting-started.md) goes from an empty folder to a CLI you can test, install and publish. [Runa and the alternatives](./guides/runa-compared.md) builds the same CLI with commander, yargs, citty and cac, and marks the differences. Coming from commander? [Migrating from commander](./guides/migrate-from-commander.md). For agents: [Your CLI as an agent's tools](./guides/mcp.md).
 
 ### Single Command
 

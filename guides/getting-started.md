@@ -155,6 +155,8 @@ npm publish   # Run npm run build first, every time
 
 ## Next
 
+- **Your commands as an agent's tools:** [Your CLI as an agent's tools](./mcp.md) adds `--mcp`, and covers what changes when a model calls them.
+
 - **Coming from another tool?** [Runa and the alternatives](./runa-compared.md) builds this same CLI with commander, yargs, citty and cac, and marks what changes.
 - **Moving a commander CLI?** [Migrating from commander](./migrate-from-commander.md) translates it piece by piece, and lists what changes for the people using it.
 

@@ -11,7 +11,9 @@ pnpm add @runa-cmd/mcp@beta
 ```
 
 > Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.
-> Runtime dependency: `@modelcontextprotocol/sdk ^1.29.0`.
+> Runtime dependency: `@modelcontextprotocol/sdk ^1.32.2`.
+>
+> **New to it?** [Your CLI as an agent's tools](https://github.com/jrodrigopuca/runa-cmd/blob/main/guides/mcp.md) builds a CLI for agents step by step, and tests it as a client does.
 
 ## Quick Start
 
@@ -242,7 +244,7 @@ $ my-tool --mcp    # Machine-readable MCP server
 
 - **Transport**: stdio (stdin/stdout JSON-RPC)
 - **Graceful shutdown**: Handles SIGINT and SIGTERM
-- **SDK**: Uses `@modelcontextprotocol/sdk` v1.29+ with `McpServer` API
+- **SDK**: Uses `@modelcontextprotocol/sdk` v1.32+ with `McpServer` API
 - **Zod v4 native**: Zod v4 implements [Standard Schema](https://github.com/standard-schema/standard-schema), so schemas pass directly to `registerTool()` — no conversion layer
 
 ### Testing with MCP Inspector

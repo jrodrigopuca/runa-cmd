@@ -1,0 +1,29 @@
+{
+	"name": "notes-cli",
+	"version": "1.0.0",
+	"private": true,
+	"description": "The project of guides/mcp.md",
+	"type": "module",
+	"bin": {
+		"notes": "dist/main.js"
+	},
+	"scripts": {
+		"start": "node src/main.ts",
+		"test": "node --test src/cli.test.ts src/mcp.test.ts",
+		"build": "tsc",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@runa-cmd/core": "workspace:*",
+		"@runa-cmd/mcp": "workspace:*",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@modelcontextprotocol/sdk": "^1.32.2",
+		"@types/node": "^24.19.2",
+		"typescript": "^7.0.2"
+	},
+	"engines": {
+		"node": ">=24.0.0"
+	}
+}
