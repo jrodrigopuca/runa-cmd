@@ -224,15 +224,15 @@ Versioning is automated; **publishing is deliberately manual** (local, with npm
 
 ### Declaring a Change (contributors)
 
-If your PR changes a published package (`core`, `help`, `mcp`, `completions`),
-add a changeset alongside it:
+If your PR changes a published package (`core`, `help`, `mcp`, `completions`,
+`create`), add a changeset alongside it:
 
 ```bash
 pnpm changeset
 ```
 
 Pick the affected package(s) and bump type, describe the change — the generated
-`.changeset/*.md` file is committed with your PR. The four published packages
+`.changeset/*.md` file is committed with your PR. The five published packages
 are a `fixed` group: they always version-bump together as one coherent
 framework release.
 
@@ -285,11 +285,16 @@ npm view @runa-cmd/core dist-tags
 npm view @runa-cmd/help dist-tags
 npm view @runa-cmd/mcp dist-tags
 npm view @runa-cmd/completions dist-tags
+npm view @runa-cmd/create dist-tags
 
 # Test installation in a fresh directory
 mkdir /tmp/runa-test && cd /tmp/runa-test
 npm init -y
 npm install @runa-cmd/core@beta @runa-cmd/help@beta zod
+
+# Test the generator: it must create a project that installs, tests and builds
+cd /tmp && npm create @runa-cmd@beta runa-created && cd runa-created
+npm install && npm test && npm run build && node dist/main.js hello Ana
 ```
 
 ### Why No Automated Publish?
