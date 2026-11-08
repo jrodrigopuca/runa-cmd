@@ -517,6 +517,7 @@ These stop the CLI at startup, all with exit 1. They point at the CLI's code, so
 | `INVALID_VARIADIC_ARGS` | A command has more than one list argument |
 | `INVALID_VARIADIC_POSITION` | The list argument isn't the last one |
 | `INVALID_COMMAND_NAME` | A command key isn't lowercase words joined by dashes, or doesn't match its `meta.name` |
+| `INVALID_COMMAND_VERSION` | A command of `defineCLI` declares `meta.version`, which only applies to the command of `runCLI`: the CLI's version goes in `defineCLI`'s `meta` |
 | `CONFIG_COLLISION` | A global option and a command share a name, so a config file can't tell them apart |
 | `INVALID_PLUGIN` | A plugin without `meta.name` or `setup()` |
 | `PLUGIN_LOAD_ERROR` | A lazy plugin failed to load, or its module has no default export |

@@ -418,6 +418,12 @@ export function validateCommandNames(commands: CommandTree, rootName?: string): 
 				throw invalid(
 					`Command '${[...path, key].join(' ')}' says meta.name is '${entry.meta.name}', but its key is '${key}'. The key names it: remove meta.name, or make it match.`,
 				);
+			} else if (entry.meta.version !== undefined) {
+				// Only the command of runCLI is the CLI: here it would do nothing (T-250)
+				throw new RunaError(
+					`Command '${[...path, key].join(' ')}' declares meta.version: 'version' only applies with runCLI; set it in defineCLI's meta.`,
+					{ code: ERROR_CODES.INVALID_COMMAND_VERSION, exitCode: 1 },
+				);
 			}
 		}
 	};

@@ -52,7 +52,11 @@ export interface CommandMeta<TOptions extends Record<string, ZodType> = Record<s
 	name?: string;
 	/** One line, shown in help and read by a model as the tool's description */
 	description: string;
-	/** Printed by `--version` when the command is the CLI, as with runCLI() */
+	/**
+	 * Printed by `--version` when the command is the CLI, as with runCLI(). In a
+	 * command of defineCLI it would do nothing, so it stops the CLI at startup:
+	 * the version goes in defineCLI's meta.
+	 */
 	version?: string;
 	/** Option metadata — keys MUST be a subset of TOptions keys */
 	options?: { [K in keyof TOptions]?: OptionMeta };

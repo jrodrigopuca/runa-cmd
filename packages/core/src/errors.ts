@@ -56,6 +56,8 @@ export const ERROR_CODES = {
 	INVALID_VARIADIC_POSITION: 'INVALID_VARIADIC_POSITION',
 	/** A command key isn't kebab-case, or doesn't match its meta.name */
 	INVALID_COMMAND_NAME: 'INVALID_COMMAND_NAME',
+	/** A command of defineCLI declares meta.version, which only runCLI reads */
+	INVALID_COMMAND_VERSION: 'INVALID_COMMAND_VERSION',
 	/** A global option and a command share a name */
 	CONFIG_COLLISION: 'CONFIG_COLLISION',
 	/** A plugin without meta.name or setup() */

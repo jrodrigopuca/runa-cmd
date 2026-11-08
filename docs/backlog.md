@@ -106,7 +106,7 @@
 | | T-247 | Sugerir dónde va una clave del config | Opcional | Pendiente |
 | | T-248 | Alias y env junto al schema | Opcional | Pendiente |
 | | T-249 | Docs internas al día | Opcional | Pendiente |
-| | T-250 | Detalles de coherencia | Opcional | Pendiente |
+| | T-250 | Detalles de coherencia | Opcional | En curso |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
@@ -1165,7 +1165,8 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-250 Detalles de coherencia
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** En curso
+- **Progreso, 2026-11-08:** `meta.version` en un comando de `defineCLI` ya frena al arrancar, con `INVALID_COMMAND_VERSION`. Faltan los errores de tipos en los tests y los detalles de texto.
 - **Descripción:** como persona que usa una CLI, quiero que lo mismo se diga igual en todos lados. Los menores de [la revisión](./research/2026-11-review-before-v1.md): `Expected one of` con punto o con dos puntos, `invalid value` en minúscula en el config; `GLOBAL OPTIONS` antes de `COMMANDS` en la ayuda de un grupo; la lista de secciones del README de `help`; la versión que falta en la ayuda de una CLI con `runCLI`; el README de `completions` sobre el nombre del comando; la ruta de Claude Desktop y la arquitectura en el README de `mcp`; `replaceHelp` en la tabla de Plugin API; `meta.version` de un subcomando, que no hace nada; y `cli.run()` sin `await` en los READMEs. Además, los tests tienen errores de tipos que nadie ve, porque `pnpm typecheck` no los incluye y vitest no chequea tipos: medido el 2026-11-08, con `tsc --strict` sobre los `*.test.ts` de cada paquete, con flags propios y no con su tsconfig, hay 11 en `core`, 1 en `help`, 8 en `mcp`, 8 en `completions` y 0 en `create`. Casi todos son mocks y fixtures que quedaron atrás de los tipos: un `OptionSchema` sin `flag`, un `PluginAPI` sin `help` o sin `command`, un contexto sin `invocation`. Uno es de T-234: la clase de `error-codes.test.ts` que simula otra copia de `core` declara `[Symbol.for(...)]` como propiedad, y TypeScript no lo acepta (TS1166).
 - **Decisión, 2026-11-08, sobre `meta.version`:** un comando con `meta.version` dentro de `defineCLI` frena la CLI al arrancar, porque ahí se ignora: solo tiene efecto cuando el comando es la CLI, con `runCLI`. El tipo no lo puede detectar, porque el mismo `defineCommand` sirve en los dos. Se descartó un aviso por stderr, que le llegaría en cada corrida a quien usa la CLI y no puede arreglarlo, y darle efecto con una versión por comando, que nadie pidió. Entra en la `0.2.0-beta.7`.
 - **Criterios de aceptación:**
