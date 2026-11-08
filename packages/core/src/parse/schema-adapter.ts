@@ -15,6 +15,7 @@ import type { ZodType } from 'zod';
 import type { ParamType } from '../types.js';
 import { zodV4Adapter } from './adapters/zod-v4.js';
 
+/** Reads the structure of a schema, for help and MCP. It never validates: Zod does. */
 export interface SchemaAdapter {
 	/** Adapter identity for diagnostics, e.g. 'zod-v4' */
 	readonly name: string;
@@ -24,6 +25,7 @@ export interface SchemaAdapter {
 	describe(schema: ZodType): SchemaDescription;
 }
 
+/** What a SchemaAdapter reads from one schema. */
 export interface SchemaDescription {
 	/** Base type kind after unwrapping (int maps to 'number'; unknown falls back to 'string') */
 	kind: ParamType;

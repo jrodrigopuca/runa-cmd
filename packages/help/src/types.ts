@@ -19,7 +19,9 @@ export type ColorDepth = 'truecolor' | '256' | '16' | 'none';
 
 /** Render context passed to all primitives (auto-detected or overridden in tests) */
 export interface RenderContext {
+	/** How many colors the output can show. `none` means no ANSI at all, as in a pipe */
 	colorDepth: ColorDepth;
+	/** Columns available to wrap text: the terminal's, or 80 when it isn't one */
 	termWidth: number;
 }
 
@@ -43,11 +45,17 @@ export interface Theme {
 
 /** Theme with all colors resolved to ANSI-ready escape strings */
 export interface ResolvedTheme {
+	/** See Theme.primary */
 	primary: string;
+	/** See Theme.secondary */
 	secondary: string;
+	/** See Theme.muted */
 	muted: string;
+	/** See Theme.error */
 	error: string;
+	/** See Theme.warning */
 	warning: string;
+	/** See Theme.success */
 	success: string;
 }
 

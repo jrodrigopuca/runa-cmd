@@ -6,21 +6,60 @@
  */
 import type { HookName } from './types.js';
 
+/**
+ * Where a value came from: the terminal, env, the config file, its default, or
+ * the input of a tool call through MCP.
+ */
 export type ValueSource = 'cli' | 'env' | 'config' | 'default' | 'input';
 
+/**
+ * One thing a run did: the config file it read, where an option came from, a
+ * hook and how long it took, the command, or something written. Its shape isn't
+ * part of the versioning contract.
+ */
 export type TraceEvent =
-	| { step: 'config'; file?: string }
 	| {
+			/** The config file was looked for */
+			step: 'config';
+			/** The file it read, if it found one */
+			file?: string;
+	  }
+	| {
+			/** An option got its value */
 			step: 'option';
+			/** Its key */
 			name: string;
+			/** Whether it's a global option or the command's own */
 			scope: 'global' | 'command';
+			/** Where the value came from */
 			source: ValueSource;
 			/** Left out when it comes from env: it can be a secret */
 			value?: unknown;
 	  }
-	| { step: 'hook'; name: HookName; ms: number }
-	| { step: 'run'; command: string[]; ms: number }
-	| { step: 'output'; stream: 'stdout' | 'stderr'; text: string };
+	| {
+			/** A hook ran, if it had handlers */
+			step: 'hook';
+			/** Which one */
+			name: HookName;
+			/** How long its handlers took */
+			ms: number;
+	  }
+	| {
+			/** The command ran */
+			step: 'run';
+			/** Its whole path */
+			command: string[];
+			/** How long it took, with its middleware */
+			ms: number;
+	  }
+	| {
+			/** Something was written */
+			step: 'output';
+			/** Where */
+			stream: 'stdout' | 'stderr';
+			/** What */
+			text: string;
+	  };
 
 /** One line per event. Never a value: this output ends up in CI logs. */
 export function debugLine(event: TraceEvent): string | undefined {

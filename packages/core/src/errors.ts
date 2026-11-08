@@ -16,8 +16,14 @@ const captureStackTrace =
 
 // ─── RunaError ──────────────────────────────────────────────
 
+/**
+ * The base of every error Runa throws. Its message reaches stderr as written,
+ * and the process exits with its exit code.
+ */
 export class RunaError extends Error {
+	/** What happened, as a stable name: tell errors apart by it, not by the message */
 	readonly code: string;
+	/** The exit code the process ends with */
 	readonly exitCode: number;
 
 	constructor(message: string, options: { code: string; exitCode?: number; cause?: unknown }) {
@@ -42,7 +48,9 @@ function formatIssue(issue: ZodIssue): string {
 	return `${issue.path.join('.')}: ${issue.message}`;
 }
 
+/** An argument or option is missing or invalid: a usage error, with exit 2. */
 export class ValidationError extends RunaError {
+	/** One issue per value that failed, as Zod reports them */
 	readonly issues: ZodIssue[];
 
 	constructor(issues: ZodIssue[]) {
@@ -77,7 +85,9 @@ export class ConfigError extends RunaError {
 
 // ─── CommandNotFoundError ───────────────────────────────────
 
+/** No command has that name: exit 127, as in a shell. */
 export class CommandNotFoundError extends RunaError {
+	/** The closest command name, if one is close enough to suggest */
 	readonly suggestion?: string;
 
 	constructor(commandName: string, suggestion?: string) {
@@ -97,6 +107,11 @@ export class CommandNotFoundError extends RunaError {
 
 // ─── CommandError ───────────────────────────────────────────
 
+/**
+ * A failure you throw from run(), for the people using your CLI and for a
+ * model calling it as a tool: both read the message as you wrote it.
+ * Default code: `COMMAND_ERROR`. Default exit code: 1.
+ */
 export class CommandError extends RunaError {
 	constructor(message: string, options?: { code?: string; exitCode?: number }) {
 		super(message, {

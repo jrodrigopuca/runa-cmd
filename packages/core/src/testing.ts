@@ -15,6 +15,10 @@ import type { CLI, CLIConfig, Command, RunCLIOptions } from './types.js';
 
 export type { TraceEvent, ValueSource } from './trace.js';
 
+/**
+ * What a test hands in instead of the machine it runs on. A single command also
+ * takes the plugins, middleware and global options it will run under.
+ */
 export interface TestOptions
 	extends Pick<RunCLIOptions, 'plugins' | 'middleware' | 'globalOptions' | 'globalMeta'> {
 	/** What Runa sees as the environment. It doesn't read the real one */
@@ -23,10 +27,13 @@ export interface TestOptions
 	config?: Record<string, unknown>;
 }
 
+/** What a run did, instead of ending the process. */
 export interface TestResult {
 	/** The exit code the process would end with */
 	code: number;
+	/** What it wrote to stdout: the result, or what the command printed */
 	stdout: string;
+	/** What it wrote to stderr: errors, warnings and progress */
 	stderr: string;
 	/** What run() returned */
 	result: unknown;

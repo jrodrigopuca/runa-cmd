@@ -13,6 +13,7 @@ import { wrapText } from './wrap.js';
 
 // ─── Border Character Sets ──────────────────────────────────
 
+/** The lines a box is drawn with. `none` leaves the space of the border, without drawing it */
 export type BorderStyle = 'single' | 'double' | 'rounded' | 'none';
 
 interface BorderChars {

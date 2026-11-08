@@ -9,6 +9,7 @@ import type { Block } from '../types.js';
 
 // ─── Vertical Join ──────────────────────────────────────────
 
+/** Options for join.vertical() */
 export interface VerticalJoinOptions {
 	/** Number of blank lines between blocks (default: 0) */
 	gap?: number;
@@ -28,8 +29,10 @@ function vertical(blocks: Block[], opts: VerticalJoinOptions = {}): Block {
 
 // ─── Horizontal Join ────────────────────────────────────────
 
+/** Where a shorter block sits next to a taller one */
 export type HorizontalAlign = 'top' | 'center' | 'bottom';
 
+/** Options for join.horizontal() */
 export interface HorizontalJoinOptions {
 	/** Space between columns (default: 1) */
 	gap?: number;
@@ -89,8 +92,11 @@ function horizontal(blocks: Block[], opts: HorizontalJoinOptions = {}): Block {
 
 // ─── Public API ─────────────────────────────────────────────
 
+/** Put blocks of text together, one under the other or side by side. */
 export const join = {
+	/** Stack blocks top to bottom, leaving out empty ones */
 	vertical,
+	/** Place blocks side by side, as columns */
 	horizontal,
 } as const;
 
