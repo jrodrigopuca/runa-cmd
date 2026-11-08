@@ -73,7 +73,7 @@
 | | T-216 | Opción faltante con su variable de entorno | Opcional | Hecho |
 | | T-217 | Valor por defecto legible en la ayuda | Opcional | Hecho |
 | | T-218 | Parada limpia de un servicio | Opcional | Pendiente |
-| | T-310 | Valores fijos que no son secretos | Opcional | Pendiente |
+| | T-310 | Valores fijos que no son secretos | Opcional | Descartado |
 | | T-226 | Ruta completa en hooks y middleware | Opcional | Hecho |
 | | T-227 | Detalles de ayuda y errores | Opcional | Pendiente |
 | | T-228 | `format` recibe las opciones | Opcional | Hecho |
@@ -502,7 +502,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Requerido
 - **Estado:** Hecho
-- **Resultado:** con `opencode` y `qwen3.5:9b`, el modelo usó las tools en 24 de 24 corridas sin que se las nombraran, y ante un error nunca reintentó. Falta probar una tool con guión como función del proveedor, en otro cliente. El detalle está en [la validación](./research/2026-11-local-beacon-real-model.md).
+- **Resultado:** con `opencode` y `qwen3.5:9b`, el modelo usó las tools en 24 de 24 corridas sin que se las nombraran, y ante un error nunca reintentó. Con la beta.5, una tool con guion funcionó en otro cliente, Claude Code con `claude-haiku-5-5`: 6 de 6 corridas la llamaron sin que el prompt la nombrara ([validación](./research/2026-11-local-beacon-beta5.md)). El detalle está en [la validación](./research/2026-11-local-beacon-real-model.md).
 - **Descripción:** como mantenedor, quiero ver una CLI real usada por un agente real, porque qr-plus no usa MCP y hasta ahora solo hay pruebas con un cliente propio. La prueba la hace otro proyecto, y su agente solo ve lo publicado, para que no lo sesgue conocer Runa por dentro.
 - **Avance:** `local-beacon` vigila la comunicación con un LLM externo, e informa si responde, si está bloqueado o si la máquina está sin conexión, para usar modelos locales desde dispositivos que no pueden correrlos. Adoptó `0.2.0-beta.2` y reportó 14 fricciones, [contrastadas](./research/2026-10-local-beacon-friction.md) y ya en este backlog. Falta comprobar que un modelo llame sus tools y qué hace ante un error.
 - **Criterios de aceptación:**
@@ -576,7 +576,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - `commands: { withOutput }` falla al arrancar, e indica la forma correcta.
   - `meta.name` es opcional en un subcomando, y si no coincide con la clave, falla al arrancar.
   - `runCLI` sigue exigiendo `meta.name`.
-  - Se comprueba una tool con guión con el cliente oficial del SDK de MCP. Falta comprobarla en una app de escritorio y con un modelo real.
+  - Se comprueba una tool con guión con el cliente oficial del SDK de MCP. Con la beta.5 se comprobó con un modelo real en Claude Code: aparece como `mcp__dash__list-tags` y se llama sin errores ([validación](./research/2026-11-local-beacon-beta5.md)). Falta una app de escritorio.
   - La nota de migración muestra el cambio.
 
 ### T-214 La ayuda de un subcomando muestra la CLI
@@ -648,7 +648,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-310 Valores fijos que no son secretos
 
 - **v1:** Opcional
-- **Estado:** Pendiente
+- **Estado:** Descartado
+- **Motivo del descarte:** con la beta.5, `local-beacon` midió 6 corridas con la ruta redactada y 6 con la ruta visible, con un modelo real: en las dos, 6 de 6 usaron la tool, ninguna reintentó y 5 de 6 interpretaron bien el error. La redacción no le cuesta nada al modelo, así que no hace falta marcar opciones como no secretas. Además, `[redacted]` solo aparece en el error con el proxy apagado. El detalle está en [la validación de la beta.5](./research/2026-11-local-beacon-beta5.md). Se reabre si un caso real muestra que la redacción le quita al modelo algo que necesita.
 - **Descripción:** como quien opera un servidor, quiero que el modelo vea una ruta que no es secreta, y no `[redacted]`. Es F-14 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
 - **Avance:** no hay con qué compararlo: commander, yargs, citty y cac no tienen MCP ni un concepto de secreto ([ADR-0032](./adr/0032-postura-sobre-secretos.md)).
 - **Antes de decidir:** se prueba con una beta qué pierde el modelo hoy. Con `local-beacon`, `LBEACON_SOCKET` fijado y `tools/call status`, se mira si `no proxy on [redacted]` le impide al modelo responder o lo lleva a reintentar, con el mismo método que la [validación con un modelo real](./research/2026-11-local-beacon-real-model.md). Si el modelo responde bien igual, la tarea se cierra sin cambios.

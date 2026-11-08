@@ -8,11 +8,13 @@
 
 | Paquete | `latest` | `beta` | Repo |
 |---|---|---|---|
-| `@runa-cmd/core` | 0.1.0 | 0.2.0-beta.4 | 0.2.0-beta.4 |
-| `@runa-cmd/help` | 0.1.0 | 0.2.0-beta.4 | 0.2.0-beta.4 |
-| `@runa-cmd/mcp` | 0.1.0 | 0.2.0-beta.4 | 0.2.0-beta.4 |
-| `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.4 | 0.2.0-beta.4 |
-| `@runa-cmd/create` | — | — | 0.2.0-beta.4, sin publicar; sale en la próxima beta |
+| `@runa-cmd/core` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
+| `@runa-cmd/help` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
+| `@runa-cmd/mcp` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
+| `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
+| `@runa-cmd/create` | 0.2.0-beta.5 | 0.2.0-beta.5 | 0.2.0-beta.5 |
+
+`@runa-cmd/create` tiene `latest` en la beta porque fue su primera publicación, y npm se lo pone a la primera versión. `npm create @runa-cmd my-tool` sin `@beta` también funciona.
 
 Changesets está en modo pre-release con el tag `beta`.
 
@@ -32,14 +34,14 @@ Changesets está en modo pre-release con el tag `beta`.
 
 ## Dónde estamos
 
-- **Beta publicada:** `0.2.0-beta.4`, verificada desde npm en un proyecto limpio. Trae el archivo de config por comando, `testCLI()`, `format` y `--json`, un solo nombre por comando, errores por MCP sin `safeToRetry`, comandos fuera de las tools y el retiro del modo implícito.
+- **Beta publicada:** `0.2.0-beta.5`, el 2026-11-08, verificada desde npm en una carpeta limpia: `npm create @runa-cmd@beta` genera un proyecto que instala, pasa sus tests, compila y corre, con `--version` igual al `package.json`. Trae `@runa-cmd/create`, `command.path` en hooks y middleware, `defaultDescription`, el error que nombra la variable de entorno y el SDK de MCP 1.32. Es aditiva, así que no reinicia la ventana de estabilidad. La `0.2.0-beta.4` trajo el archivo de config por comando, `testCLI()`, `format` y `--json`, un solo nombre por comando, errores por MCP sin `safeToRetry`, comandos fuera de las tools y el retiro del modo implícito.
 - **Primera migración:** pasar `@qr-plus/cli` desde commander dejó cinco workarounds, ya eliminados. Es evidencia de migración, no de uso, porque esa versión no se publicó. Está en [research](./research/2026-10-qr-plus-migration.md).
 - **Investigación:** el comportamiento de librerías y el uso público están en [research](./research/2026-10-cli-usage.md).
 - **Problemas abiertos:** se listan en [known-issues.md](./known-issues.md). Solo queda uno, de severidad media: `npm view` no muestra el README, que se comprueba al publicar la 1.0.0 (T-506).
 
 ## Camino a v1
 
-La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([ADR-0038](./adr/0038-ventana-de-estabilidad.md)). **La ventana abrió el 2026-11-03 a las 01:59 UTC,** al publicarse `0.2.0-beta.4`, y se completa el 2026-12-01 si no hay cambios incompatibles. Cuenta el uso de `local-beacon` sobre esa beta o una posterior, instalada desde npm. El 2026-11-03 pasó a `0.2.0-beta.4` sin cambios de código, con sus 129 pruebas, y se instaló global desde su tarball. Todavía no hay uso con un agente sobre esta beta: la máquina con Ollama estaba apagada. Un cambio incompatible la reinicia desde la beta que lo publique. Falta la documentación (T-503), y después la 1.0 y qr-plus estable.
+La 1.0 depende de que la API no necesite cambios incompatibles durante una ventana de uso real, no de una fecha ([ADR-0038](./adr/0038-ventana-de-estabilidad.md)). **La ventana abrió el 2026-11-03 a las 01:59 UTC,** al publicarse `0.2.0-beta.4`, y se completa el 2026-12-01 si no hay cambios incompatibles. Cuenta el uso de `local-beacon` sobre esa beta o una posterior, instalada desde npm. El 2026-11-03 pasó a `0.2.0-beta.4` sin cambios de código, con sus 129 pruebas, y se instaló global desde su tarball. El 2026-11-08 pasó a `0.2.0-beta.5` igual, sin cambios de código, y la usó en su trabajo normal: `lbeacon proxy` reenvió los 18 pedidos de una tanda de un runner de agentes sin errores, y por MCP un modelo real usó sus tools sin reintentar ([validación](./research/2026-11-local-beacon-beta5.md)). Mientras la usaba agregó opciones a sus comandos, y Runa no frenó nada. Un cambio incompatible la reinicia desde la beta que lo publique. Falta la documentación (T-503), y después la 1.0 y qr-plus estable.
 
 ## Decisiones abiertas
 
