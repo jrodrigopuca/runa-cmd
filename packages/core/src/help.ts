@@ -125,11 +125,21 @@ function optionFlags(option: OptionSchema): string {
 	return `${[...aliases, `--${option.flag}`].join(', ')}${value}`;
 }
 
+/**
+ * The default as help shows it: the author's text if there is one, else the
+ * value. A false default says nothing a flag doesn't, so it isn't shown.
+ */
+function defaultShown(option: OptionSchema): string | undefined {
+	if (option.defaultDescription !== undefined) return option.defaultDescription;
+	if (option.defaultValue === undefined || option.defaultValue === false) return undefined;
+	return String(option.defaultValue);
+}
+
 function optionDetails(option: OptionSchema): string {
 	const details = [option.description ?? ''];
 	if (option.required) details.push('(required)');
-	const hasDefault = option.defaultValue !== undefined && option.defaultValue !== false;
-	if (hasDefault) details.push(`(default: ${option.defaultValue})`);
+	const shown = defaultShown(option);
+	if (shown !== undefined) details.push(`(default: ${shown})`);
 	if (option.env) details.push(`[env: ${option.env}]`);
 	if (option.deprecated) details.push(`(deprecated: ${option.deprecated})`);
 	return details.filter(Boolean).join(' ');

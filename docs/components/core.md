@@ -53,6 +53,7 @@ runCLI(deploy);
 - **`run(ctx)`:** recibe `args`, `options`, `globalOptions`, `command`, `rawArgs`, `rest` y `signal`.
 - **`rest: true`:** el comando recibe en `ctx.rest` lo que sobra después de `--`. Sin esto, sobrar es un error de uso ([ADR-0036](../adr/0036-rest-se-declara.md)).
 - **`meta.options.<clave>.valueName`:** cómo llama la ayuda al valor, como `--color <hex>`. Por defecto, su tipo o sus opciones.
+- **`meta.options.<clave>.defaultDescription`:** lo que las dos ayudas muestran como valor por defecto, como `~/.tool/control.sock` para una ruta calculada desde el home. El comando recibe el valor real, y MCP arma su schema desde Zod, así que no lo usa (T-217). El nombre es el de yargs.
 
 ## `--version`
 

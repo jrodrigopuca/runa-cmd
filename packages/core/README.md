@@ -101,6 +101,7 @@ Operational metadata lives in `meta.options`, separate from the Zod schema:
 | `configurable` | `boolean` | `false` if a config file can't set it, as with a guardrail. Default: `true` |
 | `group` | `string` | Group name for help display, e.g. `'Scaling'` |
 | `valueName` | `string` | What help calls the value, e.g. `'hex'` for `--color <hex>`. Defaults to its type |
+| `defaultDescription` | `string` | What help shows as the default, e.g. `'~/.tool/control.sock'` for a path built from the home folder. The command still gets the real value |
 | `deprecated` | `string` | Deprecation notice, shown in help and as a stderr warning when the option is used |
 
 #### Run Context
@@ -446,6 +447,8 @@ throw new CommandError('Deployment failed', { code: 'DEPLOY_FAILED', exitCode: 3
 #### How a failed run ends
 
 No failure exits silently. The reason goes to stderr, `cleanup` runs, and then the process exits.
+
+`cli.run()` and `runCLI()` are the entry point of a process: they own its exit code and its signals, so call them once, from your `main.ts`. To run the CLI and keep going, as a test does, use [`testCLI()`](#testing-testcli). To call it from another program, start it as a subprocess and read its exit code, stdout and stderr.
 
 | Case | stderr | Exit code |
 |---|---|---|

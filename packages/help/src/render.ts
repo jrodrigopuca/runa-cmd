@@ -232,7 +232,10 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 	const descParts: string[] = [];
 	if (opt.description) descParts.push(opt.description);
 	if (opt.required) descParts.push(fg('(required)', theme.secondary));
-	if (opt.defaultValue !== undefined && opt.defaultValue !== false)
+	// The author's text stands for the value; a false default says nothing a flag doesn't
+	if (opt.defaultDescription !== undefined)
+		descParts.push(fg(`[default: ${opt.defaultDescription}]`, theme.muted));
+	else if (opt.defaultValue !== undefined && opt.defaultValue !== false)
 		descParts.push(fg(`[default: ${String(opt.defaultValue)}]`, theme.muted));
 	if (opt.deprecated) descParts.push(fg(`(deprecated: ${opt.deprecated})`, theme.warning));
 	if (opt.env) descParts.push(fg(`[env: ${opt.env}]`, theme.muted));

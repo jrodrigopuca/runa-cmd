@@ -19,6 +19,11 @@ export interface OptionMeta {
 	deprecated?: string;
 	/** What help calls the value, e.g. 'hex' for `--color <hex>`. Default: its type */
 	valueName?: string;
+	/**
+	 * What help shows as the default, e.g. '~/.tool/control.sock' for a path
+	 * built from the home folder. The command still gets the real value.
+	 */
+	defaultDescription?: string;
 	/** False if a config file can't set it, as with a guardrail. Default: true */
 	configurable?: boolean;
 }
@@ -345,6 +350,8 @@ export interface OptionSchema {
 	valueName?: string;
 	required: boolean;
 	defaultValue?: unknown;
+	/** What help shows instead of `defaultValue`, if the author wrote it */
+	defaultDescription?: string;
 	alias?: string[];
 	env?: string;
 	group?: string;

@@ -306,6 +306,31 @@ describe('defaultRenderer — command', () => {
 		expect(output).toContain('[default: 3000]');
 	});
 
+	it('shows defaultDescription instead of the value it stands for', () => {
+		const schema: CommandSchema = {
+			name: 'status',
+			description: 'Status',
+			fullPath: ['status'],
+			args: [],
+			options: [
+				{
+					name: 'socket',
+					flag: 'socket',
+					type: 'string',
+					required: false,
+					defaultValue: '/Users/ana/.beacon/control.sock',
+					defaultDescription: '~/.beacon/control.sock',
+				},
+			],
+			hasOutput: false,
+		};
+
+		const output = renderRaw(schema);
+
+		expect(output).toContain('[default: ~/.beacon/control.sock]');
+		expect(output).not.toContain('/Users/ana');
+	});
+
 	it('omits the implicit false default, and keeps a meaningful true', () => {
 		const schema: CommandSchema = {
 			name: 'serve',
