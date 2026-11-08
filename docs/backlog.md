@@ -89,6 +89,24 @@
 | | T-505 | Trusted Publishing | Opcional | Pendiente |
 | | T-506 | Salir de pre-release y publicar 1.0.0 | Requerido | Pendiente |
 | | T-507 | Referencia de API generada | Opcional | Pendiente |
+| 7. Revisión antes de v1 | T-233 | Peer de `help` al día con lo que usa | Requerido | Pendiente |
+| | T-234 | Lista de códigos de error y clases de MCP | Requerido | Pendiente |
+| | T-235 | Errores del archivo de config | Requerido | Pendiente |
+| | T-236 | Errores de MCP por un valor del operador | Requerido | Pendiente |
+| | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Pendiente |
+| | T-238 | Slots del tema que no tienen efecto | Requerido | Pendiente |
+| | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Pendiente |
+| | T-240 | Completions de bash después de un posicional | Requerido | Pendiente |
+| | T-241 | Opción enum obligatoria que falta | Requerido | Pendiente |
+| | T-242 | Error de tipos engañoso sin `description` | Requerido | Pendiente |
+| | T-243 | `help` como comando | Requerido | Pendiente |
+| | T-244 | Alias mal escritos al arrancar | Requerido | Pendiente |
+| | T-245 | Guías de comparación honestas | Requerido | Pendiente |
+| | T-246 | El valor recibido en los errores | Opcional | Pendiente |
+| | T-247 | Sugerir dónde va una clave del config | Opcional | Pendiente |
+| | T-248 | Alias y env junto al schema | Opcional | Pendiente |
+| | T-249 | Docs internas al día | Opcional | Pendiente |
+| | T-250 | Detalles de coherencia | Opcional | Pendiente |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
@@ -951,6 +969,175 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Las firmas no muestran internos de Zod, como `$ZodTypeInternals`.
   - CI falla si la referencia publicada queda desactualizada, o se genera en cada release.
 - **Revisar si:** sale un TypeDoc con TypeScript 7 en sus peers, o la referencia hace falta antes de que salga.
+
+## Fase 7: revisión antes de v1
+
+Salen de [la revisión de coherencia y la comparación](./research/2026-11-review-before-v1.md) del 2026-11-08. El orden es el de prioridad: primero lo que destraba la beta.7, después las decisiones que tocan el contrato, que después de la 1.0 costarían una major, después los errores que ve cualquiera que empiece, y al final las guías. Todo es aditivo o una decisión que se toma ahora, así que hecho bien no reinicia la ventana. Cada tarea vuelve a reproducir su hallazgo antes de cambiar código.
+
+### T-233 Peer de `help` al día con lo que usa
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como quien instala `@runa-cmd/help`, quiero que npm me avise si mi `core` es demasiado viejo, en vez de que una función no haga nada. El peer es `^0.2.0-beta.1`, pero el plugin usa `defaultDescription` (beta.5) e `inherited` (beta.7): con `core@0.2.0-beta.1` instala sin aviso y la ayuda muestra la ruta del home que `defaultDescription` existe para ocultar. Se cumple el "Revisar si" de [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md), y al revisar la beta.5 se dijo que no hacía falta subirlo, contra lo que pide CONTRIBUTING.
+- **Criterios de aceptación:**
+  - El peer de `help` pide la beta que trae `inherited`.
+  - Una prueba falla si un plugin lee del esquema de `core` un campo que su peer más bajo no tiene, o la regla queda como un paso de la revisión de cada beta en CONTRIBUTING.
+
+### T-234 Lista de códigos de error y clases de MCP
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como autor que distingue errores por su `code`, como piden la guía de testing y VERSIONING.md, quiero saber cuáles existen. Son contrato, y hay 22 `code` en el código y 2 en la documentación; 10 `class` de MCP y 1 documentada, y `guides/mcp.md` remite a una lista que el README de `mcp` no tiene.
+- **Criterios de aceptación:**
+  - El README de `core` lista cada `code` con su exit code y cuándo sale, y el de `mcp` cada `class` con su `effect`.
+  - Un control de `docs:check`, o una prueba, falla si el código usa un `code` o una `class` que la lista no tiene.
+  - Antes de fijar la lista se revisa si algún nombre conviene cambiar: después de la 1.0 cuesta una major.
+
+### T-235 Errores del archivo de config
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que escribe el config de una CLI, quiero que un error en el archivo me diga siempre lo mismo: qué archivo, qué clave y qué está mal. Hoy un valor inválido es `ValidationError` con el texto de Zod y el hint de `--help`, una clave desconocida es `ConfigError` sin hint, y un JSON roto tiene un tercer formato. Además `"force": 1` se rechaza y `"force": "1"` no, contra [ADR-0028](./adr/0028-coercion-booleana.md).
+- **Criterios de aceptación:**
+  - Se decide qué clase y qué `code` lleva un valor inválido en el config, antes de la 1.0.
+  - Los tres casos nombran el archivo y la clave con el mismo formato, y un valor inválido usa los mismos textos que la terminal (`must be greater than 0`).
+  - Un booleano acepta `1` y `0` como número JSON, o la documentación dice que no.
+
+### T-236 Errores de MCP por un valor del operador
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como quien opera un servidor MCP, quiero que si falta un valor que solo yo puedo dar, el error no le diga al modelo que se equivocó él. Hoy da `class: invalid_input`. Además los errores de input nombran `--flag` y `<arg>`, que el modelo no ve, en lugar de las claves del schema, y un `Error` común tirado desde `run()` sale como `command_failed`, igual que un `CommandError`, contra el README de `mcp`.
+- **Criterios de aceptación:**
+  - Se decide la `class` de un valor del operador que falta, distinta de `invalid_input`. Es contrato: después de la 1.0 cuesta una major.
+  - Un error de input por MCP nombra la clave del schema.
+  - El README de `mcp` y el código dicen lo mismo sobre un `Error` común.
+
+### T-237 `exitOnHelp` y ADR-0034
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que corre una CLI sin comando, quiero exit 2, como dice [ADR-0034](./adr/0034-sin-nada-que-correr-es-un-error-de-uso.md), también si la CLI usa `helpPlugin({ exitOnHelp: true })`: hoy sale con 0. La opción es pública y no está en el README, y el README de `help` dice que el plugin agrega `--help`, cuando la flag es de `core`.
+- **Criterios de aceptación:**
+  - Se decide si `exitOnHelp` queda, se corrige o se retira antes de la 1.0, y con qué costo.
+  - Sin nada que correr el exit es 2, con la opción o sin ella.
+  - El README de `help` dice lo que hace la opción y de quién es `--help`.
+
+### T-238 Slots del tema que no tienen efecto
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como autor que personaliza el tema de la ayuda, quiero que cada slot cambie algo. `error` y `success` no cambian nada en el renderer por defecto, `secondary` solo colorea `(required)`, los flags y los comandos tienen colores fijos, y el README y el JSDoc describen los slots de dos formas distintas. [ADR-0029](./adr/0029-cada-campo-tiene-efecto.md) pide que cada campo tenga efecto.
+- **Criterios de aceptación:**
+  - Se decide, antes de la 1.0, si cada slot tiene efecto o se documenta qué hace: quitarlos después sería incompatible.
+  - El README y el JSDoc describen los slots igual, y una prueba cubre el efecto de cada uno.
+
+### T-239 La CLI del generador sigue las reglas de Runa
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que corre `npm create @runa-cmd`, quiero que se comporte como una CLI hecha con Runa. Tiene `-v, --version`, que [ADR-0021](./adr/0021-help-y-version-en-core.md) descarta; sus errores de uso salen sin hint y con el texto de `parseArgs`; y VERSIONING.md hace contrato sus argumentos y exit codes, que su README no lista.
+- **Criterios de aceptación:**
+  - Se decide qué flags tiene antes de que su CLI sea contrato en la 1.0.
+  - Sus errores de uso salen con exit 2, un texto propio y el hint de `--help`.
+  - Su README lista sus argumentos y exit codes.
+
+### T-240 Completions de bash después de un posicional
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa TAB, quiero que `greet hello Ana --lang <TAB>` ofrezca `en es`, como lo hace `greet hello --lang <TAB>`. Hoy no ofrece nada, ni `greet hello --times 2 --l<TAB>`: el script arma la ruta del comando con todas las palabras que no son flags, y `Ana` o `2` quedan adentro. Verificado el 2026-11-08. yargs completa bien en ese caso.
+- **Criterios de aceptación:**
+  - En bash, después de un posicional o del valor de una opción, TAB sigue completando las opciones del comando y sus valores.
+  - Lo prueba `shells.test.ts` con bash real, y se comprueba lo mismo en zsh y fish.
+
+### T-241 Opción enum obligatoria que falta
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como quien opera una CLI, quiero que si falta una opción obligatoria que declara `env`, el error lo diga y nombre la variable, también si es un `z.enum`. Hoy, el ejemplo principal del README de `core` da `Invalid value for --env. Expected one of: staging, production`, y no `Missing required option: --env, or set DEPLOY_ENV`, como promete la misma página. Pasa igual con `z.literal` y con argumentos enum: `completions` sin shell dice `Invalid value for <shell>`. Verificado el 2026-11-08.
+- **Criterios de aceptación:**
+  - Una opción o un argumento obligatorio que falta da `Missing required …`, sea del tipo que sea, y nombra su variable si la declara.
+  - El ejemplo `deploy` del README de `core` da el mensaje que la página promete, probado.
+
+### T-242 Error de tipos engañoso sin `description`
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como dev que copia un ejemplo con `meta: { name }`, quiero un solo error claro si falta `description`. Hoy TypeScript suma `Type 'string' is not assignable to type 'void | Promise<void>'` sobre `run`, que parece un problema de lo que devuelve el comando.
+- **Criterios de aceptación:**
+  - Sin `meta.description`, el único error de tipos es el de `description`, o `description` es opcional.
+  - Un type test cubre el caso.
+
+### T-243 `help` como comando
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona que escribe `tool help`, quiero ver la ayuda, como en commander, yargs, cac y oclif. Hoy da `Command not found: 'help'. Did you mean 'hello'?` y exit 127. Verificado el 2026-11-08.
+- **Criterios de aceptación:**
+  - `tool help` y `tool help <comando>` muestran la ayuda, salvo que la CLI tenga un comando propio llamado `help`.
+  - O, si se decide no tenerlo, el error sugiere `--help` en lugar de otro comando.
+
+### T-244 Alias mal escritos al arrancar
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como autor, quiero enterarme al arrancar si escribí mal un alias. Con `alias: ['e']` o `['-ab']`, la ayuda muestra `-e, --x` y `-e v` da `Unknown option: -e`: el alias nunca funcionó y nada lo dice. Verificado el 2026-11-08.
+- **Criterios de aceptación:**
+  - Un alias que no es `-x` ni `--palabra` frena la CLI al arrancar, nombrando la opción y la forma correcta.
+
+### T-245 Guías de comparación honestas
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como dev que compara herramientas, quiero que la guía no favorezca a Runa de más, porque eso le resta credibilidad a lo que sí gana. [La comparación](./research/2026-11-review-before-v1.md) encontró que `guides/runa-compared.md` y la investigación de facilidad de uso comparan contra commander sin `@commander-js/extra-typings`, miden el arranque sin compilar, no dicen lo que pesa `--mcp` y no comparan completions.
+- **Criterios de aceptación:**
+  - La guía nombra extra-typings y su inferencia de tipos.
+  - El arranque se mide compilado: Runa +36 ms y commander +9 sobre Node vacío, y dice que es por Zod.
+  - El peso incluye `--mcp`: 27,9 MB y 92 paquetes, y un proceso por llamada.
+  - Hay una fila de completions, donde yargs es mejor.
+  - Se corrigen las líneas de Runa, la versión de commander, que oclif también usa exit 2, que la ayuda no muestra rangos, los datos de oclif y que Runa pide Node 24 y ESM.
+
+### T-246 El valor recibido en los errores
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que se equivocó, quiero ver qué escribí: `Invalid value for --times: expected int` no muestra `abc`, y commander y oclif sí. El config, además, usa otro formato que la terminal para el mismo error.
+- **Criterios de aceptación:**
+  - Un error de tipo o de enum repite el valor recibido, sin mostrar un valor que venga de env.
+
+### T-247 Sugerir dónde va una clave del config
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que escribe el config, quiero que `{"lang": "es"}` en la raíz me diga que va dentro de `"hello"`. Hoy dice `unknown key 'lang'`.
+- **Criterios de aceptación:**
+  - Una clave desconocida que es una opción de un comando sugiere su lugar, como `hello.lang`.
+
+### T-248 Alias y env junto al schema
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como autor, quiero declarar una opción en un solo lugar. Hoy el schema va en `options`, y el alias y la variable en `meta.options`. commander usa `'-s, --shout'` y oclif `char`.
+- **Criterios de aceptación:**
+  - Se puede declarar el alias y la variable junto al schema, y la forma actual sigue funcionando.
+
+### T-249 Docs internas al día
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como quien lee `docs/`, que es la fuente de verdad, quiero que diga lo que el código hace. El índice de ADRs marca "pendiente de código" a 0021, 0024, 0025 y 0040 a 0045, ya implementados; `architecture.md` todavía nombra el modo implícito; y `components/core.md` dice en un lugar que una parada pasa por `onError` y en otro lo contrario.
+- **Criterios de aceptación:**
+  - El índice de ADRs, `architecture.md` y `components/core.md` coinciden con el código.
+  - `docs:check` falla si un ADR "pendiente de código" nombra una tarea en Hecho.
+
+### T-250 Detalles de coherencia
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que usa una CLI, quiero que lo mismo se diga igual en todos lados. Los menores de [la revisión](./research/2026-11-review-before-v1.md): `Expected one of` con punto o con dos puntos, `invalid value` en minúscula en el config; `GLOBAL OPTIONS` antes de `COMMANDS` en la ayuda de un grupo; la lista de secciones del README de `help`; la versión que falta en la ayuda de una CLI con `runCLI`; el README de `completions` sobre el nombre del comando; la ruta de Claude Desktop y la arquitectura en el README de `mcp`; `replaceHelp` en la tabla de Plugin API; `meta.version` de un subcomando, que no hace nada; y `cli.run()` sin `await` en los READMEs.
+- **Criterios de aceptación:**
+  - Cada punto se corrige, o se descarta con su motivo.
 
 ## Después de v1 o si llega a tiempo
 
