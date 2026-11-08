@@ -79,6 +79,7 @@
 | | T-228 | `format` recibe las opciones | Opcional | Hecho |
 | | T-229 | Ejecutar una CLI sin terminar el proceso | Opcional | Descartado |
 | | T-230 | `testCLI()` y una CLI sin archivo de config | Opcional | Hecho |
+| | T-231 | Middleware que no llama o no espera `next()` | Opcional | Hecho |
 | | T-208 | Retirar el modo implícito | Requerido | Hecho |
 | 6. Contrato v1 | T-501 | Criterio de estabilidad verificable | Requerido | Hecho |
 | | T-502 | Política de semver y deprecación | Requerido | Hecho |
@@ -810,6 +811,18 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Una prueba con `config` sobre una CLI que no lo declara no pasa en silencio.
   - Lo decidido queda en la guía de testing.
 
+### T-231 Middleware que no llama o no espera `next()`
+
+- **v1:** Opcional
+- **Estado:** Hecho
+- **Descripción:** como autor de un middleware, quiero enterarme si me olvidé `next()` o su `await`, en vez de descubrirlo en producción. Apareció al preparar la guía de plugins, midiendo el 2026-11-08: sin `next()`, el comando no corría, no se imprimía nada y la CLI salía con 0, con `afterRun` como si todo hubiera salido bien; sin `await`, `afterRun` y `cleanup` corrían mientras el comando seguía trabajando, y el resultado salía después del cleanup.
+- **Decisión:** fallar en los dos casos, por la regla del mantenedor de no fallar en silencio. Saltear un comando a propósito, como un `--dry-run`, se escribe lanzando `CommandError` con `exitCode: 0`, que se comprobó que funciona. Ni `local-beacon` ni qr-plus usan middleware.
+- **Resultado:** `MIDDLEWARE_DID_NOT_CALL_NEXT` y `MIDDLEWARE_DID_NOT_AWAIT_NEXT`, con exit 1 y un mensaje que dice qué hacer. Sin `await`, Runa espera a que el comando termine antes de `afterRun` y `cleanup`, y su error queda como `cause`; `RunaError` acepta `cause` para eso. Por MCP, el caso sin `next()` pasa de `class: 'not_run'` a `'rejected'`, con el mismo `effect: 'none'` y un texto que dice la causa. Probado en `middleware-next.test.ts` con `testCLI()`, y en las pruebas de MCP.
+- **Criterios de aceptación:**
+  - Un middleware sin `next()` hace fallar la corrida, y el mensaje dice que el comando no corrió.
+  - Un middleware sin `await` no deja correr `afterRun` ni `cleanup` antes de que el comando termine.
+  - Lanzar un error sigue siendo la forma de frenar un comando, también con exit 0.
+
 ### T-208 Retirar el modo implícito
 
 - **v1:** Requerido
@@ -850,7 +863,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Estado:** En curso
 - **Descripción:** como dev nuevo, quiero guías que me lleven de cero a una CLI y una tool MCP.
 - **Cómo:** las guías están en inglés, en `guides/`, porque son para usuarios. Cada bloque de código que muestran es un archivo de un proyecto en `examples/`, que corre sus pruebas en CI, y `docs:check` falla si el bloque y el archivo difieren.
-- **Avance:** guía de inicio; [comparación con otras herramientas](../guides/runa-compared.md), que cumple el último criterio; y [migración desde commander](../guides/migrate-from-commander.md), con `examples/from-commander`, que cumple el segundo. La tabla de lo que cambia para quien usa la CLI salió de correr la versión con commander 15.0.0 y la de Runa con los mismos argumentos, y coincide con la [guía de migración de qr-plus](https://github.com/jrodrigopuca/qr-code-generator/blob/master/docs/MIGRATION.md). Al escribirla apareció que el `tsconfig` de la guía de inicio, y por lo tanto el del generador, no compilaba un import de `node:`: TypeScript 6 ya no carga `@types/node` por su cuenta. Se agregó `"types": ["node"]` y una prueba en `@runa-cmd/create`. En esa guía, el código de Runa sale de `examples/getting-started`; el de commander, yargs, citty y cac se corrió una vez en las versiones que nombra, y no está en CI para no depender de releases ajenos. [Guía de MCP](../guides/mcp.md), con `examples/mcp-notes`: cubre el criterio del comando que no termina, con el caso de `local-beacon`, y que para un modelo solo cuenta el texto del error, porque `_meta` puede no llegarle. Sus pruebas hablan MCP con el cliente oficial del SDK, y se comprobó que fallan si se quita el `exclude` o el `env` de la opción del archivo. [Guía de testing](../guides/testing.md), con `examples/testing`, que cubre F-09 de `local-beacon`: cada una de sus pruebas se rompió a propósito y falló, y al hacerlo apareció un falso positivo de `testCLI()`, resuelto en T-230. Faltan plugins, middleware y referencia de API.
+- **Avance:** guía de inicio; [comparación con otras herramientas](../guides/runa-compared.md), que cumple el último criterio; y [migración desde commander](../guides/migrate-from-commander.md), con `examples/from-commander`, que cumple el segundo. La tabla de lo que cambia para quien usa la CLI salió de correr la versión con commander 15.0.0 y la de Runa con los mismos argumentos, y coincide con la [guía de migración de qr-plus](https://github.com/jrodrigopuca/qr-code-generator/blob/master/docs/MIGRATION.md). Al escribirla apareció que el `tsconfig` de la guía de inicio, y por lo tanto el del generador, no compilaba un import de `node:`: TypeScript 6 ya no carga `@types/node` por su cuenta. Se agregó `"types": ["node"]` y una prueba en `@runa-cmd/create`. En esa guía, el código de Runa sale de `examples/getting-started`; el de commander, yargs, citty y cac se corrió una vez en las versiones que nombra, y no está en CI para no depender de releases ajenos. [Guía de MCP](../guides/mcp.md), con `examples/mcp-notes`: cubre el criterio del comando que no termina, con el caso de `local-beacon`, y que para un modelo solo cuenta el texto del error, porque `_meta` puede no llegarle. Sus pruebas hablan MCP con el cliente oficial del SDK, y se comprobó que fallan si se quita el `exclude` o el `env` de la opción del archivo. [Guía de testing](../guides/testing.md), con `examples/testing`, que cubre F-09 de `local-beacon`: cada una de sus pruebas se rompió a propósito y falló, y al hacerlo apareció un falso positivo de `testCLI()`, resuelto en T-230. [Guía de middleware y plugins](../guides/plugins.md), con `examples/plugins`: al prepararla apareció que un middleware sin `next()` o sin `await` fallaba en silencio, resuelto en T-231, y cada prueba del ejemplo se rompió a propósito y falló. Falta la referencia de API.
 - **Criterios de aceptación:**
   - Hay guías de inicio, plugins, middleware, testing y MCP, además de referencia de API.
   - Hay una guía de migración desde commander, basada en qr-plus.

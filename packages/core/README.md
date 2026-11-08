@@ -358,6 +358,8 @@ const auth = defineMiddleware(async ({ next, globalOptions }) => {
 });
 ```
 
+A middleware must `await next()`, or throw to stop the command. Returning without calling it fails with `MIDDLEWARE_DID_NOT_CALL_NEXT`, because the command would not run and the CLI would still exit 0. Calling it without `await` fails with `MIDDLEWARE_DID_NOT_AWAIT_NEXT`, after the command ends, so `afterRun` and `cleanup` never run while it still works. To skip a command on purpose, as a dry run does, throw `new CommandError('Dry run: would deploy api', { exitCode: 0 })`.
+
 Middleware, hooks and `run()` get the command that runs as `command`. `command.name` is its own name, and `command.path` the whole path, which is what a permissions or audit check needs: `tag add` and `add` share the name `add`.
 
 ```ts

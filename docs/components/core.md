@@ -132,7 +132,7 @@ Una clave desconocida, un valor inválido o un JSON roto dan exit 2 y nombran el
 | `RunaError` | Configurable | 1 por defecto |
 | Otro error | No aplica | 1 |
 
-Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION` e `INVALID_OUTPUT`.
+Códigos usados por `RunaError`: `OPTION_COLLISION`, `INVALID_PLUGIN`, `PLUGIN_LOAD_ERROR`, `PLUGIN_MISSING_DEPENDENCY`, `PLUGIN_CIRCULAR_DEPENDENCY`, `PLUGIN_CAPABILITY_VIOLATION`, `INVALID_META_OPTIONS`, `INVALID_VARIADIC_ARGS`, `INVALID_VARIADIC_POSITION`, `INVALID_OUTPUT`, `MIDDLEWARE_DID_NOT_CALL_NEXT` y `MIDDLEWARE_DID_NOT_AWAIT_NEXT`. Los dos últimos salen con 1 cuando un middleware no llama a `next()`, y el comando no corrió, o lo llama sin esperarlo; en ese caso Runa espera a que el comando termine antes de `afterRun` y `cleanup`, y su error queda como `cause` (T-231).
 
 ### Opciones que se repiten
 

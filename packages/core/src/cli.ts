@@ -230,8 +230,27 @@ function composeMiddleware(
 	command: NamedCommandMeta,
 	innerFn: () => Promise<void>,
 ): () => Promise<void> {
+	if (middlewareList.length === 0) return innerFn;
+
+	// Know whether a middleware ran the command, and whether it waited for it:
+	// either mistake would otherwise pass in silence
+	let running: Promise<void> | undefined;
+	let settled = false;
+	const inner = () => {
+		running = innerFn();
+		running.then(
+			() => {
+				settled = true;
+			},
+			() => {
+				settled = true;
+			},
+		);
+		return running;
+	};
+
 	// Build the chain from inside out
-	let chain = innerFn;
+	let chain = inner;
 
 	for (let i = middlewareList.length - 1; i >= 0; i--) {
 		const mw = middlewareList[i];
@@ -249,7 +268,28 @@ function composeMiddleware(
 		};
 	}
 
-	return chain;
+	const name = command.path.join(' ');
+	const outer = chain;
+	return async () => {
+		await outer();
+		if (!running) {
+			throw new RunaError(
+				`A middleware returned without calling next(): '${name}' didn't run. Call await next(), or throw an error to stop the command.`,
+				{ code: 'MIDDLEWARE_DID_NOT_CALL_NEXT', exitCode: 1 },
+			);
+		}
+		if (!settled) {
+			// Wait for it, so afterRun and cleanup don't run while it still works
+			let cause: unknown;
+			await running.catch((error: unknown) => {
+				cause = error;
+			});
+			throw new RunaError(
+				`A middleware didn't await next(): '${name}' was still running when it returned. Use await next().`,
+				{ code: 'MIDDLEWARE_DID_NOT_AWAIT_NEXT', exitCode: 1, cause },
+			);
+		}
+	};
 }
 
 // ─── Selecting the command and its values ───────────────────

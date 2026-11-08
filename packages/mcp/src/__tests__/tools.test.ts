@@ -122,11 +122,12 @@ describe('what an error says happened', () => {
 		expect(text(result)).toContain('The command did not run.');
 	});
 
+	// core rejects a middleware that forgets next(), so it's no longer a silent exit 0
 	it('skipped by a middleware: nothing ran, and it is not a success', async () => {
 		const client = await serve({ MIDDLEWARE_SKIPS: '1' });
 		const result = await client.call('greet', { name: 'Ana' });
 		expect(result.isError).toBe(true);
-		expect(meta(result as never)).toEqual({ class: 'not_run', effect: 'none' });
+		expect(meta(result as never)).toEqual({ class: 'rejected', effect: 'none' });
 	});
 
 	it('a failure the author threw: their message, and nothing about effects', async () => {
@@ -302,7 +303,10 @@ describe('the lifecycle of the CLI', () => {
 		const client = await serve({ MIDDLEWARE_SKIPS: '1' });
 		const result = await client.call('greet', { name: 'Ana' });
 		expect(result.isError).toBe(true);
-		expect(text(result)).toContain("Command 'greet' did not run");
+		expect(text(result)).toContain(
+			"A middleware returned without calling next(): 'greet' didn't run",
+		);
+		expect(text(result)).toContain('The command did not run.');
 	});
 
 	it('forwards the globals the server started with', async () => {
