@@ -16,7 +16,7 @@
 	},
 	"scripts": {
 		"build": "tsc && node scripts/copy-template.mjs",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
 		"test": "vitest run --dir src",
 		"lint": "biome check .",
 		"clean": "rm -rf dist template"

@@ -25,7 +25,7 @@ Changesets está en modo pre-release con el tag `beta`.
 | Control | Resultado |
 |---|---|
 | Build | Pasa |
-| Typecheck | Pasa, sin incluir los tests |
+| Typecheck | Pasa, con los tests de cada paquete: `tsconfig.test.json` los incluye desde T-250. Los tests de los ejemplos todavía no entran |
 | Lint (Biome) | Pasa |
 | Tests | 1337 en Ubuntu: core 816, help 237, completions 122, mcp 145, create 17, con bash, zsh y fish reales |
 | Aceptación con procesos reales | Pasan los 319 casos, sin fallos esperados |

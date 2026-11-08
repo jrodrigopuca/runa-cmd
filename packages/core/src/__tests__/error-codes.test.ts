@@ -109,7 +109,11 @@ describe('isRunaError', () => {
 		class OtherCopyError extends Error {
 			readonly code = 'INVALID_CONFIG';
 			readonly exitCode = 2;
-			[Symbol.for('@runa-cmd/core:RunaError')] = true;
+			constructor(message: string) {
+				super(message);
+				// As RunaError does it: a computed Symbol.for key can't be a class field
+				Object.defineProperty(this, Symbol.for('@runa-cmd/core:RunaError'), { value: true });
+			}
 		}
 		const error = new OtherCopyError('x');
 

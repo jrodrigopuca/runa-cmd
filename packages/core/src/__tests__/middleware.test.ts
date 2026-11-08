@@ -5,6 +5,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defineMiddleware } from '../middleware.js';
+import type { NamedCommandMeta } from '../types.js';
+
+/** The command a middleware wraps, as core hands it over */
+const command: NamedCommandMeta = { name: 'deploy', path: ['deploy'], description: 'Deploy' };
 
 describe('defineMiddleware', () => {
 	it('creates a branded middleware object', () => {
@@ -56,6 +60,7 @@ describe('middleware composition (integration)', () => {
 						await nextFn();
 					},
 					globalOptions: {},
+					command,
 				});
 		}
 
@@ -81,6 +86,7 @@ describe('middleware composition (integration)', () => {
 			mwAuth.handler({
 				next: innerFn,
 				globalOptions: {},
+				command,
 			});
 
 		await expect(chain()).rejects.toThrow('unauthorized');
@@ -99,6 +105,7 @@ describe('middleware composition (integration)', () => {
 		await mw.handler({
 			next: async () => {},
 			globalOptions: { verbose: true, token: 'abc' },
+			command,
 		});
 
 		expect(receivedGlobals).toEqual({ verbose: true, token: 'abc' });

@@ -163,6 +163,8 @@ describe('integration: completionsPlugin with real CLI schema', () => {
 			hook: vi.fn(),
 			getSchema: vi.fn(() => schema),
 			getCommands: vi.fn(() => ({})),
+			getConfigValues: vi.fn(async () => undefined),
+			replaceHelp: vi.fn(),
 		};
 
 		plugin.setup(api);
@@ -202,6 +204,8 @@ describe('integration: completionsPlugin with real CLI schema', () => {
 			hook: vi.fn(),
 			getSchema: vi.fn(() => buildTestSchema()),
 			getCommands: vi.fn(() => ({})),
+			getConfigValues: vi.fn(async () => undefined),
+			replaceHelp: vi.fn(),
 		};
 
 		plugin.setup(api);

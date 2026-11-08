@@ -113,12 +113,12 @@ test('says where each value came from, and never shows one from env', async () =
 		env,
 		config: { deploy: { replicas: 3 } },
 	});
-	const source = (name: string) =>
-		trace.find((event) => event.step === 'option' && event.name === name);
+	const options = trace.filter((event) => event.step === 'option');
+	const source = (name: string) => options.find((option) => option.name === name)?.source;
 
-	assert.equal(source('replicas')?.source, 'config');
-	assert.equal(source('target')?.source, 'default');
-	assert.equal(source('token')?.source, 'env');
+	assert.equal(source('replicas'), 'config');
+	assert.equal(source('target'), 'default');
+	assert.equal(source('token'), 'env');
 	assert.ok(!JSON.stringify(trace).includes('secret-token'));
 });
 

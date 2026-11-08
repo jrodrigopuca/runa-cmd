@@ -251,7 +251,7 @@ Solo `meta.name` es obligatorio. `meta.version` es informativo: Runa no lo lee, 
 ## Tests
 
 - Viven en `packages/core/src/__tests__`.
-- `types.test-d.ts` cubre la inferencia y corre con `pnpm test`. Usa `packages/core/tsconfig.test.json`, porque `tsconfig.json` excluye los tests y `tsc` no los abriría.
+- `types.test-d.ts` cubre la inferencia y corre con `pnpm test`. Usa `packages/core/tsconfig.test.json`, porque `tsconfig.json` excluye los tests y `tsc` no los abriría. Ese mismo archivo, con uno igual en cada paquete, hace que `pnpm typecheck` revise todos los tests: un mock que queda atrás de los tipos falla ahí (T-250).
 - `parseargs-negation.test.ts` fija el comportamiento de `parseArgs`.
 - Muchos tests mockean `process.exit`. Para validar salida real usá `packages/core/src/__tests__/acceptance/single-command.test.ts`, que lanza un proceso real ([tests de aceptación](../process.md#tests-de-aceptación)).
 

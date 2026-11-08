@@ -32,6 +32,7 @@ const serve: CommandSchema = {
 	options: [
 		{
 			name: 'port',
+			flag: 'port',
 			description: 'Port number',
 			type: 'number',
 			required: false,

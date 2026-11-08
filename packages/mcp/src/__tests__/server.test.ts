@@ -2,6 +2,7 @@
  * Tests for tool definitions and for turning a child's outcome into a result.
  * Running real tools end to end lives in tools.test.ts.
  */
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { defineCommand } from '@runa-cmd/core';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -28,7 +29,13 @@ const outcome = (overrides: Partial<ChildOutcome> = {}): ChildOutcome => ({
 	...overrides,
 });
 
-const text = (reg: ToolRegistration, out: ChildOutcome) => toToolResult(reg, out).content[0]?.text;
+/** The first part of a result, if it's text: content can also be an image or a resource */
+const firstText = (result: CallToolResult) => {
+	const [first] = result.content;
+	return first?.type === 'text' ? first.text : undefined;
+};
+
+const text = (reg: ToolRegistration, out: ChildOutcome) => firstText(toToolResult(reg, out));
 
 describe('toolDefinition', () => {
 	it('describes a command without input as an empty object', () => {
@@ -93,7 +100,7 @@ describe('toToolResult', () => {
 		];
 		const result = toToolResult(reg, outcome({ status: 3, stderr: 'locked\n', reports }));
 		expect(result.isError).toBe(true);
-		expect(result.content[0]?.text).toContain('locked');
+		expect(firstText(result)).toContain('locked');
 	});
 
 	it('falls back to the exit code when a failed command wrote nothing', () => {
@@ -103,7 +110,7 @@ describe('toToolResult', () => {
 	it('does not treat exit 0 as success without a result', () => {
 		const result = toToolResult(reg, outcome({ reports: [{ kind: 'running' }] }));
 		expect(result.isError).toBe(true);
-		expect(result.content[0]?.text).toContain('did not finish');
+		expect(firstText(result)).toContain('did not finish');
 	});
 
 	it('says nothing ran when the child died before run()', () => {

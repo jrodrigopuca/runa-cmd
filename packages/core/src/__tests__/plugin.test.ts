@@ -37,6 +37,7 @@ function makeRefs(overrides?: Partial<PluginHostRefs>): PluginHostRefs {
 		globalOptions: {},
 		globalMeta: { options: {} },
 		middleware: [],
+		help: {},
 		hookRegister: overrides?.hookRegister ?? (() => {}),
 		getSchema:
 			overrides?.getSchema ??

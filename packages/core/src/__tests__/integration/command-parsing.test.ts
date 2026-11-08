@@ -207,7 +207,9 @@ describe('defineCommand + parsing pipeline integration', () => {
 				args: {},
 				options: {},
 				globalOptions: {},
-				command: cmd.meta,
+				// By the time run() gets it, a command has its name and path
+				command: { ...cmd.meta, name: 'test', path: ['test'] },
+				signal: new AbortController().signal,
 				rawArgs: [],
 				rest: [],
 			});
@@ -227,7 +229,8 @@ describe('defineCommand + parsing pipeline integration', () => {
 				args: {},
 				options: {},
 				globalOptions: {},
-				command: cmd.meta,
+				command: { ...cmd.meta, name: 'test', path: ['test'] },
+				signal: new AbortController().signal,
 				rawArgs: [],
 				rest: [],
 			});

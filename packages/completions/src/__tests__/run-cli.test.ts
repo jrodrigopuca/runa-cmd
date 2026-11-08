@@ -30,7 +30,7 @@ describe('runCLI + completionsPlugin', () => {
 
 	async function script(shell: string): Promise<string> {
 		await runCLI(tool, { argv: ['completions', shell], plugins: [completionsPlugin()] });
-		return write.mock.calls.map(([chunk]) => String(chunk)).join('');
+		return write.mock.calls.map(([chunk]: unknown[]) => String(chunk)).join('');
 	}
 
 	it.each(['bash', 'zsh', 'fish'])('%s offers the root options at the top level', async (shell) => {

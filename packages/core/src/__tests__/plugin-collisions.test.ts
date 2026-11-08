@@ -205,7 +205,7 @@ describe('option collision detection (integration)', () => {
 	});
 
 	function stderrText(): string {
-		return errorSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+		return errorSpy.mock.calls.map((call: unknown[]) => call.join(' ')).join('\n');
 	}
 
 	it('plugin global vs command option: exits 1 before the command executes', async () => {

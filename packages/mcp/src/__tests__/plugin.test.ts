@@ -41,6 +41,8 @@ function createMockPluginAPI(commands: CommandTree = {}): {
 		}),
 		getSchema: vi.fn(() => schema),
 		getCommands: vi.fn(() => commands),
+		getConfigValues: vi.fn(async () => undefined),
+		replaceHelp: vi.fn(),
 	};
 
 	return { api, hooks, globalOptions };
@@ -88,7 +90,9 @@ describe('mcpPlugin', () => {
 		const shortCircuit = vi.fn();
 		const ctx: HookContext = {
 			cli: { name: 'test-cli' },
+			invocation: { surface: 'cli' },
 			rawArgs: ['deploy'],
+			signal: new AbortController().signal,
 			globalOptions: { mcp: false },
 			shortCircuit,
 		};
@@ -109,7 +113,9 @@ describe('mcpPlugin', () => {
 		const shortCircuit = vi.fn();
 		const ctx: HookContext = {
 			cli: { name: 'test-cli' },
+			invocation: { surface: 'cli' },
 			rawArgs: [],
+			signal: new AbortController().signal,
 			shortCircuit,
 		};
 

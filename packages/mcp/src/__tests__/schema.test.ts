@@ -38,6 +38,7 @@ describe('buildToolRegistrations', () => {
 				options: [
 					{
 						name: 'env',
+						flag: 'env',
 						description: 'Target environment',
 						type: 'enum',
 						required: true,
@@ -85,6 +86,7 @@ describe('buildToolRegistrations', () => {
 				options: [
 					{
 						name: 'loud',
+						flag: 'loud',
 						description: 'Shout',
 						type: 'boolean',
 						required: false,

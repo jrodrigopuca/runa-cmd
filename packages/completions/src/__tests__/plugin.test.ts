@@ -148,6 +148,8 @@ function createMockPluginAPI(): {
 		hook: vi.fn(),
 		getSchema: vi.fn(() => schema),
 		getCommands: vi.fn(() => ({})),
+		getConfigValues: vi.fn(async () => undefined),
+		replaceHelp: vi.fn(),
 	};
 
 	return { api, addedCommands };
@@ -223,7 +225,9 @@ describe('completionsPlugin', () => {
 			args: { shell: 'bash' as const },
 			options: { instructions: false },
 			globalOptions: {},
-			command: cmd.meta,
+			command: { ...cmd.meta, name: 'completions', path: ['completions'] },
+			signal: new AbortController().signal,
+			rest: [],
 			rawArgs: ['completions', 'bash'],
 		});
 
@@ -248,7 +252,9 @@ describe('completionsPlugin', () => {
 			args: { shell: 'zsh' as const },
 			options: { instructions: false },
 			globalOptions: {},
-			command: cmd.meta,
+			command: { ...cmd.meta, name: 'completions', path: ['completions'] },
+			signal: new AbortController().signal,
+			rest: [],
 			rawArgs: ['completions', 'zsh'],
 		});
 
@@ -272,7 +278,9 @@ describe('completionsPlugin', () => {
 			args: { shell: 'fish' as const },
 			options: { instructions: false },
 			globalOptions: {},
-			command: cmd.meta,
+			command: { ...cmd.meta, name: 'completions', path: ['completions'] },
+			signal: new AbortController().signal,
+			rest: [],
 			rawArgs: ['completions', 'fish'],
 		});
 
@@ -296,7 +304,9 @@ describe('completionsPlugin', () => {
 			args: { shell: 'bash' as const },
 			options: { instructions: true },
 			globalOptions: {},
-			command: cmd.meta,
+			command: { ...cmd.meta, name: 'completions', path: ['completions'] },
+			signal: new AbortController().signal,
+			rest: [],
 			rawArgs: ['completions', 'bash', '--instructions'],
 		});
 

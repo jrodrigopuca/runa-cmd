@@ -29,7 +29,7 @@ describe('onError/cleanup hook failure logging', () => {
 
 	function stderrText(): string {
 		return errorSpy.mock.calls
-			.map((call) =>
+			.map((call: unknown[]) =>
 				call.map((arg) => (arg instanceof Error ? arg.message : String(arg))).join(' '),
 			)
 			.join('\n');

@@ -10,7 +10,9 @@ import type { HookContext } from '../types.js';
 function makeCtx(overrides?: Partial<HookContext>): HookContext {
 	return {
 		cli: { name: 'test' },
+		invocation: { surface: 'cli' },
 		rawArgs: [],
+		signal: new AbortController().signal,
 		...overrides,
 	};
 }
