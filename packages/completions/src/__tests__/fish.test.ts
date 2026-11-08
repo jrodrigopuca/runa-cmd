@@ -155,11 +155,12 @@ describe('generateFishCompletions', () => {
 		expect(output).toContain("-d 'Target environment'");
 	});
 
-	it('includes -r for non-boolean options', () => {
+	it('requires a value for non-boolean options, and only its values for an enum', () => {
 		expect(output).toContain('-l environment');
-		// environment line should have -r
+		// environment is an enum: -x is -r and -f, so fish offers no file names with its values
 		const envLine = output.split('\n').find((l) => l.includes('-l environment'));
-		expect(envLine).toContain('-r');
+		expect(envLine).toContain(' -x ');
+		expect(envLine).not.toContain(' -r ');
 	});
 
 	it('does not include -r for boolean options', () => {

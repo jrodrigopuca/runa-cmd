@@ -9,11 +9,11 @@ complete -c mycli -f
 # Global options
 complete -c mycli -l help -s h -d 'Show help'
 complete -c mycli -l verbose -s v -d 'Enable verbose output'
-complete -c mycli -l format -d 'Output format' -r -a 'json text table'
+complete -c mycli -l format -d 'Output format' -x -a 'json text table'
 
 # Commands
 complete -c mycli -n '__fish_use_subcommand' -a 'deploy' -d 'Deploy the app'
-complete -c mycli -n '__fish_seen_subcommand_from deploy' -l environment -s e -d 'Target environment' -r -a 'staging prod'
+complete -c mycli -n '__fish_seen_subcommand_from deploy' -l environment -s e -d 'Target environment' -x -a 'staging prod'
 complete -c mycli -n '__fish_seen_subcommand_from deploy' -l force -d 'Force deploy without confirmation'
 complete -c mycli -n '__fish_seen_subcommand_from deploy' -l replicas -d 'Number of replicas' -r
 complete -c mycli -n '__fish_use_subcommand' -a 'config' -d 'Manage configuration'

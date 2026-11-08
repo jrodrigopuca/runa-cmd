@@ -28,10 +28,11 @@ function optionDirectives(binName: string, opt: OptionSchema, condition: string)
 		}
 	} else if (opt.enumValues?.length) {
 		const vals = opt.enumValues.map((v) => escapeFishValue(v)).join(' ');
+		// -x is -r and -f: an enum is a closed list, so no file names next to its values
 		lines.push(
 			`complete -c ${binName}${condPart}` +
 				` -l ${opt.flag}${shortFlag}${desc}` +
-				` -r -a '${vals}'`,
+				` -x -a '${vals}'`,
 		);
 	} else {
 		// string, number, array — require argument

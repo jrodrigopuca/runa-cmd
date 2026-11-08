@@ -86,7 +86,7 @@ describe('options that repeat', () => {
 	it('fish says so in the description', () => {
 		const script = generateFishCompletions(schema, 'mycli');
 		expect(script).toContain("-l tag -s t -d 'A tag. Can be repeated' -r");
-		expect(script).toContain("-l level -d 'Can be repeated' -r -a 'low high'");
+		expect(script).toContain("-l level -d 'Can be repeated' -x -a 'low high'");
 	});
 
 	it('bash offers the values of a list of choices', () => {

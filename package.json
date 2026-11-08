@@ -21,7 +21,7 @@
 		"format": "biome format .",
 		"format:fix": "biome format --write .",
 		"clean": "pnpm -r run clean",
-		"docs:check": "node --test scripts/ && node scripts/check-docs.mjs",
+		"docs:check": "node --test \"scripts/*.test.mjs\" && node scripts/check-docs.mjs",
 		"changeset": "changeset",
 		"version-packages": "changeset version && node scripts/peers.mjs --write",
 		"release": "pnpm build && changeset publish"
