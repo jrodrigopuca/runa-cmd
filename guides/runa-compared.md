@@ -6,33 +6,36 @@ Where Runa does something differently, it's marked **Runa differs**. Where it co
 
 | Tool | Version measured |
 |---|---|
-| Runa | `@runa-cmd/core@0.2.0-beta.4`, with `zod@4.6.7` |
-| commander | 15.0.0 |
+| Runa | `@runa-cmd/core@0.2.0-beta.6`, with `zod@4.6.7` |
+| commander | 15.1.0, and `@commander-js/extra-typings` 15.1.0 for its types |
 | yargs | 18.2.0, with `@types/yargs` |
 | citty | 0.2.2 |
 | cac | 7.1.0 |
-| oclif | 6.0.15, only its generator, from its README |
+| oclif | 6.0.15, its generator and its test helpers |
 
-Measured on 2026-11-03 with Node 26.11.1 on macOS, running the TypeScript without building it. The numbers come from [this comparison](../docs/research/2026-11-ease-of-use.md). Runa's code below runs in this repo's CI. The other tools' code was run once, at these versions, and isn't kept up to date.
+Measured on 2026-11-08 with Node 26.11.1 on macOS, each CLI built with `tsc` and run from `dist/`, as people run it once installed. Startup is the mean of 30 runs with hyperfine. The numbers come from [the review before 1.0](../docs/research/2026-11-review-before-v1.md), which was asked to look for where Runa is worse, and an [earlier comparison](../docs/research/2026-11-ease-of-use.md). Runa's code below runs in this repo's CI. The other tools' code was run once, at these versions, and isn't kept up to date.
 
 ## At a glance
 
 | | Runa | commander | yargs | citty | cac |
 |---|---|---|---|---|---|
 | Start a project | **One command** | By hand | By hand | By hand | By hand |
-| Lines for this CLI | 16 | 13 | 21 | 17 | 12 |
-| Packages to install | 2 | 1 | 2 | 1 | 1 |
-| Size of `node_modules`, on disk | **8.8 MB, 8.1 of them Zod** | 236 KB | 1.0 MB | 56 KB | 56 KB |
-| Startup, median of 15 | 164 ms | 137 ms | 175 ms | 132 ms | 132 ms |
-| Types from your definition | Yes | No, `any` | Yes | Yes | No, `any` |
+| Lines for this CLI | 17 | 13 | 21 | 17 | 12 |
+| Packages to install | 2 | 1, or 2 for types | 2 | 1 | 1 |
+| Size of `node_modules`, on disk | **9.0 MB, 8.3 of them Zod** | 236 KB | 924 KB | 56 KB | 56 KB |
+| Startup, over Node with nothing loaded | +36 ms | +9 ms | +47 ms | +4 ms | +3 ms |
+| Types from your definition | Yes | With `extra-typings` | Yes | Yes | No, `any` |
 | Validation beyond the type | **Any Zod schema** | Allowed values, your own parser | Allowed values, your own checks | Allowed values | None |
 | Exit code for a mistake | **2, or 127 for an unknown command** | 1 | 1 | 1, or **0** for an unknown flag | 1, or **0** for an unknown command |
 | Tests without a subprocess | **Built in** | A helper you write | A helper you write | A helper you write, no exit code | A helper you write, no exit code |
+| Shell completions | Bash, zsh and fish, from a script | None built in | **Built in, computed by the CLI on each TAB** | None built in | None built in |
 | Its commands as an agent's tools | **`--mcp`** | No | No | No | No |
 
-Node with nothing loaded starts in 104 ms, so Runa adds about 60 ms and commander about 33.
+Node with nothing loaded starts in 104 ms. Runa adds 36 ms, and about 25 of them are importing Zod: measured alone, `import 'zod'` takes 25 ms, and all of `@runa-cmd/core` 32. Run as TypeScript, without building it, Runa adds 62 ms.
 
-**Where the size comes from:** `@runa-cmd/core` takes 720 KB. The other 8.1 MB are Zod, which is what checks every value while your CLI runs (see [Types and validation](#types-and-validation)). Most of that is on disk and never loads: Zod ships its code twice, as ESM and as CommonJS, its types twice, its TypeScript sources, Zod 3 next to Zod 4, and 1.5 MB of error messages in other languages. What it costs when your CLI runs is in the startup row.
+**Where the size comes from:** `@runa-cmd/core` takes 724 KB. The other 8.3 MB are Zod, which is what checks every value while your CLI runs (see [Types and validation](#types-and-validation)). Most of that is on disk and never loads: Zod ships its code twice, as ESM and as CommonJS, its types twice, its TypeScript sources, Zod 3 next to Zod 4, and 1.5 MB of error messages in other languages. What it costs when your CLI runs is in the startup row.
+
+**With `--mcp`, it's much more:** `@runa-cmd/mcp` brings the official MCP SDK, and `node_modules` grows to 27.9 MB and 97 packages, counted with `npm ls --all`. A plain run doesn't load the SDK: only `--mcp` does. Each tool call runs your CLI again, as its own process.
 
 ## 1. Create the project
 
@@ -59,7 +62,7 @@ npm install -D typescript @types/node
 
 Then a `tsconfig.json`, a shebang in the entry file, and `bin` in `package.json`. [Getting started](./getting-started.md) shows each of these, and they're what Runa's generator writes for you. You can follow that guide by hand with Runa as well.
 
-**oclif** also has a generator, `npx oclif generate my-tool`. It asks for the package name and other details, and creates a project with one file per command. It wasn't measured beyond that.
+**oclif** also has a generator, `npx oclif generate my-tool`. It asks for the package name and other details, or nothing with `--yes`, and creates a project with one file per command. In the review it took 80 seconds and 183 MB, against 1.3 seconds for Runa's, and its template was older than oclif's current version.
 
 ## 2. Write the command
 
@@ -207,14 +210,14 @@ Two different things, which are easy to mix up:
 
 | | Runa | commander | yargs | citty | cac |
 |---|---|---|---|---|---|
-| Where types come from | The schema | You write them | The chain of calls, with `@types/yargs` | The definition | You write them |
+| Where types come from | The schema | The chain of calls, with `@commander-js/extra-typings`; without it, you write them | The chain of calls, with `@types/yargs` | The definition | You write them |
 | Types of values | Any Zod type | Strings and booleans, unless you parse them | String, number, boolean, arrays | String, boolean | Strings, or `type: [Number]` |
 | Allowed values | `z.enum()` | `choices()` | `choices` | `type: 'enum'` | No |
 | Your own rule | `.regex()`, `.min()`, `.refine()` | `argParser()`, a function per option | `coerce` and `check()`, functions you write | No: check it in `run` | No: check it in the action |
-| The rule shows in help | Allowed values and defaults | Allowed values | Allowed values | Allowed values | No |
+| The rule shows in help | Allowed values and defaults, not ranges as `.min()` | Allowed values | Allowed values | Allowed values | No |
 | The same rule for config files and agents | Yes | No | No | No | No |
 
-The other tools' columns come from their type definitions, at the versions above, and weren't run.
+The other tools' columns come from their type definitions, at the versions above. Whether types catch a mistake was run: four wrongly typed uses of the values, compiled with `tsc --strict`. Runa, yargs, citty, oclif and commander with `extra-typings` caught all four.
 
 With yargs and citty, the types come from type-level code that maps your definition: `{ type: 'boolean' }` becomes `boolean`. That's why they're light. But a type can't check that a string is a hex color, so that rule ends up as code you write in the action, with your own error message and exit code.
 
@@ -231,7 +234,7 @@ What the person running `greet` sees after a mistake, and the exit code a script
 | Misspelled command | 127, suggests one | 1, suggests one | 1, help | 1, help | **0, nothing** |
 | No command | 2, help | 1, help | 1, help | 1, help | **0, nothing** |
 
-**Runa differs:** a mistake in how the CLI was called is exit 2, and a command that doesn't exist is 127, as in shells. A script or an agent can tell "I called it wrong" from "it failed". Exit 0 after a mistake, as citty and cac do in some cases, is the worst outcome: a script believes it worked.
+**Runa differs:** a mistake in how the CLI was called is exit 2, and a command that doesn't exist is 127, as in shells. A script or an agent can tell "I called it wrong" from "it failed". oclif also uses 2. Exit 0 after a mistake, as citty and cac do in some cases, is the worst outcome: a script believes it worked.
 
 ## 4. Test it
 
@@ -301,7 +304,7 @@ async function run(argv: string[]) {
 }
 ```
 
-oclif has its own test helpers, which weren't tried here.
+oclif has its own test helpers, in `@oclif/test`, so it doesn't need one of yours either.
 
 ## 5. Ship it
 
@@ -310,14 +313,17 @@ The same for every tool: build `dist/` with `tsc`, point `bin` at it, and publis
 What Runa adds, each one a plugin you install and list in `plugins`:
 
 - **Your commands as an agent's tools:** [`@runa-cmd/mcp`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/mcp) adds `--mcp`, which serves every command as an MCP tool with the same schemas.
-- **Shell completions:** [`@runa-cmd/completions`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/completions), for bash, zsh and fish.
+- **Shell completions:** [`@runa-cmd/completions`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/completions), for bash, zsh and fish. They're a script made from your commands: they complete commands, options and the values of an enum, but not values your CLI computes at that moment. yargs does that, by asking the CLI on each TAB.
 - **Help with themes:** [`@runa-cmd/help`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/help).
 
 ## Where Runa costs you more
 
-- **Size:** 8.8 MB of dependencies on disk, against 56 KB for citty or cac. 8.1 MB are Zod, and that's the price of validation: see [Types and validation](#types-and-validation).
-- **Startup:** about 30 ms more than commander, which matters if your CLI runs thousands of times in a loop.
-- **`@beta`:** until 1.0, without it npm installs the old `0.1.0`.
+- **Size:** 9.0 MB of dependencies on disk, against 56 KB for citty or cac. 8.3 MB are Zod, and that's the price of validation: see [Types and validation](#types-and-validation). With `--mcp`, 27.9 MB.
+- **Startup:** 36 ms over Node with nothing loaded, four times commander's 9. It matters if your CLI runs thousands of times in a loop.
+- **Completions:** a script, not the CLI answering each TAB as with yargs, so they can't offer values computed at that moment.
+- **Node 24 and ESM:** Runa needs Node 24 or later; commander 15 asks for 22.12, and yargs and cac for 20.19. And Runa only loads with `import`: `require('@runa-cmd/core')` fails with `ERR_PACKAGE_PATH_NOT_EXPORTED`, while the other four load from CommonJS too, on Node 26.
+- **`@beta`:** until 1.0, without it npm installs the old `0.1.0`, of every package.
 - **A different idea:** returning instead of printing, and options as Zod schemas. If you know commander, it takes a moment to get used to.
+- **Each option in two places:** its schema in `options`, and its alias or env var in `meta.options`. commander writes `'-s, --shout'` once.
 
-If size or startup decide it for you, citty and cac are the lightest of these, though you should check how they handle mistakes (section 3). If your CLI is already written with commander and works, the reasons to move are the exit codes, `testCLI()` and `--mcp`, not the code itself.
+If size or startup decide it for you, citty and cac are the lightest of these, though you should check how they handle mistakes (section 3). If your CLI is already written with commander and works, the reasons to move are the exit codes, `testCLI()` and `--mcp`, not the code itself: with `extra-typings`, commander already gives you the types.

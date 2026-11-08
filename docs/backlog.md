@@ -101,7 +101,7 @@
 | | T-242 | Error de tipos engañoso sin `description` | Requerido | Hecho |
 | | T-243 | `help` como comando | Requerido | Hecho |
 | | T-244 | Alias mal escritos al arrancar | Requerido | Hecho |
-| | T-245 | Guías de comparación honestas | Requerido | Pendiente |
+| | T-245 | Guías de comparación honestas | Requerido | Hecho |
 | | T-246 | El valor recibido en los errores | Opcional | Pendiente |
 | | T-247 | Sugerir dónde va una clave del config | Opcional | Pendiente |
 | | T-248 | Alias y env junto al schema | Opcional | Pendiente |
@@ -1119,7 +1119,8 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-245 Guías de comparación honestas
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
+- **Resultado, 2026-11-08:** los números de la guía se volvieron a sacar de los proyectos compilados de la revisión, no del resumen. Dos difieren de la revisión: con `npm ls --all`, Runa con `mcp` son 97 paquetes, no 92; y `npm i @runa-cmd/mcp` en un proyecto nuevo ya no falla con npm 12.2.2, instala la `0.1.0`. Se midió aparte que importar Zod suma 25 ms de los 36 de Runa, no casi todos. Las otras cuatro herramientas cargan desde CommonJS y Runa no, y solo yargs trae completions: se buscó en su código instalado.
 - **Descripción:** como dev que compara herramientas, quiero que la guía no favorezca a Runa de más, porque eso le resta credibilidad a lo que sí gana. [La comparación](./research/2026-11-review-before-v1.md) encontró que `guides/runa-compared.md` y la investigación de facilidad de uso comparan contra commander sin `@commander-js/extra-typings`, miden el arranque sin compilar, no dicen lo que pesa `--mcp` y no comparan completions.
 - **Criterios de aceptación:**
   - La guía nombra extra-typings y su inferencia de tipos.
