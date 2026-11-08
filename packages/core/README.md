@@ -603,6 +603,11 @@ cleanup  ← (Runs on errors and on signals, within the stop deadline)
 On error → onError hook fires before cleanup
 ```
 
+What a hook gets grows as the run goes on: `globalOptions` from `onGlobalFlags`, and `command`, `args` and `options` from `afterParse`. Two fields differ from what `run()` gets:
+
+- **`ctx.rawArgs`** is the whole argv in `beforeParse`, where a hook may rewrite it before parsing. From `onGlobalFlags` on, it's only the command's part, without the global options and without what follows `--`. `run()` gets the original argv as it was.
+- **`ctx.invocation`** says who started the run: `{ surface: 'cli' }` for a person or a script, and `{ surface: 'tool', tool }` for a call through MCP, where everything written reaches the model. `run()` doesn't get it, on purpose: a command does the same work for both, and what only people read goes in `format`, which doesn't run for a tool.
+
 ## Value Resolution
 
 Options are resolved in this priority order:

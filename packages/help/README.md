@@ -34,7 +34,7 @@ $ my-tool deploy --help
 
 The plugin adds a `--help` / `-h` global flag. When triggered, it renders formatted help and stops the run, so `cleanup` still happens and the process ends with code 0.
 
-If any command declares its own `-h` option, the CLI refuses to start with an `OPTION_COLLISION` error. Use another alias for now.
+A command can declare its own `-h`, as for `--host`: it keeps it, and `--help` still shows help. `tool serve -h example.com` sets the host, and `tool serve --help` shows the help of `serve`.
 
 ## Three Layers
 
@@ -258,7 +258,7 @@ The built-in renderer (`defaultRenderer`) produces output with these sections (e
 4. **Options** — Named options table, grouped by `group` metadata
 5. **Commands** — Subcommands table
 
-The renderer is subcommand-aware: `my-tool deploy --help` shows help for the `deploy` command specifically. Today this only looks at the first level, so `my-tool db migrate --help` shows the help for `db`. With `runCLI(cmd, { plugins: [helpPlugin()] })`, `--help` shows the command itself.
+The renderer is subcommand-aware: `my-tool deploy --help` shows help for the `deploy` command, and `my-tool db migrate --help` for the nested `db migrate`, at any depth. `my-tool db --help` shows the group and its commands. With `runCLI(cmd, { plugins: [helpPlugin()] })`, `--help` shows the command itself.
 
 ## Types
 
