@@ -46,6 +46,8 @@ export const ERROR_CODES = {
 	OPTION_COLLISION: 'OPTION_COLLISION',
 	/** A boolean `noCache` would clash with `--no-cache` */
 	INVALID_OPTION_NAME: 'INVALID_OPTION_NAME',
+	/** An alias isn't `-x` nor `--word`, as `'e'` or `'-ab'` */
+	INVALID_OPTION_ALIAS: 'INVALID_OPTION_ALIAS',
 	/** meta.options names a key that options doesn't have */
 	INVALID_META_OPTIONS: 'INVALID_META_OPTIONS',
 	/** A command has more than one list argument */

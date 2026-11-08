@@ -96,7 +96,7 @@ Operational metadata lives in `meta.options`, separate from the Zod schema:
 
 | Property | Type | Description |
 |---|---|---|
-| `alias` | `string[]` | Short flags, e.g. `['-e']` (must include dash prefix) |
+| `alias` | `string[]` | Other flags for the option: one character as `'-e'`, or a word as `'--environment'`. Any other form, as `'e'` or `'-ab'`, stops the CLI at startup and says how to write it |
 | `env` | `string` | Environment variable name, e.g. `'DEPLOY_ENV'`. If a required option is missing, the error names it: `Missing required option: --env, or set DEPLOY_ENV` |
 | `configurable` | `boolean` | `false` if a config file can't set it, as with a guardrail. Default: `true` |
 | `group` | `string` | Group name for help display, e.g. `'Scaling'` |
@@ -512,6 +512,7 @@ These stop the CLI at startup, all with exit 1. They point at the CLI's code, so
 |---|---|
 | `OPTION_COLLISION` | Two options end up as the same flag or alias: two keys of a command, two globals, a global and a command's option, or an option where `format` adds `--json` |
 | `INVALID_OPTION_NAME` | A boolean `noCache` would clash with `--no-cache`, which already negates `cache` |
+| `INVALID_OPTION_ALIAS` | An alias isn't `-x`, one character, nor `--word`, as `'e'` or `'-ab'`: the message says how to write it |
 | `INVALID_META_OPTIONS` | `meta.options` names a key that `options` doesn't have |
 | `INVALID_VARIADIC_ARGS` | A command has more than one list argument |
 | `INVALID_VARIADIC_POSITION` | The list argument isn't the last one |

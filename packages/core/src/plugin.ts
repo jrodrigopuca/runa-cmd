@@ -325,6 +325,54 @@ function assertUsableNames(options: Record<string, ZodType>, owner: string): voi
 	}
 }
 
+const SHORT_ALIAS = /^-[^-\s]$/;
+const LONG_ALIAS = /^--[^-\s=][^\s=]*$/;
+
+/** How to write an alias that can't work: the letters it has, with the right dashes. */
+function aliasProposal(alias: string): string {
+	const bare = alias.replace(/^-+/, '');
+	if (bare.length === 0) return "'-x' or '--word'";
+	if (bare.length === 1) return `'-${bare}'`;
+	return `'--${bare}', or one character as '-${bare[0]}'`;
+}
+
+/**
+ * An alias that is neither `-x` nor `--word` never worked: parseArgs ignored
+ * it, and the help still showed it. It fails at startup, as a collision does,
+ * so the author sees it the first time the CLI runs (T-244).
+ */
+export function validateOptionAliases(
+	commands: CommandTree,
+	globalMeta: { options?: Record<string, OptionMeta> },
+): void {
+	const check = (options: Record<string, OptionMeta> | undefined, owner: string) => {
+		for (const [name, meta] of Object.entries(options ?? {})) {
+			for (const alias of meta.alias ?? []) {
+				if (SHORT_ALIAS.test(alias) || LONG_ALIAS.test(alias)) continue;
+				throw new RunaError(
+					`Alias '${alias}' of option '${name}' of ${owner} must be ${aliasProposal(alias)}.`,
+					{ code: ERROR_CODES.INVALID_OPTION_ALIAS, exitCode: 1 },
+				);
+			}
+		}
+	};
+
+	check(globalMeta.options, 'the CLI');
+	const walk = (tree: CommandTree, path: string[]): void => {
+		for (const [key, entry] of Object.entries(tree)) {
+			if (isCommandNode(entry)) {
+				check(
+					entry.meta.options as Record<string, OptionMeta> | undefined,
+					`command '${[...path, key].join(' ')}'`,
+				);
+			} else {
+				walk(entry, [...path, key]);
+			}
+		}
+	};
+	walk(commands, []);
+}
+
 /** Keys that can't become a usable flag fail at startup, not on the first use. */
 export function validateOptionNames(
 	commands: CommandTree,

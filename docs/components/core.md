@@ -166,7 +166,7 @@ En el código, `darkColor`; en la terminal, `--dark-color` ([ADR-0024](../adr/00
 - **Lo que no es una terminal conserva la clave:** las tools MCP y los archivos de config usan `darkColor`.
 - **Un plural de siglas no se separa bien:** `baseURLs` da `--base-ur-ls`. Para esos casos, escribí la clave con guiones: `'base-urls'`.
 
-Fallan al arrancar un booleano `noCache`, con `INVALID_OPTION_NAME`, porque `--no-cache` ya niega `cache`, y dos claves que dan la misma flag, con `OPTION_COLLISION`.
+Fallan al arrancar un booleano `noCache`, con `INVALID_OPTION_NAME`, porque `--no-cache` ya niega `cache`, y dos claves que dan la misma flag, con `OPTION_COLLISION`. También un alias que no es `-x` ni `--palabra`, como `'e'` o `'-ab'`, con `INVALID_OPTION_ALIAS`: `parseArgs` lo ignoraba y la ayuda lo mostraba igual. `validateOptionAliases`, en `plugin.ts`, revisa los de cada comando y los globales, y el mensaje propone la forma correcta (T-244).
 
 ### Ayuda
 

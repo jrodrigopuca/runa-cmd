@@ -50,6 +50,7 @@ import {
 	STATIC_GLOBAL_OPTION_SOURCE,
 	topologicalSort,
 	validateCommandNames,
+	validateOptionAliases,
 	validateOptionCollisions,
 	validateOptionNames,
 } from './plugin.js';
@@ -769,6 +770,7 @@ async function runCLILifecycle(
 		// any parsing on every invocation; throws RunaError OPTION_COLLISION.
 		validateCommandNames(mutableCommands, rootName);
 		validateOptionNames(mutableCommands, mutableGlobalOptions);
+		validateOptionAliases(mutableCommands, mutableGlobalMeta);
 		validateOptionCollisions(
 			mutableCommands,
 			mutableGlobalOptions,

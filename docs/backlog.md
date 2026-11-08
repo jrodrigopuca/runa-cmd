@@ -100,7 +100,7 @@
 | | T-241 | Opción enum obligatoria que falta | Requerido | Hecho |
 | | T-242 | Error de tipos engañoso sin `description` | Requerido | Hecho |
 | | T-243 | `help` como comando | Requerido | Hecho |
-| | T-244 | Alias mal escritos al arrancar | Requerido | Pendiente |
+| | T-244 | Alias mal escritos al arrancar | Requerido | Hecho |
 | | T-245 | Guías de comparación honestas | Requerido | Pendiente |
 | | T-246 | El valor recibido en los errores | Opcional | Pendiente |
 | | T-247 | Sugerir dónde va una clave del config | Opcional | Pendiente |
@@ -1109,11 +1109,11 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-244 Alias mal escritos al arrancar
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor, quiero enterarme al arrancar si escribí mal un alias. Con `alias: ['e']` o `['-ab']`, la ayuda muestra `-e, --x` y `-e v` da `Unknown option: -e`: el alias nunca funcionó y nada lo dice. Verificado el 2026-11-08.
 - **Decisión, 2026-11-08:** un alias mal escrito frena la CLI al arrancar, como una colisión. Se descartó corregirlo solo (`'e'` como `-e`): habría dos formas de escribir lo mismo, y `'-ab'` igual tendría que fallar. Una CLI con un alias mal escrito deja de arrancar, pero ese alias nunca funcionó. Entra en la `0.2.0-beta.7`.
 - **Criterios de aceptación:**
-  - Un alias que no es `-x` ni `--palabra` frena la CLI al arrancar con `code: 'INVALID_OPTION_ALIAS'` y exit 1, nombrando la opción y la forma correcta: `Alias 'e' of option 'env' must be '-e' or '--word'.`
+  - Un alias que no es `-x` ni `--palabra` frena la CLI al arrancar con `code: 'INVALID_OPTION_ALIAS'` y exit 1, nombrando la opción, su dueño y la forma correcta: `Alias 'e' of option 'env' of command 'deploy' must be '-e'.`, o `must be '--ab', or one character as '-a'.` si tiene más de una letra.
   - El código está en la lista de T-234.
 
 ### T-245 Guías de comparación honestas
