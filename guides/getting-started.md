@@ -32,12 +32,15 @@ Add a `tsconfig.json`. Node runs your TypeScript as it is while you develop, and
 		"rewriteRelativeImportExtensions": true,
 		"erasableSyntaxOnly": true,
 		"verbatimModuleSyntax": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"types": ["node"]
 	},
 	"include": ["src"],
 	"exclude": ["src/**/*.test.ts"]
 }
 ```
+
+`types` loads Node's types, so `import ... from 'node:fs'` compiles. Since TypeScript 6, they don't load on their own.
 
 ## 2. Define the CLI
 
@@ -153,6 +156,7 @@ npm publish   # Run npm run build first, every time
 ## Next
 
 - **Coming from another tool?** [Runa and the alternatives](./runa-compared.md) builds this same CLI with commander, yargs, citty and cac, and marks what changes.
+- **Moving a commander CLI?** [Migrating from commander](./migrate-from-commander.md) translates it piece by piece, and lists what changes for the people using it.
 
 - **Help with colors and layout:** [`@runa-cmd/help`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/help).
 - **Shell completions:** [`@runa-cmd/completions`](https://github.com/jrodrigopuca/runa-cmd/tree/main/packages/completions).

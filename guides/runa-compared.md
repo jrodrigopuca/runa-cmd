@@ -22,14 +22,17 @@ Measured on 2026-11-03 with Node 26.11.1 on macOS, running the TypeScript withou
 | Start a project | **One command** | By hand | By hand | By hand | By hand |
 | Lines for this CLI | 16 | 13 | 21 | 17 | 12 |
 | Packages to install | 2 | 1 | 2 | 1 | 1 |
-| Size of `node_modules` | **8.8 MB** | 236 KB | 1.0 MB | 56 KB | 56 KB |
+| Size of `node_modules`, on disk | **8.8 MB, 8.1 of them Zod** | 236 KB | 1.0 MB | 56 KB | 56 KB |
 | Startup, median of 15 | 164 ms | 137 ms | 175 ms | 132 ms | 132 ms |
 | Types from your definition | Yes | No, `any` | Yes | Yes | No, `any` |
+| Validation beyond the type | **Any Zod schema** | Allowed values, your own parser | Allowed values, your own checks | Allowed values | None |
 | Exit code for a mistake | **2, or 127 for an unknown command** | 1 | 1 | 1, or **0** for an unknown flag | 1, or **0** for an unknown command |
 | Tests without a subprocess | **Built in** | A helper you write | A helper you write | A helper you write, no exit code | A helper you write, no exit code |
 | Its commands as an agent's tools | **`--mcp`** | No | No | No | No |
 
-Node with nothing loaded starts in 104 ms, so Runa adds about 60 ms and commander about 33. 8.1 MB of Runa's 8.8 are Zod.
+Node with nothing loaded starts in 104 ms, so Runa adds about 60 ms and commander about 33.
+
+**Where the size comes from:** `@runa-cmd/core` takes 720 KB. The other 8.1 MB are Zod, which is what checks every value while your CLI runs (see [Types and validation](#types-and-validation)). Most of that is on disk and never loads: Zod ships its code twice, as ESM and as CommonJS, its types twice, its TypeScript sources, Zod 3 next to Zod 4, and 1.5 MB of error messages in other languages. What it costs when your CLI runs is in the startup row.
 
 ## 1. Create the project
 
@@ -191,10 +194,31 @@ cli.parse();
 What changes:
 
 - **Runa differs: `run` returns, it doesn't print.** Runa writes the result, so the same command works in a terminal, in a test and as an agent's tool. You can still print progress yourself, to stderr.
-- **Types.** With Runa, yargs and citty, `name` is a `string` because the definition says so. With commander and cac you write the types by hand, and nothing checks them: a wrong type compiles.
-- **Validation.** Runa's options are Zod schemas, so `z.number().min(1)` or `z.enum([...])` validate the value and appear in the help. The others have their own option formats.
+- **Types and validation.** Runa gets both from one schema. The next section compares them.
 - **Runa costs more here:** two packages, Zod and Runa, and its own import, `@runa-cmd/core/zod`. Until 1.0, also `@beta`.
 - **Runa differs: two files.** `cli.ts` exports the CLI without starting it, and `main.ts` starts it, so tests can import the CLI. The others put it all in one file, and to test it you split it the same way. The generator already does this.
+
+## Types and validation
+
+Two different things, which are easy to mix up:
+
+- **Types** help you while you write: `args.name` is a `string`, and a mistake doesn't compile. They're erased when the code runs, so they weigh nothing.
+- **Validation** checks what a person typed, while the CLI runs: that `--port` is a number between 1 and 65535, or that `--color` is a hex color. That's code, and it's in the package.
+
+| | Runa | commander | yargs | citty | cac |
+|---|---|---|---|---|---|
+| Where types come from | The schema | You write them | The chain of calls, with `@types/yargs` | The definition | You write them |
+| Types of values | Any Zod type | Strings and booleans, unless you parse them | String, number, boolean, arrays | String, boolean | Strings, or `type: [Number]` |
+| Allowed values | `z.enum()` | `choices()` | `choices` | `type: 'enum'` | No |
+| Your own rule | `.regex()`, `.min()`, `.refine()` | `argParser()`, a function per option | `coerce` and `check()`, functions you write | No: check it in `run` | No: check it in the action |
+| The rule shows in help | Allowed values and defaults | Allowed values | Allowed values | Allowed values | No |
+| The same rule for config files and agents | Yes | No | No | No | No |
+
+The other tools' columns come from their type definitions, at the versions above, and weren't run.
+
+With yargs and citty, the types come from type-level code that maps your definition: `{ type: 'boolean' }` becomes `boolean`. That's why they're light. But a type can't check that a string is a hex color, so that rule ends up as code you write in the action, with your own error message and exit code.
+
+With Runa, that rule is part of the schema, so it's checked once and used everywhere: before `run()` starts, with exit 2; in a config file, naming the file and the key; and in the JSON Schema an agent gets from `--mcp`. This is what Zod's size buys. [Migrating from commander](./migrate-from-commander.md) shows a color check moving from the action into the schema.
 
 ## 3. When people get it wrong
 
@@ -291,7 +315,7 @@ What Runa adds, each one a plugin you install and list in `plugins`:
 
 ## Where Runa costs you more
 
-- **Size:** 8.8 MB of dependencies against 56 KB for citty or cac. Almost all of it is Zod.
+- **Size:** 8.8 MB of dependencies on disk, against 56 KB for citty or cac. 8.1 MB are Zod, and that's the price of validation: see [Types and validation](#types-and-validation).
 - **Startup:** about 30 ms more than commander, which matters if your CLI runs thousands of times in a loop.
 - **`@beta`:** until 1.0, without it npm installs the old `0.1.0`.
 - **A different idea:** returning instead of printing, and options as Zod schemas. If you know commander, it takes a moment to get used to.

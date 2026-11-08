@@ -813,7 +813,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **Estado:** En curso
 - **Descripción:** como dev nuevo, quiero guías que me lleven de cero a una CLI y una tool MCP.
 - **Cómo:** las guías están en inglés, en `guides/`, porque son para usuarios. Cada bloque de código que muestran es un archivo de un proyecto en `examples/`, que corre sus pruebas en CI, y `docs:check` falla si el bloque y el archivo difieren.
-- **Avance:** guía de inicio, y [comparación con otras herramientas](../guides/runa-compared.md), que cumple el último criterio. En esa guía, el código de Runa sale de `examples/getting-started`; el de commander, yargs, citty y cac se corrió una vez en las versiones que nombra, y no está en CI para no depender de releases ajenos. Faltan plugins, middleware, testing, MCP, referencia de API y migración desde commander.
+- **Avance:** guía de inicio; [comparación con otras herramientas](../guides/runa-compared.md), que cumple el último criterio; y [migración desde commander](../guides/migrate-from-commander.md), con `examples/from-commander`, que cumple el segundo. La tabla de lo que cambia para quien usa la CLI salió de correr la versión con commander 15.0.0 y la de Runa con los mismos argumentos, y coincide con la [guía de migración de qr-plus](https://github.com/jrodrigopuca/qr-code-generator/blob/master/docs/MIGRATION.md). Al escribirla apareció que el `tsconfig` de la guía de inicio, y por lo tanto el del generador, no compilaba un import de `node:`: TypeScript 6 ya no carga `@types/node` por su cuenta. Se agregó `"types": ["node"]` y una prueba en `@runa-cmd/create`. En esa guía, el código de Runa sale de `examples/getting-started`; el de commander, yargs, citty y cac se corrió una vez en las versiones que nombra, y no está en CI para no depender de releases ajenos. Faltan plugins, middleware, testing, MCP y referencia de API.
 - **Criterios de aceptación:**
   - Hay guías de inicio, plugins, middleware, testing y MCP, además de referencia de API.
   - Hay una guía de migración desde commander, basada en qr-plus.
@@ -854,9 +854,10 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Se cumple el criterio de T-501.
   - Se ejecuta `changeset pre exit` y se amplían los peer ranges de help, MCP y completions.
   - Un dry-run de `changeset version` da las versiones esperadas antes de publicar.
-  - Los cuatro paquetes quedan en `1.0.0` bajo `latest`, y la tabla del README dice `Stable`.
+  - Después de `changeset pre exit`, Changesets pasa a la 3.x y el workflow de release a `changesets/action@v2`, que la requiere. No antes: en pre-release, la 3.0.3 descarta la lista de changesets ya publicados de `pre.json` y repite en el CHANGELOG de la beta siguiente todo lo publicado desde la primera beta (341 líneas de más en el de core, medido el 2026-11-08 corriendo `changeset version` con la 2.31.1 y con la 3.0.3 sobre el mismo commit).
+  - Los cinco paquetes quedan en `1.0.0` bajo `latest`, y la tabla del README dice `Stable`.
   - Después de publicar, `fixed` queda vacío en `.changeset/config.json`, como pide [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md).
-  - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cuatro paquetes. Si no, se aplica lo que dice [la investigación](./research/2026-11-readme-in-npm.md).
+  - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cinco paquetes. Si no, se aplica lo que dice [la investigación](./research/2026-11-readme-in-npm.md).
 
 ## Después de v1 o si llega a tiempo
 

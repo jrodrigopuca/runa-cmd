@@ -75,7 +75,7 @@ pnpm add @runa-cmd/completions@beta  # Shell completions
 
 Zod is required: it's how you define commands.
 
-**New to Runa?** [Getting started](./guides/getting-started.md) goes from an empty folder to a CLI you can test, install and publish. [Runa and the alternatives](./guides/runa-compared.md) builds the same CLI with commander, yargs, citty and cac, and marks the differences.
+**New to Runa?** [Getting started](./guides/getting-started.md) goes from an empty folder to a CLI you can test, install and publish. [Runa and the alternatives](./guides/runa-compared.md) builds the same CLI with commander, yargs, citty and cac, and marks the differences. Coming from commander? [Migrating from commander](./guides/migrate-from-commander.md).
 
 ### Single Command
 
@@ -261,7 +261,7 @@ Boolean options accept `true`, `1`, `false` and `0` from any source.
 - **ESM-only** — `type: "module"` everywhere
 - **Node 24+** — Uses stable `util.parseArgs` (no polyfill)
 - **Zod v4** — Peer dependency, not bundled
-- **TypeScript 6** — Strict mode, full inference
+- **TypeScript 7** — Strict mode, full inference
 
 ## Documentation
 

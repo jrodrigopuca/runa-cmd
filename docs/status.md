@@ -1,6 +1,6 @@
 # Estado actual
 
-> **Verificado:** 2026-11-02, con Node 26.11.1 local. CI usa Node 24.
+> **Verificado:** 2026-11-08, con Node 26.11.1 local. CI usa Node 24. Herramientas: TypeScript 7.0.2, vitest 5.1.0 con vite 8.3.5, Biome 2.6.4, Zod 4.6.7 en desarrollo y Changesets 2.31.1, que pasa a la 3.x en T-506.
 
 **Resumen:** el código está sano y publicado como beta, pero Runa todavía no está listo para estable. Las tareas requeridas de las fases 1 a 4 del [backlog](./backlog.md) están cerradas, y sus cambios se publicaron en `0.2.0-beta.1` (T-401). De la fase 3 solo queda T-307, opcional. qr-plus ya migró a `0.2.0-beta.2` sin workarounds (T-402), pero esa versión no está publicada: su versión en npm sigue con commander, y migra después de la estable. `local-beacon`, cuyo agente solo ve lo publicado, adoptó Runa y MCP. Su [reporte](./research/2026-10-local-beacon-friction.md) y una [evaluación de primer uso](./research/2026-10-first-use-evaluation.md) abrieron 12 tareas requeridas. Esas 12 tareas están cerradas y publicadas en `0.2.0-beta.3`, y `local-beacon` migró y usó sus tools con un [modelo real](./research/2026-11-local-beacon-real-model.md) (T-404). El modo implícito se retiró en `0.2.0-beta.4` (T-208), que abrió la ventana de estabilidad.
 
@@ -25,7 +25,7 @@ Changesets está en modo pre-release con el tag `beta`.
 | Build | Pasa |
 | Typecheck | Pasa, sin incluir los tests |
 | Lint (Biome) | Pasa |
-| Tests | 1326 en Ubuntu: core 807, help 236, completions 122, mcp 145, create 16, con bash, zsh y fish reales |
+| Tests | 1327 en Ubuntu: core 807, help 236, completions 122, mcp 145, create 17, con bash, zsh y fish reales |
 | Aceptación con procesos reales | Pasan los 319 casos, sin fallos esperados |
 | Cobertura de `core` | 91,89% de líneas, 80,45% de ramas; el mínimo exigido es 80% de líneas. No cuenta lo ejecutado en procesos hijos |
 | Type tests | 11 pasan; corren con `pnpm test` y un error de tipos hace fallar la suite |
