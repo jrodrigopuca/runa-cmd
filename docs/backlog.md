@@ -618,6 +618,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como persona que usa una CLI, quiero saber que una opción obligatoria también se puede dar por env. Es F-08 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Avance:** el 2026-11-08, commander 15.0.0 tampoco nombra la variable en el error (`required option '--token <token>' not specified`), y los dos la muestran en la ayuda (`[env: API_TOKEN]` en Runa). Sirve más con MCP: ahí la opción es de quien opera ([ADR-0032](./adr/0032-postura-sobre-secretos.md)), y el error le dice qué variable falta.
 - **Criterios de aceptación:**
   - El error nombra la variable declarada, sin mostrar ningún valor.
 
@@ -626,6 +627,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como autor de una CLI, quiero mostrar `~/.tool/control.sock` y no la ruta de mi home cuando el valor por defecto es calculado. Es F-13 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Avance:** el 2026-11-08, commander 15.0.0 lo resuelve con `new Option(...).default(valor, '~/.beacon/control.sock')`: la ayuda muestra el texto y el comando recibe el valor. Runa muestra `(default: /Users/juan/.beacon/control.sock)`.
 - **Criterios de aceptación:**
   - `meta.options` acepta el texto del valor por defecto, y las dos ayudas lo muestran.
   - El valor real no cambia.
@@ -635,6 +637,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como autor de un servicio, quiero que Ctrl+C no parezca un error si el comando terminó ordenadamente. Es F-07 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Avance:** el 2026-11-08, el mismo servicio con commander 15.0.0 termina con exit 0 y nada en stderr: commander no maneja señales, y el autor escucha `SIGINT`. Con Runa termina con 130 e `Interrupted.`, aunque el comando terminó bien.
+- **Antes de decidir:** hay que comprobar si el exit 143 que hoy es contrato le sirve a un servicio. Hipótesis, sin verificar: systemd toma como parada limpia un proceso que muere por la señal `SIGTERM`, pero no uno que sale con el código 143, salvo con `SuccessExitStatus=143`; si es así, un servicio de Runa que para bien queda como `failed`. launchd, en macOS, puede tener otra regla. Se prueba con una beta: `local-beacon proxy` como servicio de systemd y de launchd, se detiene con `systemctl stop` y `launchctl`, y se mira el estado que queda. Si la hipótesis se confirma, cambiar el exit code de una parada limpia es incompatible y va antes de la 1.0.
 - **Criterios de aceptación:**
   - Un comando que terminó bien tras la señal no imprime `Interrupted.`.
   - El exit code sigue siendo 130 o 143, porque es contrato.
@@ -644,6 +648,8 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como quien opera un servidor, quiero que el modelo vea una ruta que no es secreta, y no `[redacted]`. Es F-14 de [`local-beacon`](./research/2026-10-local-beacon-friction.md).
+- **Avance:** no hay con qué compararlo: commander, yargs, citty y cac no tienen MCP ni un concepto de secreto ([ADR-0032](./adr/0032-postura-sobre-secretos.md)).
+- **Antes de decidir:** se prueba con una beta qué pierde el modelo hoy. Con `local-beacon`, `LBEACON_SOCKET` fijado y `tools/call status`, se mira si `no proxy on [redacted]` le impide al modelo responder o lo lleva a reintentar, con el mismo método que la [validación con un modelo real](./research/2026-11-local-beacon-real-model.md). Si el modelo responde bien igual, la tarea se cierra sin cambios.
 - **Criterios de aceptación:**
   - Quien opera puede marcar una opción como no secreta.
   - Por defecto, nada cambia: redactar sigue siendo lo normal, como dice [ADR-0032](./adr/0032-postura-sobre-secretos.md).
@@ -748,6 +754,9 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como persona que usa una CLI, quiero mensajes uniformes y una ayuda sin ruido. Reúne los menores de [la evaluación](./research/2026-10-first-use-evaluation.md).
+- **Avance:** contrastados el 2026-11-08 sobre el código de la beta.5, y contra commander 15.0.0:
+  - **Se descartan, con motivo:** `nada` sugiere `add` y `-t=a` guarda `=a`. commander hace lo mismo en los dos casos, y `util.parseArgs` de Node también guarda `=a`: lo que sigue a una flag corta es su valor, como en POSIX.
+  - **Siguen:** `--limit 0` da `limit: Too small: expected number to be >0`. Las completions de zsh ofrecen `--no-help`, `--no-version` y también `--no-mcp`. La ayuda de cada comando lista `--mcp` y `--version`, que solo tienen sentido en la raíz; esto último lo reportó `local-beacon` con la beta.3 y no estaba en la lista.
 - **Criterios de aceptación:**
   - Se contrasta cada menor, y lo confirmado se corrige o se descarta con motivo.
   - Un error de validación no expone a Zod ni la clave interna.
@@ -769,6 +778,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 - **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como autor de un programa que embebe una CLI, quiero ejecutarla y recibir su resultado, sin que un error termine mi proceso. `cli.run()` llama a `process.exit`, y `testCLI()` resuelve las pruebas, no este caso. Es H4 de [la evaluación](./research/2026-10-first-use-evaluation.md), reportado de nuevo con `0.2.0-beta.4`. Es aditivo, así que puede salir en 1.x, y [ADR-0041](./adr/0041-funcion-de-pruebas.md) ya lo anticipó como opción.
+- **Avance:** revisado el 2026-11-08. No hay un programa que embeba una CLI: `local-beacon` arranca con `cli.run()` y prueba con `testCLI()`, y su reporte de la beta.3 lo anota desde `node verify.ts nope`, un script que vuelve a chequear H4. La condición de ADR-0041, "si alguien integra una CLI dentro de un programa", no se cumple. commander lo resuelve con `exitOverride()`, que lanza un error con `exitCode` en vez de terminar: es el camino a mirar cuando aparezca el caso. Hasta entonces queda pendiente.
 - **Criterios de aceptación:**
   - Un programa ejecuta la CLI y recibe el exit code y lo devuelto, sin que el proceso termine.
   - `run()` sigue terminando el proceso, como hasta ahora.
