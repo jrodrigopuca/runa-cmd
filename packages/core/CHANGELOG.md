@@ -1,5 +1,16 @@
 # @runa-cmd/core
 
+## 0.2.0-beta.5
+
+### Minor Changes
+
+- 2b3d392: Hooks, middleware and `run()` now get the whole path of the command, as `command.path`. `tag add` and `add` both had the name `add`, so a permissions or audit plugin couldn't tell them apart. Middleware also gets `command`, which it didn't have. `command.name` doesn't change.
+- 1643f9d: `meta.options.<key>.defaultDescription` sets what help shows as the default. A default built from the home folder can show as `~/.tool/control.sock`, instead of the path of whoever ran `--help`. The command still gets the real value.
+
+### Patch Changes
+
+- 33d14dd: A missing required option that declares `env` names its variable: `Missing required option: --database, or set TOOL_DATABASE_URL`. It names the variable, never a value.
+
 ## 0.2.0-beta.4
 
 ### Minor Changes

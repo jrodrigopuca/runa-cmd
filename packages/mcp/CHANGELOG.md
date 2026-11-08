@@ -1,5 +1,15 @@
 # @runa-cmd/mcp
 
+## 0.2.0-beta.5
+
+### Minor Changes
+
+- 2b3d392: Hooks, middleware and `run()` now get the whole path of the command, as `command.path`. `tag add` and `add` both had the name `add`, so a permissions or audit plugin couldn't tell them apart. Middleware also gets `command`, which it didn't have. `command.name` doesn't change.
+
+### Patch Changes
+
+- 2ceaa41: Depends on `@modelcontextprotocol/sdk` `^1.32.2`, up from `^1.29.0`.
+
 ## 0.2.0-beta.4
 
 ### Minor Changes
