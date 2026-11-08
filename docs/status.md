@@ -8,13 +8,13 @@
 
 | Paquete | `latest` | `beta` | Repo |
 |---|---|---|---|
-| `@runa-cmd/core` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
-| `@runa-cmd/help` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
-| `@runa-cmd/mcp` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
-| `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.5 | 0.2.0-beta.5 |
-| `@runa-cmd/create` | 0.2.0-beta.5 | 0.2.0-beta.5 | 0.2.0-beta.5 |
+| `@runa-cmd/core` | 0.1.0 | 0.2.0-beta.6 | 0.2.0-beta.6 |
+| `@runa-cmd/help` | 0.1.0 | 0.2.0-beta.6 | 0.2.0-beta.6 |
+| `@runa-cmd/mcp` | 0.1.0 | 0.2.0-beta.6 | 0.2.0-beta.6 |
+| `@runa-cmd/completions` | 0.1.0 | 0.2.0-beta.6 | 0.2.0-beta.6 |
+| `@runa-cmd/create` | 0.2.0-beta.5 | 0.2.0-beta.6 | 0.2.0-beta.6 |
 
-`@runa-cmd/create` tiene `latest` en la beta porque fue su primera publicación, y npm se lo pone a la primera versión. `npm create @runa-cmd my-tool` sin `@beta` también funciona.
+`@runa-cmd/create` tiene `latest` en una beta porque npm se lo puso a su primera publicación, y Changesets solo mueve `beta`. Hasta la 1.0 se mueve a mano en cada publicación, como dice CONTRIBUTING, para que `npm create @runa-cmd my-tool` sin `@beta` genere la última.
 
 Changesets está en modo pre-release con el tag `beta`.
 
@@ -34,7 +34,7 @@ Changesets está en modo pre-release con el tag `beta`.
 
 ## Dónde estamos
 
-- **Beta publicada:** `0.2.0-beta.5`, el 2026-11-08, verificada desde npm en una carpeta limpia: `npm create @runa-cmd@beta` genera un proyecto que instala, pasa sus tests, compila y corre, con `--version` igual al `package.json`. Trae `@runa-cmd/create`, `command.path` en hooks y middleware, `defaultDescription`, el error que nombra la variable de entorno y el SDK de MCP 1.32. Es aditiva, así que no reinicia la ventana de estabilidad. La `0.2.0-beta.4` trajo el archivo de config por comando, `testCLI()`, `format` y `--json`, un solo nombre por comando, errores por MCP sin `safeToRetry`, comandos fuera de las tools y el retiro del modo implícito.
+- **Beta publicada:** `0.2.0-beta.6`, el 2026-11-08, verificada desde npm: un servicio que termina bien tras `SIGTERM` o `SIGINT` muere por la señal, sin `Interrupted.`, y la shell ve 143 y 130; uno que ignora la señal sigue diciendo `Interrupted.`. El generador crea un proyecto con la beta.6 que instala, pasa sus tests y compila. La `0.2.0-beta.5`, del mismo día, también verificada desde npm en una carpeta limpia: `npm create @runa-cmd@beta` genera un proyecto que instala, pasa sus tests, compila y corre, con `--version` igual al `package.json`. Trae `@runa-cmd/create`, `command.path` en hooks y middleware, `defaultDescription`, el error que nombra la variable de entorno y el SDK de MCP 1.32. Es aditiva, así que no reinicia la ventana de estabilidad. La `0.2.0-beta.4` trajo el archivo de config por comando, `testCLI()`, `format` y `--json`, un solo nombre por comando, errores por MCP sin `safeToRetry`, comandos fuera de las tools y el retiro del modo implícito.
 - **Primera migración:** pasar `@qr-plus/cli` desde commander dejó cinco workarounds, ya eliminados. Es evidencia de migración, no de uso, porque esa versión no se publicó. Está en [research](./research/2026-10-qr-plus-migration.md).
 - **Investigación:** el comportamiento de librerías y el uso público están en [research](./research/2026-10-cli-usage.md).
 - **Problemas abiertos:** se listan en [known-issues.md](./known-issues.md). Solo queda uno, de severidad media: `npm view` no muestra el README, que se comprueba al publicar la 1.0.0 (T-506).

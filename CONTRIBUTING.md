@@ -295,6 +295,11 @@ mkdir /tmp/runa-test && cd /tmp/runa-test
 npm init -y
 npm install @runa-cmd/core@beta @runa-cmd/help@beta zod
 
+# Until 1.0, move create's `latest` too: its first publish set it, and changesets
+# only moves `beta`. Otherwise `npm create @runa-cmd my-tool`, without @beta,
+# makes projects with the previous beta
+npm dist-tag add @runa-cmd/create@<version> latest
+
 # Test the generator: it must create a project that installs, tests and builds
 cd /tmp && npm create @runa-cmd@beta runa-created && cd runa-created
 npm install && npm test && npm run build && node dist/main.js hello Ana
