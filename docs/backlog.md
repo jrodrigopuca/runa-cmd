@@ -954,6 +954,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
   - Después de `changeset pre exit`, Changesets pasa a la 3.x y el workflow de release a `changesets/action@v2`, que la requiere. No antes: en pre-release, la 3.0.3 descarta la lista de changesets ya publicados de `pre.json` y repite en el CHANGELOG de la beta siguiente todo lo publicado desde la primera beta (341 líneas de más en el de core, medido el 2026-11-08 corriendo `changeset version` con la 2.31.1 y con la 3.0.3 sobre el mismo commit).
   - Los cinco paquetes quedan en `1.0.0` bajo `latest`, y la tabla del README dice `Stable`.
   - Después de publicar, `fixed` queda vacío en `.changeset/config.json`, como pide [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md).
+  - Con los paquetes independientes, se decide cómo se mantiene al día el peer de `core` de cada plugin, que hasta acá va en lockstep (T-233). La opción anotada es probar cada plugin contra la versión más baja de su peer, instalada desde npm.
   - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cinco paquetes. Si no, se aplica lo que dice [la investigación](./research/2026-11-readme-in-npm.md).
 
 ### T-507 Referencia de API generada
@@ -979,48 +980,65 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como quien instala `@runa-cmd/help`, quiero que npm me avise si mi `core` es demasiado viejo, en vez de que una función no haga nada. El peer es `^0.2.0-beta.1`, pero el plugin usa `defaultDescription` (beta.5) e `inherited` (beta.7): con `core@0.2.0-beta.1` instala sin aviso y la ayuda muestra la ruta del home que `defaultDescription` existe para ocultar. Se cumple el "Revisar si" de [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md), y al revisar la beta.5 se dijo que no hacía falta subirlo, contra lo que pide CONTRIBUTING.
+- **Decisión, 2026-11-08:** hasta la 1.0, los pisos van en lockstep. Mientras los paquetes salen juntos, en el grupo `fixed`, el peer de `core` de cada plugin es la versión actual de `core`, y `docs:check` falla si no coinciden. Es automático y no depende de saber qué usa cada plugin. Se descartó probar cada plugin contra su piso, por ahora: cuesta más CI, y el piso de una beta todavía no existe en npm cuando se prueba. Un paso en la checklist ya existía y falló. Después de la 1.0 se revisa en T-506.
 - **Criterios de aceptación:**
-  - El peer de `help` pide la beta que trae `inherited`.
-  - Una prueba falla si un plugin lee del esquema de `core` un campo que su peer más bajo no tiene, o la regla queda como un paso de la revisión de cada beta en CONTRIBUTING.
+  - El peer de `core` de `help`, `mcp` y `completions` es la versión actual de `core`.
+  - `docs:check` falla si un peer de `core` no coincide con su versión, mientras `fixed` agrupe a los paquetes.
+  - CONTRIBUTING explica la regla.
 
 ### T-234 Lista de códigos de error y clases de MCP
 
 - **v1:** Requerido
 - **Estado:** Pendiente
-- **Descripción:** como autor que distingue errores por su `code`, como piden la guía de testing y VERSIONING.md, quiero saber cuáles existen. Son contrato, y hay 22 `code` en el código y 2 en la documentación; 10 `class` de MCP y 1 documentada, y `guides/mcp.md` remite a una lista que el README de `mcp` no tiene.
+- **Descripción:** como autor que distingue errores por su `code`, como piden la guía de testing y VERSIONING.md, quiero saber cuáles existen. Son contrato, y hay 24 `code` en el código y 2 en la documentación; 10 `class` de MCP y 1 documentada, y `guides/mcp.md` remite a una lista que el README de `mcp` no tiene.
+- **Decisión, 2026-11-08:** todos los `code` siguen siendo contrato, también los que salen al arrancar. Se descartó hacer informativos esos 15: lo que nada obliga a documentar se desactualiza. La lista pasa a ser código: constantes exportadas y un helper. Antes de fijarla se renombran los tres nombres que engañan o desentonan, y como un `code` es contrato, el mantenedor decidió reiniciar la ventana de estabilidad desde la beta que lo publique, la `0.2.0-beta.7`. Cuesta pocos días porque la ventana se había reiniciado ese mismo día. `VALIDATION_ERROR` y `COMMAND_ERROR` no cambian: son los que más se leen. El `code` solo llega a código JS (`onError`, `testCLI()`, plugins): ni stderr ni MCP lo muestran, porque MCP usa `class`.
 - **Criterios de aceptación:**
+  - `core` exporta `ErrorCode`, un objeto `as const` con cada uno de sus `code`, y el tipo `ErrorCode`, y todo `RunaError` de `core` usa esas constantes.
+  - `core` exporta `isRunaError(error, code?)`, que reconoce un `RunaError` por `name` y `code`, así que funciona también con dos copias de `core` instaladas, donde `instanceof` falla. Acepta códigos propios, como los de un `CommandError`, sin perder el autocompletado de los de Runa.
+  - `RunaError.code` sigue aceptando cualquier string.
+  - `mcp` exporta sus propios `code` (`MCP_*`) y sus `class`, porque `core` no conoce a sus plugins.
+  - Se renombra `CONFIG_INVALID` a `INVALID_CONFIG`. `OPTION_NAME` se divide: si dos opciones dan el mismo `--flag`, pasa a `OPTION_COLLISION`, el código que ya usa ese caso con las globales; si un booleano `noX` choca con `--no-x`, pasa a `INVALID_OPTION_NAME`.
+  - El changeset marca los renombres como incompatibles, con el código viejo y el nuevo, y `docs/status.md` registra que la ventana se reinicia con la beta.7.
   - El README de `core` lista cada `code` con su exit code y cuándo sale, y el de `mcp` cada `class` con su `effect`.
-  - Un control de `docs:check`, o una prueba, falla si el código usa un `code` o una `class` que la lista no tiene.
-  - Antes de fijar la lista se revisa si algún nombre conviene cambiar: después de la 1.0 cuesta una major.
+  - `docs:check`, o una prueba, falla si las constantes y la lista de la documentación no coinciden.
 
 ### T-235 Errores del archivo de config
 
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como persona que escribe el config de una CLI, quiero que un error en el archivo me diga siempre lo mismo: qué archivo, qué clave y qué está mal. Hoy un valor inválido es `ValidationError` con el texto de Zod y el hint de `--help`, una clave desconocida es `ConfigError` sin hint, y un JSON roto tiene un tercer formato. Además `"force": 1` se rechaza y `"force": "1"` no, contra [ADR-0028](./adr/0028-coercion-booleana.md).
+- **Decisión, 2026-11-08:** el `code` dice qué falló, y el mensaje dice dónde. Un valor que no cumple el schema es `ValidationError` con `VALIDATION_ERROR`, venga de la terminal, de una variable de entorno o del archivo. Un archivo mal armado, sea un JSON roto, una clave que no existe o algo que no es un objeto, es `ConfigError` con `INVALID_CONFIG`. Se descartó usar un código según el origen: el mismo valor malo tendría dos códigos según de dónde venga. Si alguien necesita saber el origen, se suma de forma aditiva, sin renombrar.
 - **Criterios de aceptación:**
-  - Se decide qué clase y qué `code` lleva un valor inválido en el config, antes de la 1.0.
+  - La regla de los dos códigos está en el README de `core`, en la lista de T-234.
   - Los tres casos nombran el archivo y la clave con el mismo formato, y un valor inválido usa los mismos textos que la terminal (`must be greater than 0`).
-  - Un booleano acepta `1` y `0` como número JSON, o la documentación dice que no.
+  - La regla de los valores del archivo está en el README de `core`: cada valor puede ser su tipo JSON, o el mismo texto que se escribiría en la terminal, como `"5"` o `"true"`. Lo decidió el mantenedor el 2026-11-08, después de comparar: tsc 6.0.3 y Biome 2.6.4 rechazan `1`, `"1"` y `"true"`, y yargs 18 deja pasar el número `1` y convierte `"1"` en `false`, en silencio. Se mantiene el texto porque un loader de `config.loaders` puede producir solo texto, como un INI. No se acepta `1` como número: ninguna herramienta que valida lo acepta.
+  - Un número donde va un booleano da un error que dice qué escribir, como `expected true or false`.
 
 ### T-236 Errores de MCP por un valor del operador
 
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como quien opera un servidor MCP, quiero que si falta un valor que solo yo puedo dar, el error no le diga al modelo que se equivocó él. Hoy da `class: invalid_input`. Además los errores de input nombran `--flag` y `<arg>`, que el modelo no ve, en lugar de las claves del schema, y un `Error` común tirado desde `run()` sale como `command_failed`, igual que un `CommandError`, contra el README de `mcp`.
+- **Decisión, 2026-11-08:** se reprodujo con un cliente MCP real (SDK 1.32.2). Un valor del operador que falta tiene una clase nueva, `not_configured`, con `effect: none`, y además el servidor lo avisa al arrancar, para que el operador se entere antes de la primera llamada. Un `Error` común tirado desde `run()` pasa a `crashed`; `command_failed` queda solo para un `CommandError`, el error que el autor escribió. Así, un cliente puede distinguir un bug de una falla prevista. Este cambio de clase es incompatible y entra en la `0.2.0-beta.7`, que ya reinicia la ventana por T-234. La clase nueva es aditiva.
 - **Criterios de aceptación:**
-  - Se decide la `class` de un valor del operador que falta, distinta de `invalid_input`. Es contrato: después de la 1.0 cuesta una major.
-  - Un error de input por MCP nombra la clave del schema.
-  - El README de `mcp` y el código dicen lo mismo sobre un `Error` común.
+  - Si falta un valor que solo da el operador, como una opción con `env` fuera del schema de la tool, la llamada sale con `class: 'not_configured'` y `effect: 'none'`. El texto dice que el operador tiene que dar ese valor, para que el modelo no lo tome como un error suyo.
+  - Si en la misma llamada también hay errores del modelo, la clase es `not_configured`, y el texto lista todo.
+  - Al arrancar, el servidor escribe en stderr qué tools no van a poder correr y qué valor falta en cada una. No frena el servidor.
+  - Un error de input que corrige el modelo nombra la clave del schema (`limit`, `title`), no `--limit` ni `<title>`. Las líneas para el operador siguen nombrando la flag y la variable.
+  - Un `Error` común desde `run()` sale con `class: 'crashed'` y el texto de su `effect`; un `CommandError`, con `command_failed` y su mensaje tal como está.
+  - El changeset marca el cambio de clase como incompatible, y el README de `mcp` lista cada `class` con su `effect` (T-234).
 
 ### T-237 `exitOnHelp` y ADR-0034
 
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como persona que corre una CLI sin comando, quiero exit 2, como dice [ADR-0034](./adr/0034-sin-nada-que-correr-es-un-error-de-uso.md), también si la CLI usa `helpPlugin({ exitOnHelp: true })`: hoy sale con 0. La opción es pública y no está en el README, y el README de `help` dice que el plugin agrega `--help`, cuando la flag es de `core`.
+- **Decisión, 2026-11-08:** `exitOnHelp` se retira en la `0.2.0-beta.7`. Existe para recuperar el `process.exit(0)` de la 0.1.0, que ADR-0006 llama bug: saltea `cleanup`, rompe el uso embebido y puede cortar stdout en un pipe. Corregirla la dejaba como contrato para siempre, y deprecarla obligaba a mantenerla toda la 1.x. No se conoce a nadie que la use, y la beta.7 ya reinicia la ventana. **Revisar si:** una CLI real queda colgada después de la ayuda y `cleanup` no alcanza. En ese caso vuelve, con el exit code que corresponde.
 - **Criterios de aceptación:**
-  - Se decide si `exitOnHelp` queda, se corrige o se retira antes de la 1.0, y con qué costo.
-  - Sin nada que correr el exit es 2, con la opción o sin ella.
+  - `HelpPluginOptions` no tiene `exitOnHelp`, así que pasarla en TypeScript es un error de tipos.
+  - En JS, `helpPlugin({ exitOnHelp })` escribe en stderr, al arrancar, que la opción se retiró y que la ayuda termina como cualquier comando. No frena la CLI.
+  - Sin nada que correr el exit es 2, y con `--help` es 0.
+  - El changeset la marca como retirada, que es incompatible, y `docs/components/help.md` deja de listarla.
   - El README de `help` dice lo que hace la opción y de quién es `--help`.
 
 ### T-238 Slots del tema que no tienen efecto
@@ -1028,18 +1046,21 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como autor que personaliza el tema de la ayuda, quiero que cada slot cambie algo. `error` y `success` no cambian nada en el renderer por defecto, `secondary` solo colorea `(required)`, los flags y los comandos tienen colores fijos, y el README y el JSDoc describen los slots de dos formas distintas. [ADR-0029](./adr/0029-cada-campo-tiene-efecto.md) pide que cada campo tenga efecto.
+- **Decisión, 2026-11-08:** el renderer por defecto cumple lo que dice el README: `primary` colorea los títulos y los nombres de comando, y `secondary` las flags, los argumentos y `(required)`. Ya no hay colores fijos en `yellow`. `error` y `success` quedan como paleta para un renderer propio (Layer 3), que recibe el tema resuelto, y la documentación dice que el renderer por defecto no los usa: la ayuda no muestra errores ni éxitos, porque los escribe `core`. Se descartó retirarlos: sería incompatible para un renderer propio que los lea, y solo dejaría la API más prolija. Es aditivo. Cambia el aspecto por defecto, que no es contrato.
 - **Criterios de aceptación:**
-  - Se decide, antes de la 1.0, si cada slot tiene efecto o se documenta qué hace: quitarlos después sería incompatible.
-  - El README y el JSDoc describen los slots igual, y una prueba cubre el efecto de cada uno.
+  - Cambiar `primary` cambia los títulos y los nombres de comando; cambiar `secondary`, las flags, los argumentos y `(required)`; `muted`, los defaults y `[env: …]`; `warning`, `(deprecated: …)`. Una prueba cubre cada slot.
+  - El README y el JSDoc describen los slots igual, y dicen que `error` y `success` están para un renderer propio.
+  - El changeset dice que cambia el color por defecto de las flags y los comandos.
 
 ### T-239 La CLI del generador sigue las reglas de Runa
 
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como persona que corre `npm create @runa-cmd`, quiero que se comporte como una CLI hecha con Runa. Tiene `-v, --version`, que [ADR-0021](./adr/0021-help-y-version-en-core.md) descarta; sus errores de uso salen sin hint y con el texto de `parseArgs`; y VERSIONING.md hace contrato sus argumentos y exit codes, que su README no lista.
+- **Decisión, 2026-11-08:** el generador tiene `-h, --help` y `--version`, sin `-v`, como dice ADR-0021 para las CLIs de Runa. Sigue sin dependencias: se descartó construirlo con Runa, porque traería Zod a cada `npm create`. Sacar `-v` es incompatible para su CLI y entra en la `0.2.0-beta.7`, que ya reinicia la ventana.
 - **Criterios de aceptación:**
-  - Se decide qué flags tiene antes de que su CLI sea contrato en la 1.0.
-  - Sus errores de uso salen con exit 2, un texto propio y el hint de `--help`.
+  - `--version` muestra la versión; `-v` da `Unknown option '-v'` con exit 2 y el hint de `--help`.
+  - Sus errores de uso salen con exit 2, un texto propio y el hint de `--help`. Un nombre que falta o un argumento de más dicen qué está mal.
   - Su README lista sus argumentos y exit codes.
 
 ### T-240 Completions de bash después de un posicional
@@ -1065,26 +1086,34 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como dev que copia un ejemplo con `meta: { name }`, quiero un solo error claro si falta `description`. Hoy TypeScript suma `Type 'string' is not assignable to type 'void | Promise<void>'` sobre `run`, que parece un problema de lo que devuelve el comando.
+- **Decisión, 2026-11-08:** `description` sigue obligatoria, porque es lo que lee un modelo para elegir una tool. El default de `TResult` en `defineCommand` pasa de `void` a `unknown`. La causa del error engañoso: cuando un campo falla, TypeScript no infiere los genéricos y usa los defaults, y con `void` exige que `run` no devuelva nada. Se probó en un spike sobre los tipos de la beta.6, con TypeScript 7.0.2: con `unknown` queda un solo error, y siguen fallando un `output` mal devuelto y una clave de `meta.options` que no existe. `NoInfer` en `meta` no cambió nada, y un genérico propio para `meta` perdía el chequeo de claves. **Revisar si:** algún type test depende del default `void`.
 - **Criterios de aceptación:**
-  - Sin `meta.description`, el único error de tipos es el de `description`, o `description` es opcional.
-  - Un type test cubre el caso.
+  - Sin `meta.description`, el único error de tipos es el de `description`.
+  - Un `output` mal devuelto, una clave de `meta.options` que no existe y el tipo que recibe `format` se siguen detectando.
+  - Un type test cubre cada caso, y los 11 type tests que ya existen pasan.
 
 ### T-243 `help` como comando
 
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como persona que escribe `tool help`, quiero ver la ayuda, como en commander, yargs, cac y oclif. Hoy da `Command not found: 'help'. Did you mean 'hello'?` y exit 127. Verificado el 2026-11-08.
+- **Decisión, 2026-11-08:** `help` es un alias de `--help` donde se espera un nombre de comando, en la raíz o en un grupo. Si la CLI tiene un comando propio llamado `help`, gana ese, como dice ADR-0021 para `--help`. No es una tool de MCP ni aparece en la lista de comandos. Es aditivo, porque reemplaza un error 127. Se descartó solo sugerir `--help`: la persona o el agente igual tiene que intentar dos veces. Va en un ADR nuevo que amplía ADR-0021 y ADR-0034.
 - **Criterios de aceptación:**
-  - `tool help` y `tool help <comando>` muestran la ayuda, salvo que la CLI tenga un comando propio llamado `help`.
-  - O, si se decide no tenerlo, el error sugiere `--help` en lugar de otro comando.
+  - `tool help` muestra la ayuda de la CLI; `tool help db migrate`, la de ese comando; `tool db help`, la del grupo. Todos salen por stdout con exit 0.
+  - `tool help noexiste` da 127 con su sugerencia, como hoy.
+  - En un comando hoja, `help` es un valor más: `tool greet help` le pasa `help` al argumento.
+  - Una CLI con un comando propio `help` corre ese comando.
+  - Por MCP no hay una tool `help`, y la lista de comandos de la ayuda no lo muestra.
 
 ### T-244 Alias mal escritos al arrancar
 
 - **v1:** Requerido
 - **Estado:** Pendiente
 - **Descripción:** como autor, quiero enterarme al arrancar si escribí mal un alias. Con `alias: ['e']` o `['-ab']`, la ayuda muestra `-e, --x` y `-e v` da `Unknown option: -e`: el alias nunca funcionó y nada lo dice. Verificado el 2026-11-08.
+- **Decisión, 2026-11-08:** un alias mal escrito frena la CLI al arrancar, como una colisión. Se descartó corregirlo solo (`'e'` como `-e`): habría dos formas de escribir lo mismo, y `'-ab'` igual tendría que fallar. Una CLI con un alias mal escrito deja de arrancar, pero ese alias nunca funcionó. Entra en la `0.2.0-beta.7`.
 - **Criterios de aceptación:**
-  - Un alias que no es `-x` ni `--palabra` frena la CLI al arrancar, nombrando la opción y la forma correcta.
+  - Un alias que no es `-x` ni `--palabra` frena la CLI al arrancar con `code: 'INVALID_OPTION_ALIAS'` y exit 1, nombrando la opción y la forma correcta: `Alias 'e' of option 'env' must be '-e' or '--word'.`
+  - El código está en la lista de T-234.
 
 ### T-245 Guías de comparación honestas
 
@@ -1136,8 +1165,10 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 - **v1:** Opcional
 - **Estado:** Pendiente
 - **Descripción:** como persona que usa una CLI, quiero que lo mismo se diga igual en todos lados. Los menores de [la revisión](./research/2026-11-review-before-v1.md): `Expected one of` con punto o con dos puntos, `invalid value` en minúscula en el config; `GLOBAL OPTIONS` antes de `COMMANDS` en la ayuda de un grupo; la lista de secciones del README de `help`; la versión que falta en la ayuda de una CLI con `runCLI`; el README de `completions` sobre el nombre del comando; la ruta de Claude Desktop y la arquitectura en el README de `mcp`; `replaceHelp` en la tabla de Plugin API; `meta.version` de un subcomando, que no hace nada; y `cli.run()` sin `await` en los READMEs.
+- **Decisión, 2026-11-08, sobre `meta.version`:** un comando con `meta.version` dentro de `defineCLI` frena la CLI al arrancar, porque ahí se ignora: solo tiene efecto cuando el comando es la CLI, con `runCLI`. El tipo no lo puede detectar, porque el mismo `defineCommand` sirve en los dos. Se descartó un aviso por stderr, que le llegaría en cada corrida a quien usa la CLI y no puede arreglarlo, y darle efecto con una versión por comando, que nadie pidió. Entra en la `0.2.0-beta.7`.
 - **Criterios de aceptación:**
   - Cada punto se corrige, o se descarta con su motivo.
+  - Un comando con `meta.version` dentro de `defineCLI` frena al arrancar con exit 1, un `code` de la lista de T-234 y el mensaje `'version' only applies with runCLI; set it in defineCLI's meta.`
 
 ## Después de v1 o si llega a tiempo
 
