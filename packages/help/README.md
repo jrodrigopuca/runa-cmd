@@ -32,7 +32,7 @@ $ my-tool --help
 $ my-tool deploy --help
 ```
 
-The plugin adds a `--help` / `-h` global flag. When triggered, it renders formatted help and stops the run, so `cleanup` still happens and the process ends with code 0.
+`--help` and `-h` are `@runa-cmd/core`'s: the plugin only changes how the help looks. Core decides when it shows and how the run ends: `cleanup` still happens, and the process exits with 0 for `--help`, or with 2 when there's nothing to run, as `my-tool` alone, with the help on stderr. The plugin never ends the process itself.
 
 A command can declare its own `-h`, as for `--host`: it keeps it, and `--help` still shows help. `tool serve -h example.com` sets the host, and `tool serve --help` shows the help of `serve`.
 

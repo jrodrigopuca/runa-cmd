@@ -23,7 +23,8 @@ defineCLI({
 |---|---|---|
 | `theme` | `Partial<Theme>` | Sobrescribe colores del tema por defecto |
 | `render` | `(ctx: RenderFnCtx) => string` | Reemplaza el renderer |
-| `exitOnHelp` | `boolean` | Llama a `process.exit(0)` tras renderizar; `false` por defecto |
+
+`exitOnHelp` se retiró en la `0.2.0-beta.7` ([ADR-0047](../adr/0047-ningun-plugin-termina-el-proceso-con-la-ayuda.md)): el plugin nunca termina el proceso, y `core` decide el exit code. Si una CLI en JS todavía la pasa, el plugin lo avisa por stderr al arrancar, y sigue.
 
 Tres niveles de personalización:
 

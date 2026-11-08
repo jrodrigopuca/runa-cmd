@@ -1,6 +1,6 @@
 # ADR-0006: Siete hooks, y cortes sin `process.exit`
 
-- **Estado:** aceptada
+- **Estado:** aceptada; `exitOnHelp` se retiró, según [ADR-0047](./0047-ningun-plugin-termina-el-proceso-con-la-ayuda.md)
 - **Drivers:** los plugins necesitan intervenir en puntos conocidos. MCP y la ayuda deben cortar la ejecución antes de resolver el comando. Quien embebe Runa necesita que `cli.run()` termine y que `cleanup` corra.
 - **Decisión:** existen `beforeParse`, `onGlobalFlags`, `afterParse`, `beforeRun`, `afterRun`, `onError` y `cleanup`, con handlers secuenciales. `onGlobalFlags` puede cortar con `ctx.shortCircuit()`. Los plugins no llaman a `process.exit`; `helpPlugin({ exitOnHelp: true })` es una salida opcional para recuperar el comportamiento de 0.1.0.
 - **Alternativas descartadas:** `exitOnHelp` por defecto mantiene el bug: saltea `cleanup`, rompe el uso embebido y puede truncar stdout en pipes.

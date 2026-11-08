@@ -20,7 +20,7 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0003](./0003-parseargs-extrae-zod-valida.md) | `util.parseArgs` extrae y Zod valida | Aceptada |
 | [0004](./0004-sistema-de-plugins.md) | Plugins con capacidades, orden topológico y carga diferida | Aceptada |
 | [0005](./0005-ayuda-como-plugin.md) | La ayuda vive solo en un plugin | Reemplazada por ADR-0021 |
-| [0006](./0006-ciclo-de-vida-con-hooks.md) | Siete hooks, y cortes sin `process.exit` | Aceptada |
+| [0006](./0006-ciclo-de-vida-con-hooks.md) | Siete hooks, y cortes sin `process.exit` | Aceptada; `exitOnHelp` se retiró por ADR-0047 |
 | [0007](./0007-middleware-onion.md) | Middleware con modelo onion | Aceptada |
 | [0008](./0008-config-merge-en-core.md) | `core` hace el merge; los loaders solo leen | Aceptada |
 | [0009](./0009-errores-y-codigos-de-salida.md) | Jerarquía de errores con códigos POSIX | Aceptada |
@@ -61,3 +61,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0044](./0044-runa-no-opina-sobre-reintentos.md) | Runa informa lo que ocurrió, y no opina sobre reintentos | Aceptada, pendiente de código |
 | [0045](./0045-registro-de-la-ejecucion.md) | El ciclo de vida registra lo que hace, sin exponer secretos | Aceptada, pendiente de código |
 | [0046](./0046-una-parada-termina-por-la-senal.md) | Una parada termina por la señal, y no con su código | Aceptada |
+| [0047](./0047-ningun-plugin-termina-el-proceso-con-la-ayuda.md) | Ningún plugin termina el proceso al mostrar la ayuda | Aceptada |

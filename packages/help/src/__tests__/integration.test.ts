@@ -9,6 +9,7 @@
  */
 
 import { defineCLI, defineCommand, definePlugin, runCLI } from '@runa-cmd/core';
+import { testCLI } from '@runa-cmd/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { strip } from '../ansi/codes.js';
@@ -300,17 +301,23 @@ describe('integration — help lifecycle without process.exit', () => {
 		expect(events.indexOf('help-written')).toBeLessThan(events.indexOf('plugin-cleanup'));
 	});
 
-	it('exitOnHelp: true → process.exit(0) called after render', async () => {
+	// ADR-0034 holds with the removed exitOnHelp too: it used to exit with 0 (T-237)
+	it.each([
+		[['--help'], 0],
+		[[], 2],
+	])('%j ends with %i, even if a CLI still passes exitOnHelp', async (argv, code) => {
+		const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 		const cli = defineCLI({
 			meta: { name: 'legacy-app' },
-			commands: {},
-			plugins: [helpPlugin({ exitOnHelp: true })],
+			commands: { hello: defineCommand({ meta: { description: 'Say hi' }, run: () => {} }) },
+			plugins: [helpPlugin({ exitOnHelp: true } as Parameters<typeof helpPlugin>[0])],
 		});
 
-		await cli.run(['--help']);
+		const result = await testCLI(cli, argv);
+		stderr.mockRestore();
 
-		expect(getCapturedOutput()).toContain('legacy-app');
-		expect(exitSpy).toHaveBeenCalledWith(0);
+		expect(result.code).toBe(code);
+		expect(exitSpy).not.toHaveBeenCalled();
 	});
 
 	it('rest-args trap: exec -- --help does NOT render help; exec runs with rest', async () => {

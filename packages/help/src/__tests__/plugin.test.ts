@@ -113,18 +113,34 @@ describe('helpPlugin — showing help', () => {
 	});
 });
 
-// ─── exitOnHelp Opt-In ──────────────────────────────────────
+// ─── exitOnHelp, removed ────────────────────────────────────
 
-describe('helpPlugin — exitOnHelp', () => {
-	it('exitOnHelp: true exits with 0 after rendering', () => {
-		showOf(helpPlugin({ exitOnHelp: true }))(cli);
-		expect(writeSpy).toHaveBeenCalledTimes(1);
-		expect(exitSpy).toHaveBeenCalledWith(0);
+// It brought back the process.exit(0) of 0.1.0, which skips cleanup (T-237)
+describe('helpPlugin — exitOnHelp was removed', () => {
+	const removed = { exitOnHelp: true } as Parameters<typeof helpPlugin>[0];
+
+	it('is not an option anymore', () => {
+		// @ts-expect-error exitOnHelp is no longer in HelpPluginOptions
+		const options: Parameters<typeof helpPlugin>[0] = { exitOnHelp: true };
+		expect(options).toBeDefined();
 	});
 
-	it('exitOnHelp: false behaves like the default', () => {
-		showOf(helpPlugin({ exitOnHelp: false }))(cli);
+	it('says at startup that it was removed, without stopping the CLI', () => {
+		const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+		showOf(helpPlugin(removed))(cli);
+
+		const warned = stderr.mock.calls.map(([chunk]) => String(chunk)).join('');
+		expect(warned).toContain('helpPlugin: exitOnHelp was removed');
+		expect(writeSpy).toHaveBeenCalledTimes(1);
 		expect(exitSpy).not.toHaveBeenCalled();
+		stderr.mockRestore();
+	});
+
+	it('says nothing when it is not passed', () => {
+		const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+		showOf(helpPlugin())(cli);
+		expect(stderr).not.toHaveBeenCalled();
+		stderr.mockRestore();
 	});
 });
 

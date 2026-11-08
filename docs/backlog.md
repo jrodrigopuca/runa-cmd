@@ -93,7 +93,7 @@
 | | T-234 | Lista de códigos de error y clases de MCP | Requerido | Hecho |
 | | T-235 | Errores del archivo de config | Requerido | Hecho |
 | | T-236 | Errores de MCP por un valor del operador | Requerido | Hecho |
-| | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Pendiente |
+| | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Hecho |
 | | T-238 | Slots del tema que no tienen efecto | Requerido | Pendiente |
 | | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Pendiente |
 | | T-240 | Completions de bash después de un posicional | Requerido | Pendiente |
@@ -1031,7 +1031,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-237 `exitOnHelp` y ADR-0034
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona que corre una CLI sin comando, quiero exit 2, como dice [ADR-0034](./adr/0034-sin-nada-que-correr-es-un-error-de-uso.md), también si la CLI usa `helpPlugin({ exitOnHelp: true })`: hoy sale con 0. La opción es pública y no está en el README, y el README de `help` dice que el plugin agrega `--help`, cuando la flag es de `core`.
 - **Decisión, 2026-11-08:** `exitOnHelp` se retira en la `0.2.0-beta.7`. Existe para recuperar el `process.exit(0)` de la 0.1.0, que ADR-0006 llama bug: saltea `cleanup`, rompe el uso embebido y puede cortar stdout en un pipe. Corregirla la dejaba como contrato para siempre, y deprecarla obligaba a mantenerla toda la 1.x. No se conoce a nadie que la use, y la beta.7 ya reinicia la ventana. **Revisar si:** una CLI real queda colgada después de la ayuda y `cleanup` no alcanza. En ese caso vuelve, con el exit code que corresponde.
 - **Criterios de aceptación:**
