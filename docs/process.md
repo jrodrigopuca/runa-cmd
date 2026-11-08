@@ -60,7 +60,7 @@ Si un comportamiento depende de `process.exit`, stdout o exit codes, probalo ac�
 | ADRs | Un ADR no figura en el índice, o le faltan campos |
 | Backlog | Hay IDs repetidos, o un estado o valor de v1 inválido |
 | Known issues | Hay IDs repetidos, una fila sin tarea, o un documento cita un issue que ya no existe |
-| Commits | Un commit cambia `packages/*/src` sin tocar también `docs/` y tests |
+| Commits | Un commit cambia `packages/*/src` sin tocar también documentación y tests. Cuenta como documentación `docs/`, el `README.md` de un paquete, `guides/`, el `README.md` raíz y `VERSIONING.md`: un export nuevo se documenta en el README del paquete, y eso alcanza. La regla está en `scripts/commit-rule.mjs`, con sus pruebas |
 
 **Lo que no se controla:** ninguna herramienta puede demostrar que el documento y la prueba se escribieron antes del código. El control comprueba que los tres lleguen juntos. El orden depende de la disciplina y de la revisión. Un test que nace fallando deja constancia cuando se hace visible, por eso [T-001](./backlog.md#t-001-tests-de-aceptación-con-procesos-reales) marca los casos pendientes como fallo esperado.
 

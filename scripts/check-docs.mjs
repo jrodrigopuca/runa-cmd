@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { codeFiles, missingForCode } from './commit-rule.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = join(ROOT, 'docs');
@@ -181,21 +182,16 @@ function checkIssueReferences(file, text, issues) {
 }
 
 function checkChange(label, files, message) {
-	const code = files.filter(
-		(file) => /^packages\/[^/]+\/src\//.test(file) && !file.includes('/__tests__/'),
-	);
-	if (code.length === 0) return;
+	const missing = missingForCode(files);
+	if (missing.length === 0) return;
 	if (/^Process-Skip:\s*\S/m.test(message)) return;
-	const missing = [];
-	if (!files.some((file) => file.startsWith('docs/'))) missing.push('docs/');
-	if (!files.some((file) => file.includes('/__tests__/'))) missing.push('tests');
-	if (missing.length > 0) {
-		fail(
-			label,
-			`changes ${code[0]} without ${missing.join(' or ')}. ` +
-				'Update them, or add "Process-Skip: <reason>" to the commit message (docs/process.md).',
-		);
-	}
+	const docs = 'docs (docs/, a package README, guides/, README.md or VERSIONING.md)';
+	const names = missing.map((what) => (what === 'docs' ? docs : what));
+	fail(
+		label,
+		`changes ${codeFiles(files)[0]} without ${names.join(' or ')}. ` +
+			'Update them, or add "Process-Skip: <reason>" to the commit message (docs/process.md).',
+	);
 }
 
 function checkRange(range) {
