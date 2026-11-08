@@ -521,7 +521,7 @@ PARAM_TYPES.ARRAY    // 'array'
 
 ### Testing: `testCLI()`
 
-Run a command through its real lifecycle, without ending the process:
+Run a command through its real lifecycle, without ending the process. [Testing a CLI](https://github.com/jrodrigopuca/runa-cmd/blob/main/guides/testing.md) shows it test by test, and what needs a real process instead.
 
 ```ts
 import { testCLI } from '@runa-cmd/core/testing';
@@ -555,6 +555,8 @@ It takes a CLI or a single command, and a single command also accepts `plugins`,
 A value from env is left out, because it can be a secret. The shape of `trace` isn't part of the [versioning contract](https://github.com/jrodrigopuca/runa-cmd/blob/main/VERSIONING.md).
 
 **What's isolated:** the test doesn't read the real environment or config files, and several runs can share a process, as with `it.concurrent`.
+
+**`config` needs a CLI that reads one:** if the CLI doesn't declare `config` in `defineCLI`, `testCLI()` rejects with a message saying so, because the real program would read no file. For a single command, `config` stands for the file of `runCLI(command, { config })`.
 
 **What isn't:** a command that reads `process.env` by itself sees the real one. A child process, or a write straight to a file descriptor, isn't captured. `process.exitCode` is global, so it isn't reliable with concurrent runs: exit or throw instead.
 

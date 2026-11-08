@@ -174,6 +174,23 @@ describe('the environment of the test', () => {
 		expect(result.code).toBe(0);
 	});
 
+	// The real CLI reads no file without `config`, so the test must not pass (T-230)
+	it('fails loudly when given config for a CLI that reads no config file', async () => {
+		const noFile = defineCLI({
+			meta: { name: 'nofile' },
+			commands: { say },
+		});
+
+		await expect(testCLI(noFile, ['say', 'hi'], { config: { say: {} } })).rejects.toThrow(
+			"testCLI() got config, but 'nofile' reads no config file: add config: { name: 'nofile' } to defineCLI, or drop config from the test.",
+		);
+	});
+
+	it('takes config for a single command, as the file of runCLI(command, { config })', async () => {
+		const result = await testCLI(sum, [], { config: { by: 4 } });
+		expect(result.result).toEqual({ total: 5 });
+	});
+
 	it('rejects a config the real CLI would reject', async () => {
 		const result = await testCLI(cli, ['deploy'], { config: { deploy: { nope: 1 } } });
 

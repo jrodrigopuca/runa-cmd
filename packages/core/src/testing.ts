@@ -148,6 +148,20 @@ function configOf(target: CLI | Command, options: TestOptions): [CLIConfig, stri
 }
 
 /**
+ * A CLI without `config` reads no file, so a test that hands it config values
+ * would pass while the real program ignores them (T-230). Say so instead.
+ * A single command can't be checked: `config` stands for the file of
+ * `runCLI(command, { config })`.
+ */
+function assertReadsConfig(target: CLI | Command, config: CLIConfig, options: TestOptions): void {
+	if (options.config === undefined || !isCLI(target) || config.config) return;
+	const { name } = config.meta;
+	throw new Error(
+		`testCLI() got config, but '${name}' reads no config file: add config: { name: '${name}' } to defineCLI, or drop config from the test.`,
+	);
+}
+
+/**
  * Run a CLI or a command through its real lifecycle, without ending the process.
  *
  * @param argv - What would follow the name of the program at the terminal
@@ -176,6 +190,7 @@ export async function testCLI(
 	};
 
 	const [config, rootName] = configOf(target, options);
+	assertReadsConfig(target, config, options);
 	const exitCodeBefore = process.exitCode;
 
 	enter();
