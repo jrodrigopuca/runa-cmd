@@ -277,6 +277,25 @@ Write `darkColor` in code and `--dark-color` at the terminal. `run()`, config fi
 
 A boolean named `noCache` stops the CLI at startup, because `--no-cache` already negates `cache`. Declare `cache` with `.default(true)` instead.
 
+### Environment variables
+
+An option reads a variable only if it declares one, in `meta.options`. Nothing is read by a prefix, so the environment can't turn on an option you didn't mean it to, like `--force`:
+
+```ts
+defineCommand({
+  meta: { name: 'tool', description: 'Migrate', options: { database: { env: 'TOOL_DATABASE_URL' } } },
+  options: { database: z.string().describe('Database to migrate') },
+  run({ options }) { /* options.database comes from --database or TOOL_DATABASE_URL */ },
+});
+```
+
+The value is converted like one typed at the terminal, which wins over it: `TOOL_STEPS=3` gives a number, `1` and `0` give booleans, and `a, b` gives a list. Help shows the variable, a missing required option names it, and an MCP tool leaves the option out, because it's set by whoever runs the server.
+
+You choose the name. A convention that helps:
+
+- **Start with the name of your CLI**, as in `TOOL_DATABASE_URL`. It doesn't collide with other programs, and shows whose variable it is.
+- **Reuse a well-known variable only when it means the same thing** and your users already set it, such as `NO_COLOR`, `HTTP_PROXY`, or `OLLAMA_URL` in a tool made for Ollama.
+
 ### `--help`
 
 Every CLI has `--help` and `-h`, with no plugin: `tool --help` shows the CLI or the root command, and `tool db migrate --help` shows that command, with the global options that work on it.

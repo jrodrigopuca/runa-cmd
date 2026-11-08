@@ -103,6 +103,8 @@ interface CLIConfig {
 
 ## Resolución de valores
 
+Una opción lee una variable solo si la declara en `meta.options.<clave>.env`: no hay prefijo automático, como `.env('PREFIJO')` de yargs, porque dejaría que el entorno prenda cualquier opción, incluidas las de guarda como `--force`, y con [ADR-0032](../adr/0032-postura-sobre-secretos.md) sacaría todas las opciones del schema MCP. El nombre lo elige el autor; el README de `core` recomienda, sin imponerlo, empezar con el nombre de la CLI y reutilizar una variable conocida solo si significa lo mismo.
+
 Si falta una opción obligatoria que declara `env`, el error nombra la variable: `Missing required option: --database, or set TOOL_DATABASE_URL`. Es un nombre, nunca un valor, así que por MCP también le dice a quien opera qué setear (T-216).
 
 La prioridad es **CLI, env, config y default de Zod**. El detalle está en [parseo](../flows/argument-parsing.md). Los booleanos aceptan `true`, `1`, `false` y `0` desde cualquier fuente, incluido `--flag=false`.
