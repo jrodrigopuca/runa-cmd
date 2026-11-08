@@ -189,7 +189,7 @@ defineCommand({
 | Salida forzada, con `cleanup` o sin él | 5 s | Default de `forceKillAfterDelay` en execa. Docker usa 10 s, sin una persona esperando |
 | Segunda señal, en la CLI | Al instante | |
 
-Sale con 130 tras `SIGINT` y con 143 tras `SIGTERM`, por la convención 128 + señal, e imprime `Interrupted.`.
+En Unix, después del cleanup, el proceso se reenvía la señal y muere por ella, así que la shell ve 130 o 143, por la convención 128 + señal, y systemd cuenta la parada como limpia ([ADR-0046](../adr/0046-una-parada-termina-por-la-senal.md)). En Windows sale con el código. Si `run()` terminó bien después de la señal, no es un error: no se imprime nada y no corre `onError`. Si falló por el aborto o no terminó a tiempo, imprime `Interrupted.`. La cancelación de una tool MCP sale con 143 y `Cancelled.`, porque no llega por una señal.
 
 **Límite de la plataforma:** Node atiende las señales desde el event loop, así que un comando que lo bloquea no responde hasta liberarlo. Medido con un bucle síncrono de 1,5 s, Ctrl+C tardó 1.607 ms con handler y 304 ms sin él. `Ctrl+\` corta igual, porque Runa no captura `SIGQUIT`.
 

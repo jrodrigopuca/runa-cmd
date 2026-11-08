@@ -51,6 +51,8 @@ export interface RunStop {
 	guard(run: () => Promise<void>): Promise<void>;
 	/** The run ended: stop listening, and end what a stopped tool left behind */
 	finish(): void;
+	/** After cleanup, end a stopped process: by its signal where there is one */
+	leave(): void;
 }
 
 /**
@@ -71,9 +73,23 @@ export function watchForStop(isTool: boolean, listen = true): RunStop {
 
 	const interrupted = () => new InterruptedError(STOP_MESSAGES[cause ?? 'SIGINT']);
 
+	/**
+	 * End the process the way the stop asks. On Unix a signal ends it by that
+	 * same signal, after cleanup (ADR-0046): the shell still sees 130 or 143, and
+	 * systemd sees a clean stop, which it doesn't for exit(143). Windows has no
+	 * signals to raise, and a cancelled tool has no signal: both use the code.
+	 */
 	const leave = () => {
 		if (isTool) killProcessTree(process.pid);
-		process.exit(EXIT_CODES[cause ?? 'SIGINT']);
+		const code = EXIT_CODES[cause ?? 'SIGINT'];
+		if ((cause === 'SIGINT' || cause === 'SIGTERM') && process.platform !== 'win32') {
+			process.removeAllListeners(cause);
+			process.kill(process.pid, cause);
+			// The signal ends the process on its way out of kill(): this only runs if it didn't
+			setImmediate(() => process.exit(code));
+			return;
+		}
+		process.exit(code);
 	};
 
 	const stop = (next: StopCause) => {
@@ -115,7 +131,9 @@ export function watchForStop(isTool: boolean, listen = true): RunStop {
 				if (cause) throw interrupted();
 				throw error;
 			}
-			if (cause) throw interrupted();
+			// run() ended well after a signal: it stopped as asked, so it isn't an
+			// error (F-07). A cancelled tool still reports the cancellation.
+			if (cause === 'cancelled') throw interrupted();
 		},
 		finish() {
 			process.off('SIGINT', onSigint);
@@ -123,5 +141,6 @@ export function watchForStop(isTool: boolean, listen = true): RunStop {
 			process.off('disconnect', onDisconnect);
 			if (cause && isTool) killProcessTree(process.pid);
 		},
+		leave,
 	};
 }

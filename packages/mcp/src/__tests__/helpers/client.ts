@@ -105,6 +105,11 @@ export class TestClient {
 		return new Promise((resolve) => this.server.once('close', resolve));
 	}
 
+	/** Resolves with the signal the server died of, or null if it exited with a code. */
+	exitSignal(): Promise<NodeJS.Signals | null> {
+		return new Promise((resolve) => this.server.once('close', (_code, signal) => resolve(signal)));
+	}
+
 	close(): void {
 		this.server.kill();
 	}

@@ -1,0 +1,15 @@
+# ADR-0046: Una parada termina por la señal, y no con su código
+
+- **Estado:** aceptada
+- **Amplía:** [ADR-0033](./0033-parar-recorre-el-arbol-de-procesos.md)
+- **Drivers:** ADR-0033 fija 130 con `SIGINT` y 143 con `SIGTERM`, por la convención 128 + señal. Runa lo imitaba con `process.exit(143)`, y un proceso que sale con un código no es lo mismo que uno que muere por la señal, aunque la shell muestre el mismo `$?`. systemd cuenta como parada limpia la muerte por `SIGHUP`, `SIGINT`, `SIGTERM` o `SIGPIPE`, y no el código 143, según su documentación de `SuccessExitStatus=`; `systemctl stop` manda `SIGTERM`. Así, un servicio de Runa que paraba bien quedaba `failed`. Además, `local-beacon` vio `Interrupted.` en un servicio que terminó bien (F-07). Medido el 2026-11-08 en macOS: después del cleanup, reenviar la señal deja `$?` en 143 y el padre ve `signal: 'SIGTERM'`; en launchd, con `bootout`, las tres formas de salir paran sin reinicio, y con `launchctl kill` y `SuccessfulExit: false` reinicia tanto `exit(143)` como la muerte por la señal: launchd no distingue, y solo `exit(0)` queda parado.
+- **Decisión:**
+  - **En Unix, una parada por `SIGINT` o `SIGTERM` termina reenviándose la señal** después del cleanup: se quitan sus listeners y el proceso se la manda a sí mismo. Vale para los tres caminos de salida: el final normal, el plazo vencido y la segunda señal. La shell sigue viendo 130 y 143.
+  - **En Windows sigue el exit code,** porque no hay señales que reenviar.
+  - **Si `run()` termina bien después de la señal, no es un error:** no hay `Interrupted.` ni `onError`, y corre `afterRun`. El proceso igual termina por la señal, porque se detuvo por ella. Si `run()` falla por el aborto, o no termina dentro del plazo, sigue siendo una interrupción.
+  - **La cancelación de una tool MCP no cambia:** llega por el canal con el servidor, no por una señal, y sigue saliendo con 143 y `Cancelled.`.
+- **Alternativas descartadas:** dejar `process.exit(143)` obliga a cada unidad de systemd a declarar `SuccessExitStatus=130 143`. Salir con 0 cuando el comando terminó bien, como commander, deja a launchd parado también con `launchctl kill`, pero la shell ve 0 y un script no sabe que se cortó: rompe la convención de ADR-0033, que una CLI necesita.
+- **Costo aceptado:** un programa que lanza la CLI con `spawn` y lee `code` ve `code: null` y `signal: 'SIGTERM'` en lugar de 143; [`VERSIONING.md`](../../VERSIONING.md) lo aclara. Un hook de `onError` ya no corre cuando el comando terminó bien después de la señal. En launchd, con `SuccessfulExit: false`, un `launchctl kill` reinicia el servicio como a cualquier daemon que muere por la señal; la forma de pararlo es `launchctl bootout`.
+- **Revisar si:** un systemd real no trata la muerte por la señal como limpia, o un caso real necesita leer 130 o 143 como `code` desde `spawn`.
+- **Código:** [`packages/core/src/stop.ts`](../../packages/core/src/stop.ts)
+- **Implementación:** [T-218](../backlog.md#t-218-parada-limpia-de-un-servicio)

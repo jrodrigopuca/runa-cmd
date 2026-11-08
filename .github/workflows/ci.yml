@@ -66,6 +66,9 @@ jobs:
       - run: pnpm test
         env:
           RUNA_REQUIRE_SHELLS: ${{ runner.os == 'Linux' && '1' || '' }}
+          # A Runa service stopped by systemd must be a clean stop (ADR-0046).
+          # The Linux runner has systemd and passwordless sudo.
+          RUNA_REQUIRE_SYSTEMD: ${{ runner.os == 'Linux' && '1' || '' }}
 
   coverage:
     # Single canonical coverage cell (ADR-0015). The threshold lives in

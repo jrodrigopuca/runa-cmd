@@ -1,7 +1,9 @@
 /**
  * Stopping a run from outside (ADR-0033), with real processes and real signals.
- * Windows has no signals to send from outside: the same path is covered there
- * through a cancelled tool, in @runa-cmd/mcp.
+ * On Unix the process ends by the signal itself, so the shell sees 130 or 143
+ * and systemd sees a clean stop (ADR-0046). Windows has no signals to send from
+ * outside: the same path is covered there through a cancelled tool, in
+ * @runa-cmd/mcp.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { assertFreshBuild, runFixture, startFixture } from './harness.js';
@@ -15,30 +17,41 @@ const started = async (command: string, env: Record<string, string> = {}) => {
 };
 
 describe.skipIf(process.platform === 'win32')('a signal stops the run', () => {
-	it.each([
-		['SIGINT', 130],
-		['SIGTERM', 143],
-	] as const)('%s aborts ctx.signal, runs cleanup and exits with %i', async (signal, status) => {
-		const run = await started('cooperative');
-		run.child.kill(signal);
-		const result = await run.exited;
+	it.each(['SIGINT', 'SIGTERM'] as const)(
+		'%s aborts ctx.signal, runs cleanup and ends by the same signal',
+		async (signal) => {
+			const run = await started('cooperative');
+			run.child.kill(signal);
+			const result = await run.exited;
 
-		expect(result.status).toBe(status);
-		expect(result.stdout).toContain('cleanup:true');
-		expect(result.stderr).toContain('Interrupted.');
-	});
+			// Died of the signal, not exit(130/143): that's what systemd reads as clean
+			expect(result.signal).toBe(signal);
+			expect(result.status).toBeNull();
+			expect(result.stdout).toContain('cleanup:true');
+			expect(result.stderr).toContain('Interrupted.');
+		},
+	);
 
-	it('goes through onError like any other failure', async () => {
+	it('goes through onError when run() fails because of it', async () => {
 		const run = await started('cooperative');
 		run.child.kill('SIGINT');
 		expect((await run.exited).stdout).toContain('onError:INTERRUPTED');
 	});
 
-	it('is still an interruption if run() returns after the signal', async () => {
-		const run = await started('finishes-anyway');
-		run.child.kill('SIGINT');
-		expect((await run.exited).status).toBe(130);
-	});
+	it.each(['SIGINT', 'SIGTERM'] as const)(
+		'is not an error if run() ends well after %s (F-07)',
+		async (signal) => {
+			const run = await started('finishes-anyway');
+			run.child.kill(signal);
+			const result = await run.exited;
+
+			expect(result.signal).toBe(signal);
+			expect(result.stderr).not.toContain('Interrupted.');
+			expect(result.stdout).not.toContain('onError');
+			expect(result.stdout).toContain('afterRun');
+			expect(result.stdout).toContain('cleanup:true');
+		},
+	);
 
 	it('waits for a command that ignores it only as long as the grace period', async () => {
 		const run = await started('ignores');
@@ -47,7 +60,8 @@ describe.skipIf(process.platform === 'win32')('a signal stops the run', () => {
 		const result = await run.exited;
 		const elapsed = Date.now() - before;
 
-		expect(result.status).toBe(130);
+		expect(result.signal).toBe('SIGINT');
+		expect(result.stderr).toContain('Interrupted.');
 		expect(result.stdout).toContain('cleanup:true');
 		expect(elapsed).toBeGreaterThanOrEqual(1900);
 		expect(elapsed).toBeLessThan(4000);
@@ -61,7 +75,7 @@ describe.skipIf(process.platform === 'win32')('a signal stops the run', () => {
 		run.child.kill('SIGINT');
 		const result = await run.exited;
 
-		expect(result.status).toBe(130);
+		expect(result.signal).toBe('SIGINT');
 		expect(Date.now() - before).toBeLessThan(1500);
 	});
 
@@ -72,7 +86,7 @@ describe.skipIf(process.platform === 'win32')('a signal stops the run', () => {
 		const result = await run.exited;
 		const elapsed = Date.now() - before;
 
-		expect(result.status).toBe(143);
+		expect(result.signal).toBe('SIGTERM');
 		expect(elapsed).toBeGreaterThanOrEqual(4900);
 		expect(elapsed).toBeLessThan(7000);
 	}, 10_000);

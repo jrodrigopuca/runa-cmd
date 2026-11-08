@@ -645,6 +645,9 @@ async function runCLILifecycle(
 		else if (hookCtx.handled) {
 			// A plugin that truly recovered keeps control by setting process.exitCode.
 			process.exitCode ??= exitCode;
+		} else if (stop.exitCode !== undefined) {
+			// A stopped run ends by its signal where there is one (ADR-0046)
+			stop.leave();
 		} else {
 			process.exit(exitCode);
 		}

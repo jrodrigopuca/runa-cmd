@@ -110,13 +110,14 @@ describe('stopping the server', () => {
 		expect(trace()).toContain('cleanup');
 	});
 
-	it.skipIf(process.platform === 'win32')('exits with the code of the signal', async () => {
+	// The shell still sees 143, and systemd a clean stop (ADR-0046)
+	it.skipIf(process.platform === 'win32')('ends by the signal it got', async () => {
 		const client = await serve();
-		const exited = client.exit();
+		const died = client.exitSignal();
 
 		client.signal('SIGTERM');
 
-		expect(await exited).toBe(143);
+		expect(await died).toBe('SIGTERM');
 	});
 
 	it('exits with 0 when the client leaves', async () => {

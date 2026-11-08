@@ -12,7 +12,7 @@ A change here needs a major version.
 |---|---|
 | Exports | Everything exported from `@runa-cmd/core`, `@runa-cmd/core/zod`, `@runa-cmd/core/testing`, `@runa-cmd/help`, `@runa-cmd/mcp` and `@runa-cmd/completions` |
 | Project generator | `npm create @runa-cmd <name>`: its arguments and exit codes. The files it creates follow the getting started guide, and change with it |
-| Exit codes | `0` success, `1` failure, `2` usage error, `127` command not found, `130` `SIGINT`, `143` `SIGTERM`, and the case each one covers |
+| Exit codes | `0` success, `1` failure, `2` usage error, `127` command not found, `130` `SIGINT`, `143` `SIGTERM`, and the case each one covers. On Unix, `130` and `143` are what the shell shows for a process that died by that signal: Runa ends by the signal itself, so `spawn` reports `signal`, not `code` (ADR-0046) |
 | Streams | Results go to stdout. Errors, warnings and the help of a run with nothing to do go to stderr |
 | Error codes | The `code` of each `RunaError`: use it, not the message, to tell errors apart |
 | Flags | How a key becomes a flag: `darkColor` is `--dark-color` |

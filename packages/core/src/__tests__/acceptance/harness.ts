@@ -25,6 +25,8 @@ export const pending = process.env.RUNA_SHOW_PENDING ? it : it.fails;
 
 export interface Result {
 	status: number | null;
+	/** The signal the process died of, if it did: then status is null */
+	signal?: NodeJS.Signals | null;
 	stdout: string;
 	stderr: string;
 }
@@ -62,7 +64,7 @@ export function startFixture(fixture: string, argv: string[], env: Record<string
 	});
 
 	const exited = new Promise<Result>((resolve) => {
-		child.on('close', (status) => resolve({ status, stdout, stderr }));
+		child.on('close', (status, signal) => resolve({ status, signal, stdout, stderr }));
 	});
 
 	const written = (text: string) =>

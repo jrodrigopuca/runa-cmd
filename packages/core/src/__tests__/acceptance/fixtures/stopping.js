@@ -10,6 +10,7 @@ const probe = definePlugin({
 	meta: { name: 'probe', version: '1.0.0' },
 	setup(api) {
 		api.hook('onError', (ctx) => console.log(`onError:${ctx.error.code}`));
+		api.hook('afterRun', () => console.log('afterRun'));
 		api.hook('cleanup', async (ctx) => {
 			console.log(`cleanup:${ctx.signal.aborted}`);
 			if (process.env.CLEANUP_HANGS) await delay(WAIT_MS);
