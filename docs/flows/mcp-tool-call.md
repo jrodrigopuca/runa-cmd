@@ -41,7 +41,7 @@ sequenceDiagram
 
 ## Cómo se arma el resultado
 
-El hijo informa hasta dónde llegó: `running` antes de `run()`, `ran` cuando vuelve, y `result` cuando todo el comando terminó y su `output` es válido. Si termina en error, `failed` indica si fue la entrada, el `output` u otra cosa. Stdout y stderr pasan por la redacción de valores fijos; el valor devuelto, no.
+El hijo informa hasta dónde llegó: `running` antes de `run()`, `ran` cuando vuelve, y `result` cuando todo el comando terminó y su `output` es válido. Si termina en error, `failed` indica si fue la entrada, el `output`, un `CommandError` u otra cosa. Stdout y stderr pasan por la redacción de valores fijos; el valor devuelto, no.
 
 | Hijo | Clase | Efecto |
 |---|---|---|
@@ -51,8 +51,9 @@ El hijo informa hasta dónde llegó: `running` antes de `run()`, `ran` cuando vu
 | `result` con `failed` o exit distinto de 0 | `after_run_failed` | `completed` |
 | `ran` y `failed` por `output` | `invalid_output` | `completed` |
 | `ran`, otro caso | `after_run_failed` | `completed` |
-| `running` y `failed` | `command_failed` | `unknown` |
-| `running`, sin `failed` | `crashed` | `unknown` |
+| `running` y `failed` por un `CommandError` | `command_failed` | `unknown` |
+| `running` y otro `failed`, o sin `failed` | `crashed` | `unknown` |
+| Sin `running`, `failed` por entrada, y la tool tiene valores del operador sin poner | `not_configured` | `none` |
 | Sin `running`, `failed` por entrada | `invalid_input` | `none` |
 | Sin `running`, otro `failed` | `rejected` | `none` |
 | Sin informes, exit 0 | `not_run` | `none` |

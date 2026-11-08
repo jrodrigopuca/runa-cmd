@@ -92,7 +92,7 @@
 | 7. Revisión antes de v1 | T-233 | Peer de `help` al día con lo que usa | Requerido | Hecho |
 | | T-234 | Lista de códigos de error y clases de MCP | Requerido | Hecho |
 | | T-235 | Errores del archivo de config | Requerido | Hecho |
-| | T-236 | Errores de MCP por un valor del operador | Requerido | Pendiente |
+| | T-236 | Errores de MCP por un valor del operador | Requerido | Hecho |
 | | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Pendiente |
 | | T-238 | Slots del tema que no tienen efecto | Requerido | Pendiente |
 | | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Pendiente |
@@ -1017,7 +1017,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-236 Errores de MCP por un valor del operador
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como quien opera un servidor MCP, quiero que si falta un valor que solo yo puedo dar, el error no le diga al modelo que se equivocó él. Hoy da `class: invalid_input`. Además los errores de input nombran `--flag` y `<arg>`, que el modelo no ve, en lugar de las claves del schema, y un `Error` común tirado desde `run()` sale como `command_failed`, igual que un `CommandError`, contra el README de `mcp`.
 - **Decisión, 2026-11-08:** se reprodujo con un cliente MCP real (SDK 1.32.2). Un valor del operador que falta tiene una clase nueva, `not_configured`, con `effect: none`, y además el servidor lo avisa al arrancar, para que el operador se entere antes de la primera llamada. Un `Error` común tirado desde `run()` pasa a `crashed`; `command_failed` queda solo para un `CommandError`, el error que el autor escribió. Así, un cliente puede distinguir un bug de una falla prevista. Este cambio de clase es incompatible y entra en la `0.2.0-beta.7`, que ya reinicia la ventana por T-234. La clase nueva es aditiva.
 - **Criterios de aceptación:**

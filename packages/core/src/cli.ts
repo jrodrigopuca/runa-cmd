@@ -21,6 +21,7 @@ import {
 	commandValues,
 } from './config/scope.js';
 import {
+	CommandError,
 	CommandNotFoundError,
 	describeFailure,
 	ERROR_CODES,
@@ -214,7 +215,11 @@ function printResult(command: Command, result: unknown, run: ResultDisplay): voi
 
 function toolFailureReason(error: Error): ToolFailureReason {
 	if (isUsageError(error)) return 'input';
-	return isRunaError(error, ERROR_CODES.INVALID_OUTPUT) ? 'output' : 'other';
+	if (isRunaError(error, ERROR_CODES.INVALID_OUTPUT)) return 'output';
+	// By name too: a CommandError from another copy of core isn't an instance of this one
+	const wrote =
+		error instanceof CommandError || (isRunaError(error) && error.name === 'CommandError');
+	return wrote ? 'command' : 'other';
 }
 
 // ─── Middleware Composition ─────────────────────────────────

@@ -33,6 +33,8 @@ export interface ToolRegistration {
 	optionKeys: Set<string>;
 	/** Options the operator fixed: out of the schema, and dropped from any call */
 	fixed: Set<string>;
+	/** Required options only the operator can give, still without a value: the tool can't run */
+	unconfigured: Array<{ key: string; env: string }>;
 	/** Text to hide from what the command writes */
 	redactions: string[];
 	/** Most bytes of output this tool can answer with */
@@ -118,6 +120,7 @@ function walkTree(
 				argKeys,
 				optionKeys,
 				fixed: new Set(),
+				unconfigured: [],
 				redactions: [],
 				maxOutput: DEFAULT_MAX_OUTPUT,
 			});

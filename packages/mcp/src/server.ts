@@ -19,6 +19,7 @@ import { RunaError } from '@runa-cmd/core';
 import type { ToolReport } from '@runa-cmd/core/internal';
 import { type ZodType, z } from 'zod';
 import { ERROR_CLASSES, type ErrorClass, MCP_ERROR_CODES } from './errors.js';
+import { missingValues } from './operator.js';
 import type { ChildOutcome, RunOptions } from './runner.js';
 import { childrenFinished, runChild } from './runner.js';
 import type { ToolRegistration } from './schema.js';
@@ -70,12 +71,15 @@ const EFFECT_TEXT: Record<Effect, string> = {
  * The reports say how far the command got. Without one, a command may have done
  * anything: the safe reading of the unknown is never that nothing happened.
  */
-function findFailure({ reports, status, cancelled }: ChildOutcome): ToolFailure | undefined {
+function findFailure(
+	{ reports, status, cancelled }: ChildOutcome,
+	reg: ToolRegistration,
+): ToolFailure | undefined {
 	const reached = (kind: ToolReport['kind']) => reports.some((report) => report.kind === kind);
 	const failed = reports.find((report) => report.kind === 'failed');
 
 	const { AFTER_RUN_FAILED, CANCELLED, COMMAND_FAILED, CRASHED, INVALID_INPUT } = ERROR_CLASSES;
-	const { INVALID_OUTPUT, NOT_RUN, OUTPUT_TOO_LARGE, REJECTED } = ERROR_CLASSES;
+	const { INVALID_OUTPUT, NOT_CONFIGURED, NOT_RUN, OUTPUT_TOO_LARGE, REJECTED } = ERROR_CLASSES;
 
 	if (cancelled) return { class: CANCELLED, effect: 'unknown' };
 	if (reached('oversized')) return { class: OUTPUT_TOO_LARGE, effect: 'completed' };
@@ -88,11 +92,15 @@ function findFailure({ reports, status, cancelled }: ChildOutcome): ToolFailure 
 		return { class: invalid ? INVALID_OUTPUT : AFTER_RUN_FAILED, effect: 'completed' };
 	}
 	if (reached('running')) {
-		return { class: failed ? COMMAND_FAILED : CRASHED, effect: 'unknown' };
+		// Only a CommandError is a failure the author wrote: anything else is a bug
+		return { class: failed?.reason === 'command' ? COMMAND_FAILED : CRASHED, effect: 'unknown' };
 	}
-	if (failed) {
-		return { class: failed.reason === 'input' ? INVALID_INPUT : REJECTED, effect: 'none' };
+	if (failed?.reason === 'input') {
+		// What the operator didn't set is what's missing first, whatever the model sent
+		const configured = reg.unconfigured.length === 0;
+		return { class: configured ? INVALID_INPUT : NOT_CONFIGURED, effect: 'none' };
 	}
+	if (failed) return { class: REJECTED, effect: 'none' };
 	return { class: status === 0 ? NOT_RUN : CRASHED, effect: 'none' };
 }
 
@@ -127,7 +135,12 @@ function failedChild(
 
 	const written = outcome.stderr.trim();
 	const printed = outcome.stdout.trim();
-	return failure(written || printed || silentFailure(reg, outcome, found), found);
+	const reason = written || printed || silentFailure(reg, outcome, found);
+	if (found.class !== ERROR_CLASSES.NOT_CONFIGURED) return failure(reason, found);
+
+	// The model reads this: it can't send the value, nor ask the user for it
+	const note = `The operator of this server has to set ${missingValues(reg)}. It isn't a value you can send.`;
+	return failure(`${note}\n\n${reason}`, found);
 }
 
 function silentFailure(reg: ToolRegistration, outcome: ChildOutcome, found: ToolFailure): string {
@@ -141,7 +154,7 @@ function silentFailure(reg: ToolRegistration, outcome: ChildOutcome, found: Tool
  * can exit on its own. Only the reports say how far it got.
  */
 export function toToolResult(reg: ToolRegistration, outcome: ChildOutcome): CallToolResult {
-	const found = findFailure(outcome);
+	const found = findFailure(outcome, reg);
 	if (found) return failedChild(reg, outcome, found);
 
 	const finished = outcome.reports.find((report) => report.kind === 'result');

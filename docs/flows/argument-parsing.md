@@ -77,10 +77,13 @@ Si no hay valor, la clave se omite para que Zod aplique `.default()` o reporte q
 | Falta una opción | `Missing required option: --name` |
 | Enum inválido | `Invalid value for --name. Expected one of: a, b` |
 | Tipo inválido | `Invalid value for --name: expected number` |
+| Booleano inválido | `Invalid value for --name: expected true or false` |
 | Flag desconocida, antes o después del comando | `Unknown option: --name. Did you mean '--other'?` |
 | Falta el valor | `Option -n, --name requires a value` |
 | Posicional de más | `Unexpected positional argument: 'x'` |
 
-`ValidationError` antepone la ruta del issue, salvo que el mensaje ya la nombre como `<name>` o `--name`. Las sugerencias toleran una distancia de la mitad del largo del texto, hasta 3.
+En una llamada de tool, el modelo mandó claves, no flags: los mensajes nombran la clave, como `Missing required argument: 'name'` o `Invalid value for 'name': expected number`. Una opción con `env` que falta sigue diciendo `Missing required option: --name, or set NAME`, porque esa línea es para quien opera el servidor (T-236).
+
+`ValidationError` antepone la ruta del issue, salvo que el mensaje ya la nombre como `<name>`, `--name` o `'name'`. Las sugerencias toleran una distancia de la mitad del largo del texto, hasta 3.
 
 Si la CLI tiene una opción global `help`, los errores de uso terminan con `Run '<cli> --help' for usage.`.

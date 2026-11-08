@@ -101,6 +101,7 @@ function applyToTool(
 	const inputShape = { ...reg.inputShape };
 	const fixed = new Set<string>();
 	const fixedValues: unknown[] = [];
+	const unconfigured: ToolRegistration['unconfigured'] = [];
 
 	for (const key of reg.optionKeys) {
 		if (options.expose?.includes(key)) continue;
@@ -115,8 +116,15 @@ function applyToTool(
 			);
 		}
 
-		const belongsToOperator = value !== undefined || envNameOf(key, reg) !== undefined;
+		const envName = envNameOf(key, reg);
+		const belongsToOperator = value !== undefined || envName !== undefined;
 		if (!belongsToOperator) continue;
+
+		// A model can't send it, so without a value no call can run (T-236)
+		const required = inputShape[key]?.safeParse(undefined).success === false;
+		if (value === undefined && envName !== undefined && required) {
+			unconfigured.push({ key, env: envName });
+		}
 
 		delete inputShape[key];
 		fixed.add(key);
@@ -129,6 +137,7 @@ function applyToTool(
 		annotations: options.annotations,
 		inputShape,
 		fixed,
+		unconfigured,
 		redactions: redactable([...fixedValues, ...Object.values(values.globals)]),
 		maxOutput: options.maxOutput ?? maxOutput ?? reg.maxOutput,
 	};
@@ -152,6 +161,28 @@ export function applyOperatorValues(
 	return offered
 		.filter((reg) => !exclude.includes(reg.name))
 		.map((reg) => applyToTool(reg, tools[reg.name] ?? {}, maxOutput, values));
+}
+
+/** The variables, as `NOTES_FILE` or `A (--a) and B (--b)` with their flags. */
+export function missingValues(reg: ToolRegistration, withFlags = false): string {
+	const names = reg.unconfigured.map(({ key, env }) =>
+		withFlags ? `${env} (${longFlag(key)})` : env,
+	);
+	return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : `${names[0]}`;
+}
+
+/**
+ * What the operator has to set before each tool can run. Said at startup, so
+ * it doesn't wait for a model to call the tool, and the server keeps serving:
+ * the other tools work.
+ */
+export function unconfiguredWarnings(registrations: ToolRegistration[]): string[] {
+	return registrations
+		.filter((reg) => reg.unconfigured.length > 0)
+		.map(
+			(reg) =>
+				`mcpPlugin: tool '${reg.name}' can't run until the operator sets ${missingValues(reg, true)}.`,
+		);
 }
 
 /** Hide fixed values from text a command wrote without meaning to expose them. */

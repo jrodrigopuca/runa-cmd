@@ -38,7 +38,11 @@ export type ToolReport =
 	/** The run ended on an error; the reason is on stderr, for the same text a person reads */
 	| { kind: 'failed'; reason: ToolFailureReason };
 
-export type ToolFailureReason = 'input' | 'output' | 'other';
+/**
+ * `command` is a CommandError, a failure the author wrote; `other` is anything
+ * else, as a plain Error, a bug the author didn't foresee.
+ */
+export type ToolFailureReason = 'input' | 'output' | 'command' | 'other';
 
 /**
  * The request of this process, if it was started as a tool. The variable is

@@ -8,7 +8,7 @@
 import type { HookContext, PluginConfig } from '@runa-cmd/core';
 import { definePlugin } from '@runa-cmd/core';
 import { z } from 'zod';
-import { applyOperatorValues } from './operator.js';
+import { applyOperatorValues, unconfiguredWarnings } from './operator.js';
 import { defaultSelfCommand } from './runner.js';
 import { buildToolRegistrations } from './schema.js';
 import type { McpPluginOptions } from './types.js';
@@ -54,6 +54,8 @@ export function mcpPlugin(opts: McpPluginOptions = {}): PluginConfig {
 					env: process.env,
 					globals: ctx.globalOptions,
 				});
+				// stderr reaches the client's logs, and stdout is the protocol
+				for (const warning of unconfiguredWarnings(registrations)) console.error(warning);
 
 				// Loaded here so a plain CLI run doesn't pay for the MCP SDK
 				const { serve } = await import('./server.js');

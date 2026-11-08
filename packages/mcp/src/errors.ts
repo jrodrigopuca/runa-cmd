@@ -10,13 +10,15 @@ export const ERROR_CLASSES = {
 	UNKNOWN_TOOL: 'unknown_tool',
 	/** An argument or option the model sent is missing or breaks its schema */
 	INVALID_INPUT: 'invalid_input',
+	/** A value only the operator gives is missing, as an option's env var */
+	NOT_CONFIGURED: 'not_configured',
 	/** The call failed before run(), as in a hook or a middleware */
 	REJECTED: 'rejected',
 	/** The call ended well without running the command */
 	NOT_RUN: 'not_run',
-	/** run() threw */
+	/** run() threw a CommandError: the failure the author wrote */
 	COMMAND_FAILED: 'command_failed',
-	/** The process ended without saying why */
+	/** run() threw any other error, or the process ended without saying why */
 	CRASHED: 'crashed',
 	/** run() returned a value its output schema rejects */
 	INVALID_OUTPUT: 'invalid_output',

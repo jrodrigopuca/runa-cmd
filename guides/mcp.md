@@ -140,7 +140,7 @@ A tool call is a process that has to end, and `watch` runs until someone stops i
 `notes` keeps its notes wherever `NOTES_FILE` says. An option that declares `env` belongs to whoever runs the server, not to the model:
 
 - It isn't in any tool's schema, so a model can't point `notes` at another file. If a model sends it anyway, it's dropped.
-- If it's missing, the call fails with `Missing required option: --file, or set NOTES_FILE`: the operator learns what to set, and the model can't ask anyone for it.
+- If it's missing, the server says so when it starts, on stderr, one line per tool: `mcpPlugin: tool 'add' can't run until the operator sets NOTES_FILE (--file).` A call to that tool fails with `class: "not_configured"`, and its text starts with `The operator of this server has to set NOTES_FILE. It isn't a value you can send.`, so the model doesn't take it as its own mistake, nor ask anyone for it.
 - To let the model choose an option that declares `env`, list it in `expose`.
 
 This is also where secrets go: a token in `env` never reaches the model. Fixed values are redacted from what a command prints, as a safety net, but what `run()` returns is not, so don't return secrets.

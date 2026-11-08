@@ -121,10 +121,15 @@ export class RunaError extends Error {
 
 // ─── ValidationError ────────────────────────────────────────
 
-/** Prefixes the path, unless the message already names it as `<name>` or `--name`. */
+/**
+ * Prefixes the path, unless the message already names it: as `<name>` or
+ * `--name` at a terminal, or as `'name'`, the key a tool call sends.
+ */
 function formatIssue(issue: ZodIssue): string {
 	const name = String(issue.path[0]);
-	const isNamed = issue.message.includes(`<${name}>`) || issue.message.includes(longFlag(name));
+	const isNamed = [`<${name}>`, longFlag(name), `'${name}'`].some((form) =>
+		issue.message.includes(form),
+	);
 	if (issue.path.length === 0 || isNamed) return issue.message;
 	return `${issue.path.join('.')}: ${issue.message}`;
 }

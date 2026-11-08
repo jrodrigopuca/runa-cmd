@@ -130,12 +130,20 @@ describe('what an error says happened', () => {
 		expect(meta(result as never)).toEqual({ class: 'rejected', effect: 'none' });
 	});
 
-	it('a failure the author threw: their message, and nothing about effects', async () => {
+	// A plain Error is a bug: the client can tell it from a failure the author wrote (T-236)
+	it('a plain Error from run(): a crash, and it did not finish', async () => {
 		const client = await serve();
 		const result = await client.call('partial');
-		expect(meta(result as never)).toEqual({ class: 'command_failed', effect: 'unknown' });
+		expect(meta(result as never)).toEqual({ class: 'crashed', effect: 'unknown' });
 		expect(text(result)).toContain('then the network failed');
-		expect(text(result)).not.toMatch(/did not|already ran|effect/);
+		expect(text(result)).toContain('The command did not finish.');
+	});
+
+	it('a failure the author wrote: their message, and nothing about effects', async () => {
+		const client = await serve();
+		const result = await client.call('fail');
+		expect(meta(result as never)).toEqual({ class: 'command_failed', effect: 'unknown' });
+		expect(text(result).trim()).toBe('Environment is locked');
 	});
 
 	it('a CommandError reaches the model as the author wrote it', async () => {
@@ -149,7 +157,7 @@ describe('what an error says happened', () => {
 		const tools = JSON.stringify({ partial: { annotations: { readOnlyHint: true } } });
 		const client = await serve({ TOOLS: tools });
 		const result = await client.call('partial');
-		expect(meta(result as never)).toEqual({ class: 'command_failed', effect: 'unknown' });
+		expect(meta(result as never)).toEqual({ class: 'crashed', effect: 'unknown' });
 	});
 
 	it('a crash: it did not finish', async () => {
@@ -218,6 +226,68 @@ describe('what an error says happened', () => {
 	});
 });
 
+// A value only the operator gives is not the model's mistake (T-236)
+describe('a value the operator has to give', () => {
+	const meta = (result: { _meta?: Record<string, unknown> }) => result._meta?.['runa/error'];
+
+	it('missing, the call is not_configured, and the text says who has to set it', async () => {
+		const client = await serve();
+		const result = await client.call('operated', { service: 'api' });
+
+		expect(meta(result as never)).toEqual({ class: 'not_configured', effect: 'none' });
+		expect(text(result)).toMatch(/^The operator of this server has to set TEST_TOKEN/);
+		expect(text(result)).toContain('Missing required option: --token, or set TEST_TOKEN');
+		expect(text(result)).toContain('The command did not run.');
+	});
+
+	it("with the model's own mistakes, it is still not_configured, and lists them all", async () => {
+		const client = await serve();
+		const result = await client.call('operated', {});
+
+		expect(meta(result as never)).toEqual({ class: 'not_configured', effect: 'none' });
+		expect(text(result)).toContain('TEST_TOKEN');
+		expect(text(result)).toContain("Missing required argument: 'service'");
+	});
+
+	it('set, the same call runs', async () => {
+		const client = await serve({ TEST_TOKEN: 'a-long-operator-token' });
+		const result = await client.call('operated', { service: 'api' });
+		expect(meta(result as never)).toBeUndefined();
+	});
+
+	it('the server says at startup which tools can not run, and keeps serving', async () => {
+		const client = await serve();
+		await client.tools();
+
+		expect(client.stderr).toContain(
+			"mcpPlugin: tool 'operated' can't run until the operator sets TEST_TOKEN (--token).",
+		);
+		const result = await client.call('greet', { name: 'Ana' });
+		expect(text(result)).toBe('Hello Ana');
+	});
+
+	it('nothing is said at startup when every value is there', async () => {
+		const client = await serve({ TEST_TOKEN: 'a-long-operator-token' });
+		await client.tools();
+		expect(client.stderr).not.toContain("can't run until");
+	});
+});
+
+// The model sends keys, not flags: an error names what it sent (T-236)
+describe('an input error names the key of the schema', () => {
+	it.each([
+		['deploy', { service: 'api', replicas: 'many' }, "Invalid value for 'replicas'"],
+		['deploy', { service: 'api', env: 'mars' }, "Invalid value for 'env'"],
+		['deploy', {}, "Missing required argument: 'service'"],
+		['paint', {}, "Missing required option: 'darkColor'"],
+	])('%s %j', async (tool, input, expected) => {
+		const client = await serve();
+		const message = text(await client.call(tool, input));
+		expect(message).toContain(expected);
+		expect(message).not.toMatch(/--[a-z]|<[a-z]/);
+	});
+});
+
 describe('failures', () => {
 	it('returns the error of the command', async () => {
 		const client = await serve();
@@ -230,7 +300,7 @@ describe('failures', () => {
 		const client = await serve();
 		const result = await client.call('deploy', {});
 		expect(result.isError).toBe(true);
-		expect(text(result)).toContain('Missing required argument: <service>');
+		expect(text(result)).toContain("Missing required argument: 'service'");
 	});
 
 	it('rejects an unknown tool', async () => {

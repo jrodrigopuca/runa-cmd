@@ -125,9 +125,11 @@ Un error nunca afirma que no pasó nada si el comando llegó a empezar:
 
 | `effect` | Significa | Texto agregado | Clases |
 |---|---|---|---|
-| `none` | `run()` no empezó | `The command did not run.` | `unknown_tool`, `invalid_input`, `rejected`, `not_run`, `crashed` |
-| `unknown` | `run()` empezó y no volvió, o se pidió detenerlo | `The command did not finish.` | `crashed`, `cancelled` |
-| `unknown` | El comando lanzó un error | Ninguno: solo su mensaje | `command_failed` |
+| `none` | `run()` no empezó | `The command did not run.` | `unknown_tool`, `invalid_input`, `not_configured`, `rejected`, `not_run`, `crashed` |
+| `unknown` | `run()` empezó y no volvió, lanzó un error que no es `CommandError`, o se pidió detenerlo | `The command did not finish.` | `crashed`, `cancelled` |
+| `unknown` | El comando lanzó un `CommandError` | Ninguno: solo su mensaje | `command_failed` |
+
+Un valor obligatorio que solo da el operador, como una opción con `env` sin la variable puesta, hace la llamada `not_configured`, aunque el modelo también se haya equivocado: lo del operador se resuelve primero. El texto empieza con `The operator of this server has to set X. It isn't a value you can send.`, y el servidor lo avisa al arrancar, por stderr, una línea por tool, sin dejar de servir. `applyToTool`, en `operator.ts`, guarda esos valores en `ToolRegistration.unconfigured` (T-236). Un error de entrada que corrige el modelo nombra la clave que mandó, como `'limit'`, no la flag; la línea de un valor del operador sigue nombrando la flag y la variable, porque la lee quien opera.
 | `completed` | `run()` volvió | `The command already ran.` | `invalid_output`, `output_too_large`, `after_run_failed` |
 
 Runa informa hasta dónde llegó el comando, y no opina sobre reintentar ([ADR-0044](../adr/0044-runa-no-opina-sobre-reintentos.md)). `readOnlyHint` no cambia la respuesta. La tabla completa está en el [flujo](../flows/mcp-tool-call.md#cómo-se-arma-el-resultado).

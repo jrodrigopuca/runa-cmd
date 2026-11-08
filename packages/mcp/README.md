@@ -117,10 +117,11 @@ The `class` says what failed. Each one is part of the [contract](../../VERSIONIN
 |---|---|---|
 | `unknown_tool` | `none` | No tool has that name, or it's excluded |
 | `invalid_input` | `none` | An argument or option the model sent is missing or breaks its schema |
+| `not_configured` | `none` | A value only the operator gives is missing, as an option's env var. The model can't send it, so the text says the operator has to set it |
 | `rejected` | `none` | The call failed before `run()`, as in a hook or a middleware |
 | `not_run` | `none` | The call ended well without running the command, because a hook or a middleware skipped it |
-| `command_failed` | `unknown` | `run()` threw |
-| `crashed` | `none` or `unknown` | The process ended without saying why: before `run()` started, or while it ran |
+| `command_failed` | `unknown` | `run()` threw a `CommandError`: the failure you wrote, with your message as is |
+| `crashed` | `none` or `unknown` | `run()` threw any other error, as a plain `Error`: a bug, not a failure you foresaw. Also when the process ends without saying why |
 | `invalid_output` | `completed` | `run()` returned a value its `output` schema rejects |
 | `output_too_large` | `completed` | The result is over `maxOutput` |
 | `after_run_failed` | `completed` | Something failed after `run()` returned, as an `afterRun` hook |
@@ -181,7 +182,7 @@ An unknown name in `exclude`, an excluded tool with settings, or a tool both rea
 
 ## What the Operator Decides
 
-Whoever starts the server beats the model. An option that declares `env`, or has a value for that command in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call, so a model can't ask anyone for it.
+Whoever starts the server beats the model. An option that declares `env`, or has a value for that command in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call with `class: "not_configured"`, and its text tells the model that the operator has to set it, so it doesn't take it as its own mistake. The server also says it at startup, on stderr, which clients show in their logs: `mcpPlugin: tool 'deploy' can't run until the operator sets DEPLOY_TOKEN (--token).` It keeps serving, because the other tools work.
 
 ```ts
 mcpPlugin({

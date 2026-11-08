@@ -312,11 +312,23 @@ function ruleIssue(issue: ZodIssue, label: string): ZodIssue {
 	};
 }
 
+/** How an error names a value: as it's typed, or as the key a tool call sends. */
+type NameIt = (name: string) => string;
+
+const argAtTerminal: NameIt = (name) => `<${name}>`;
+const optionAtTerminal: NameIt = longFlag;
+/** A model sends keys, and never saw a flag (T-236) */
+const inputKey: NameIt = (name) => `'${name}'`;
+
 /**
  * Rewrite Zod issues into user-friendly CLI error messages.
  * Handles common cases: missing required args/options, invalid enums, wrong types.
  */
-function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodType>): ZodIssue[] {
+function humanizeArgIssues(
+	issues: ZodIssue[],
+	argsSchemas: Record<string, ZodType>,
+	nameIt: NameIt = argAtTerminal,
+): ZodIssue[] {
 	const metadata = walkSchema(argsSchemas);
 	const metaByName = new Map(metadata.map((m) => [m.name, m]));
 
@@ -329,7 +341,7 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
 			return {
 				code: 'custom' as const,
-				message: `Missing required argument: <${name}>`,
+				message: `Missing required argument: ${nameIt(name)}`,
 				path: issue.path,
 			};
 		}
@@ -338,7 +350,7 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 		if (issue.code === 'invalid_value' && param?.enumValues) {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for <${name}>. Expected one of: ${param.enumValues.join(', ')}`,
+				message: `Invalid value for ${nameIt(name)}. Expected one of: ${param.enumValues.join(', ')}`,
 				path: issue.path,
 			};
 		}
@@ -347,12 +359,12 @@ function humanizeArgIssues(issues: ZodIssue[], argsSchemas: Record<string, ZodTy
 		if (issue.code === 'invalid_type') {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for <${name}>: ${expectedText(issue)}`,
+				message: `Invalid value for ${nameIt(name)}: ${expectedText(issue)}`,
 				path: issue.path,
 			};
 		}
 
-		return ruleIssue(issue, `<${name}>`);
+		return ruleIssue(issue, nameIt(name));
 	});
 }
 
@@ -360,6 +372,7 @@ function humanizeOptionIssues(
 	issues: ZodIssue[],
 	optionsSchemas: Record<string, ZodType>,
 	optionsMeta: Record<string, OptionMeta> | undefined,
+	nameIt: NameIt = optionAtTerminal,
 ): ZodIssue[] {
 	const metadata = walkSchema(optionsSchemas);
 	const metaByName = new Map(metadata.map((m) => [m.name, m]));
@@ -369,12 +382,15 @@ function humanizeOptionIssues(
 		if (typeof name !== 'string') return issue;
 		const param = metaByName.get(name);
 
-		// Missing required option. Its variable is a name, never a value (T-216)
+		// Missing required option. Its variable is a name, never a value (T-216).
+		// One with env is the operator's to set, who knows it by its flag and variable
 		if (issue.code === 'invalid_type' && issue.message.includes('received undefined')) {
 			const envName = optionsMeta?.[name]?.env;
 			return {
 				code: 'custom' as const,
-				message: `Missing required option: ${longFlag(name)}${envName ? `, or set ${envName}` : ''}`,
+				message: envName
+					? `Missing required option: ${longFlag(name)}, or set ${envName}`
+					: `Missing required option: ${nameIt(name)}`,
 				path: issue.path,
 			};
 		}
@@ -383,7 +399,7 @@ function humanizeOptionIssues(
 		if (issue.code === 'invalid_value' && param?.enumValues) {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for ${longFlag(name)}. Expected one of: ${param.enumValues.join(', ')}`,
+				message: `Invalid value for ${nameIt(name)}. Expected one of: ${param.enumValues.join(', ')}`,
 				path: issue.path,
 			};
 		}
@@ -392,12 +408,12 @@ function humanizeOptionIssues(
 		if (issue.code === 'invalid_type') {
 			return {
 				code: 'custom' as const,
-				message: `Invalid value for ${longFlag(name)}: ${expectedText(issue)}`,
+				message: `Invalid value for ${nameIt(name)}: ${expectedText(issue)}`,
 				path: issue.path,
 			};
 		}
 
-		return ruleIssue(issue, longFlag(name));
+		return ruleIssue(issue, nameIt(name));
 	});
 }
 
@@ -501,7 +517,7 @@ export function resolveToolInput(toolInput: ResolveToolInput): ResolveOutput {
 	const optionSources: Record<string, ValueSource> = {};
 
 	return {
-		parsedArgs: validateArgs(rawArgs, argSchemas),
+		parsedArgs: validateArgs(rawArgs, argSchemas, inputKey),
 		parsedOptions: validateOptions(
 			rawOptions,
 			{},
@@ -520,6 +536,7 @@ export function resolveToolInput(toolInput: ResolveToolInput): ResolveOutput {
 function validateArgs(
 	rawArgs: Record<string, unknown>,
 	argSchemas: Record<string, ZodType>,
+	nameIt: NameIt = argAtTerminal,
 ): Record<string, unknown> {
 	if (Object.keys(argSchemas).length === 0) return {};
 
@@ -532,7 +549,7 @@ function validateArgs(
 		return z.object(argSchemas).parse(coerced) as Record<string, unknown>;
 	} catch (err) {
 		if (err instanceof ZodError) {
-			throw new ValidationError(humanizeArgIssues(err.issues, argSchemas));
+			throw new ValidationError(humanizeArgIssues(err.issues, argSchemas, nameIt));
 		}
 		throw err;
 	}
@@ -567,7 +584,8 @@ function validateOptions(
 		return z.object(optionSchemas).parse(rawOptions) as Record<string, unknown>;
 	} catch (err) {
 		if (err instanceof ZodError) {
-			const humanized = humanizeOptionIssues(err.issues, optionSchemas, optionsMeta);
+			const nameIt = directSource === 'input' ? inputKey : optionAtTerminal;
+			const humanized = humanizeOptionIssues(err.issues, optionSchemas, optionsMeta, nameIt);
 			const enumsByName = new Map(walkSchema(optionSchemas).map((m) => [m.name, m.enumValues]));
 			throw new ValidationError(
 				err.issues.map((issue, index) => {

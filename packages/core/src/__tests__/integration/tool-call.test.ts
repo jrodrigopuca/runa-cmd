@@ -116,7 +116,8 @@ describe('runToolCall', () => {
 			await runToolCall(cliWith({ commands: { deploy } }), { path: ['deploy'], input: {} });
 
 			expect(exitSpy).toHaveBeenCalledWith(2);
-			expect(stderr()).toContain('Missing required argument: <service>');
+			// A tool call sends keys: the error names the one the model sent (T-236)
+			expect(stderr()).toContain("Missing required argument: 'service'");
 		});
 
 		it('reports a wrong type as a usage error', async () => {
@@ -129,7 +130,7 @@ describe('runToolCall', () => {
 			});
 
 			expect(exitSpy).toHaveBeenCalledWith(2);
-			expect(stderr()).toContain('Invalid value for --size: expected number');
+			expect(stderr()).toContain("Invalid value for 'size': expected number");
 		});
 
 		it('rejects a key the command does not declare', async () => {
