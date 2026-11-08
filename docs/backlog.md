@@ -94,7 +94,7 @@
 | | T-235 | Errores del archivo de config | Requerido | Hecho |
 | | T-236 | Errores de MCP por un valor del operador | Requerido | Hecho |
 | | T-237 | `exitOnHelp` y ADR-0034 | Requerido | Hecho |
-| | T-238 | Slots del tema que no tienen efecto | Requerido | Pendiente |
+| | T-238 | Slots del tema que no tienen efecto | Requerido | Hecho |
 | | T-239 | La CLI del generador sigue las reglas de Runa | Requerido | Pendiente |
 | | T-240 | Completions de bash después de un posicional | Requerido | Pendiente |
 | | T-241 | Opción enum obligatoria que falta | Requerido | Pendiente |
@@ -1044,7 +1044,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-238 Slots del tema que no tienen efecto
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor que personaliza el tema de la ayuda, quiero que cada slot cambie algo. `error` y `success` no cambian nada en el renderer por defecto, `secondary` solo colorea `(required)`, los flags y los comandos tienen colores fijos, y el README y el JSDoc describen los slots de dos formas distintas. [ADR-0029](./adr/0029-cada-campo-tiene-efecto.md) pide que cada campo tenga efecto.
 - **Decisión, 2026-11-08:** el renderer por defecto cumple lo que dice el README: `primary` colorea los títulos y los nombres de comando, y `secondary` las flags, los argumentos y `(required)`. Ya no hay colores fijos en `yellow`. `error` y `success` quedan como paleta para un renderer propio (Layer 3), que recibe el tema resuelto, y la documentación dice que el renderer por defecto no los usa: la ayuda no muestra errores ni éxitos, porque los escribe `core`. Se descartó retirarlos: sería incompatible para un renderer propio que los lea, y solo dejaría la API más prolija. Es aditivo. Cambia el aspecto por defecto, que no es contrato.
 - **Criterios de aceptación:**

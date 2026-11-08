@@ -54,16 +54,18 @@ Override any of the 6 color slots:
 plugins: [
   helpPlugin({
     theme: {
-      primary: '#00BFFF',   // Headings, command names
-      secondary: '#FF6B6B', // Flags, options
-      muted: 'dim',         // Descriptions, defaults
-      error: '#FF0000',     // Error messages
-      warning: '#FFAA00',   // Deprecation notices
-      success: '#00FF00',   // Success indicators
+      primary: '#00BFFF',   // Section titles and command names
+      secondary: '#FF6B6B', // Flags, arguments and (required)
+      muted: 'dim',         // [default: …] and [env: …]
+      warning: '#FFAA00',   // (deprecated: …)
+      error: '#FF0000',     // For your own renderer
+      success: '#00FF00',   // For your own renderer
     },
   }),
 ]
 ```
+
+The default renderer uses the first four. `error` and `success` reach a [renderer of your own](#layer-3-custom-renderer) with the rest of the theme: the help shows no errors and no successes, since core writes those.
 
 Colors are automatically downsampled to match terminal capabilities: truecolor, 256-color, 16-color, or no color (`NO_COLOR` respected).
 

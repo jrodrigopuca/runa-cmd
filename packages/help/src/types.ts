@@ -29,17 +29,17 @@ export interface RenderContext {
 
 /** Theme colors — all values are hex (#RRGGBB) or named ANSI attribute (e.g. 'dim') */
 export interface Theme {
-	/** Titles, borders */
+	/** Section titles and command names */
 	primary: string;
-	/** Required markers, highlights */
+	/** Flags, arguments and `(required)` */
 	secondary: string;
-	/** Descriptions, defaults */
+	/** `[default: …]` and `[env: …]` */
 	muted: string;
-	/** Error messages */
+	/** Not used by the default renderer: for your own, as the help shows no errors */
 	error: string;
-	/** Warnings */
+	/** `(deprecated: …)` */
 	warning: string;
-	/** Success states */
+	/** Not used by the default renderer: for your own, as the help shows no successes */
 	success: string;
 }
 

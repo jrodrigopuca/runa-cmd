@@ -69,10 +69,7 @@ function renderCLI(cli: CLISchema, theme: ResolvedTheme, ctx: RenderContext): Bl
 
 	// Commands
 	if (hasCommands) {
-		const cmdRows = cli.commands.map((cmd) => [
-			styled(cmd.name, { color: 'yellow' }, ctx),
-			cmd.description || '',
-		]);
+		const cmdRows = cli.commands.map((cmd) => [fg(cmd.name, theme.primary), cmd.description || '']);
 		sections.push(join.vertical([sectionTitle('COMMANDS', theme, ctx), indent(table(cmdRows))]));
 	}
 
@@ -143,7 +140,7 @@ function renderCommand(cmd: CommandSchema, theme: ResolvedTheme, ctx: RenderCont
 	// Subcommands
 	if (cmd.subcommands && cmd.subcommands.length > 0) {
 		const cmdRows = cmd.subcommands.map((sub) => [
-			styled(sub.name, { color: 'yellow' }, ctx),
+			fg(sub.name, theme.primary),
 			sub.description || '',
 		]);
 		sections.push(join.vertical([sectionTitle('COMMANDS', theme, ctx), indent(table(cmdRows))]));
@@ -226,7 +223,7 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 	// A boolean that starts on is turned off with --no-x: the flag says so
 	const startsOn = opt.type === 'boolean' && opt.defaultValue === true;
 	flags.push(startsOn ? `--[no-]${opt.flag}` : `--${opt.flag}`);
-	const flagStr = styled(flags.join(', '), { color: 'yellow' }, ctx);
+	const flagStr = fg(flags.join(', '), theme.secondary);
 
 	// Type column
 	const typeParts: string[] = [];
@@ -262,11 +259,7 @@ function renderOptionRow(opt: OptionSchema, theme: ResolvedTheme, ctx: RenderCon
 function renderArgRow(arg: ArgSchema, theme: ResolvedTheme, ctx: RenderContext): Block[] {
 	// Name column
 	const nameDisplay = arg.isVariadic ? `${arg.name}...` : arg.name;
-	const nameStr = styled(
-		arg.required ? `<${nameDisplay}>` : `[${nameDisplay}]`,
-		{ color: 'yellow' },
-		ctx,
-	);
+	const nameStr = fg(arg.required ? `<${nameDisplay}>` : `[${nameDisplay}]`, theme.secondary);
 
 	// Type column
 	const typeParts: string[] = [];

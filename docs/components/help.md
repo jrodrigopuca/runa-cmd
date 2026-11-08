@@ -59,7 +59,7 @@ Las firmas exactas están en `packages/help/src/primitives/`. Todo devuelve un `
 | `strip(text)`, `visibleWidth(text)` | Quita ANSI y mide ancho |
 | `bold`, `dim`, `italic`, `underline`, `fg`, `reset` | Códigos ANSI |
 
-Tema por defecto: `primary`, `secondary`, `muted`, `error`, `warning` y `success`. Los colores deben ser `#RRGGBB` o un atributo como `dim`.
+Tema por defecto: `primary`, `secondary`, `muted`, `error`, `warning` y `success`. Los colores deben ser `#RRGGBB` o un atributo como `dim`. El renderer por defecto no tiene colores fijos: `primary` colorea los títulos y los nombres de comando; `secondary`, las flags, los argumentos y `(required)`; `muted`, `[default: …]` y `[env: …]`; `warning`, `(deprecated: …)`. `error` y `success` no los usa, porque la ayuda no muestra errores ni éxitos: llegan a un renderer propio con el resto del tema (T-238). `theme-slots.test.ts` prueba cada uno.
 
 ## Módulos
 
