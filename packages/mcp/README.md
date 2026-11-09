@@ -7,10 +7,12 @@ Every command becomes an MCP tool. Zod schemas pass directly to the MCP SDK — 
 ## Install
 
 ```bash
-pnpm add @runa-cmd/mcp@beta
+pnpm add @runa-cmd/mcp
 ```
 
-> Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.
+> **Still at `0.x`.** The rest of Runa is at 1.0, and this package isn't yet: until its own 1.0, a minor version may change its contract, as its error `class` values and codes, and its changelog says how to migrate. A patch never does.
+
+> Peer dependencies: `@runa-cmd/core ^1.0.0` and `zod ^4.0.0`.
 > Runtime dependency: `@modelcontextprotocol/sdk ^1.32.2`.
 >
 > **New to it?** [Your CLI as an agent's tools](https://github.com/jrodrigopuca/runa-cmd/blob/main/guides/mcp.md) builds a CLI for agents step by step, and tests it as a client does.

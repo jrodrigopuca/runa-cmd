@@ -14,10 +14,8 @@ The commander code is version 15.0.0, run once on 2026-11-03. The Runa code is [
 
 ```bash
 npm uninstall commander
-npm install @runa-cmd/core@beta zod
+npm install @runa-cmd/core zod
 ```
-
-Until Runa reaches 1.0, install it with `@beta`.
 
 ## 1. Keep what the CLI does apart from how it's called
 

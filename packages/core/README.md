@@ -9,10 +9,10 @@ Define your CLI with Zod schemas and get full type inference, validation, and me
 ## Install
 
 ```bash
-pnpm add @runa-cmd/core@beta zod
+pnpm add @runa-cmd/core zod
 ```
 
-> Requires Node 24+. Zod v4 is a required peer dependency. Without `@beta`, npm installs the older `0.1.0`.
+> Requires Node 24+. Zod v4 is a required peer dependency.
 
 ## Quick Start
 

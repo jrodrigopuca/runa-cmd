@@ -235,13 +235,15 @@ Pick the affected package(s) and bump type, describe the change — the generate
 `.changeset/*.md` file is committed with your PR. Private packages, like the
 examples, are never versioned (`privatePackages: false`): `examples/getting-started`
 is the template of `@runa-cmd/create`, and a bump there would give every new
-project a version that `--version` doesn't print. The five published packages
-are a `fixed` group: they always version-bump together as one coherent
-framework release.
+project a version that `--version` doesn't print. `core`, `help`,
+`completions` and `create` are a `fixed` group up to their 1.0.0, and
+`@runa-cmd/mcp` versions on its own, at `0.x`, until its own 1.0
+([ADR-0050](./docs/adr/0050-la-1-0-sale-sin-mcp.md)). After the 1.0 is out, the
+group empties and each package versions on its own
+([ADR-0039](./docs/adr/0039-paquetes-independientes-desde-1-0.md)).
 
-> The repo is currently in changesets **pre-release mode** (`beta` tag), so
-> versions resolve to `0.2.0-beta.N` and publishes land under the npm `beta`
-> dist-tag; `latest` is untouched until `pnpm changeset pre exit`.
+> The repo left changesets pre-release mode for the 1.0: publishes land under
+> the npm `latest` dist-tag.
 
 ### The Version Packages PR (automated)
 
@@ -286,11 +288,16 @@ git push --follow-tags
 > escalates. `pnpm docs:check` fails if a peer doesn't match. If you run
 > `changeset version` by hand, run `node scripts/peers.mjs --write` after it.
 > After 1.0, with independent packages, T-506 decides how each peer is kept.
+>
+> `@runa-cmd/mcp` is out of the group, so `peers.mjs` doesn't keep its peer:
+> it's `^1.0.0`, set by hand before the 1.0 was versioned. Without that,
+> `onlyUpdatePeerDependentsWhenOutOfRange` would take `mcp` to a major along
+> with `core`. Raise it by hand when `mcp` starts using something newer.
 
 ### Post-Publish Verification
 
 ```bash
-# Verify versions and dist-tags (beta while in pre-mode; latest untouched)
+# Verify versions and dist-tags: each release lands on `latest`
 npm view @runa-cmd/core dist-tags
 npm view @runa-cmd/help dist-tags
 npm view @runa-cmd/mcp dist-tags
@@ -300,16 +307,14 @@ npm view @runa-cmd/create dist-tags
 # Test installation in a fresh directory
 mkdir /tmp/runa-test && cd /tmp/runa-test
 npm init -y
-npm install @runa-cmd/core@beta @runa-cmd/help@beta zod
-
-# Until 1.0, move create's `latest` too: its first publish set it, and changesets
-# only moves `beta`. Otherwise `npm create @runa-cmd my-tool`, without @beta,
-# makes projects with the previous beta
-npm dist-tag add @runa-cmd/create@<version> latest
+npm install @runa-cmd/core @runa-cmd/help @runa-cmd/mcp zod
 
 # Test the generator: it must create a project that installs, tests and builds
-cd /tmp && npm create @runa-cmd@beta runa-created && cd runa-created
+cd /tmp && npm create @runa-cmd runa-created && cd runa-created
 npm install && npm test && npm run build && node dist/main.js hello Ana
+
+# The README reaches npm view (KI-041)
+npm view @runa-cmd/core readme | head -3
 ```
 
 ### Why No Automated Publish?

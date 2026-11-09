@@ -9,7 +9,7 @@ It assumes you know the basics from [Getting started](./getting-started.md).
 ## 1. Add the plugin
 
 ```bash
-npm install @runa-cmd/mcp@beta
+npm install @runa-cmd/mcp
 ```
 
 The plugin goes in `plugins`, and adds `--mcp`. Here is the whole CLI, explained piece by piece below:

@@ -42,13 +42,13 @@ Node with nothing loaded starts in 104 ms. Runa adds 36 ms, and about 25 of them
 **Runa differs:** one command creates the project, ready to run, test and build.
 
 ```bash
-npm create @runa-cmd@beta my-tool
+npm create @runa-cmd my-tool
 cd my-tool
 npm install
 node src/main.ts hello Ana
 ```
 
-It asks nothing and installs nothing on its own. It works with pnpm, yarn and bun too, as `pnpm create @runa-cmd@beta my-tool`.
+It asks nothing and installs nothing on its own. It works with pnpm, yarn and bun too, as `pnpm create @runa-cmd my-tool`.
 
 **With commander, yargs, citty and cac** you set it up by hand. None of them has a generator: `create-commander` exists on npm, but at version `0.0.0`. The steps are the same for all four, because they come from Node and TypeScript, not from the tool:
 
@@ -198,7 +198,7 @@ What changes:
 
 - **Runa differs: `run` returns, it doesn't print.** Runa writes the result, so the same command works in a terminal, in a test and as an agent's tool. You can still print progress yourself, to stderr.
 - **Types and validation.** Runa gets both from one schema. The next section compares them.
-- **Runa costs more here:** two packages, Zod and Runa, and its own import, `@runa-cmd/core/zod`. Until 1.0, also `@beta`.
+- **Runa costs more here:** two packages, Zod and Runa, and its own import, `@runa-cmd/core/zod`.
 - **Runa differs: two files.** `cli.ts` exports the CLI without starting it, and `main.ts` starts it, so tests can import the CLI. The others put it all in one file, and to test it you split it the same way. The generator already does this.
 
 ## Types and validation
@@ -322,7 +322,7 @@ What Runa adds, each one a plugin you install and list in `plugins`:
 - **Startup:** 36 ms over Node with nothing loaded, four times commander's 9. It matters if your CLI runs thousands of times in a loop.
 - **Completions:** a script, not the CLI answering each TAB as with yargs, so they can't offer values computed at that moment.
 - **Node 24 and ESM:** Runa needs Node 24 or later; commander 15 asks for 22.12, and yargs and cac for 20.19. And Runa only loads with `import`: `require('@runa-cmd/core')` fails with `ERR_PACKAGE_PATH_NOT_EXPORTED`, while the other four load from CommonJS too, on Node 26.
-- **`@beta`:** until 1.0, without it npm installs the old `0.1.0`, of every package.
+- **`@runa-cmd/mcp` is still at `0.x`:** a minor of it may change its contract, while the rest of Runa is at 1.0.
 - **A different idea:** returning instead of printing, and options as Zod schemas. If you know commander, it takes a moment to get used to.
 - **Each option in two places:** its schema in `options`, and its alias or env var in `meta.options`. commander writes `'-s, --shout'` once.
 

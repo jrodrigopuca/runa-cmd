@@ -35,7 +35,7 @@
 		"@modelcontextprotocol/sdk": "^1.32.2"
 	},
 	"peerDependencies": {
-		"@runa-cmd/core": "^0.2.0-beta.7",
+		"@runa-cmd/core": "^1.0.0",
 		"zod": "^4.0.0"
 	},
 	"engines": {

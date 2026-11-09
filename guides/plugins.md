@@ -208,7 +208,7 @@ A plugin in its own package declares `@runa-cmd/core` as a peer dependency, with
 ```json
 {
 	"peerDependencies": {
-		"@runa-cmd/core": "^0.2.0-beta.6",
+		"@runa-cmd/core": "^1.0.0",
 		"zod": "^4.0.0"
 	}
 }

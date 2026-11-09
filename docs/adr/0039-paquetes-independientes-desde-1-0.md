@@ -1,6 +1,6 @@
 # ADR-0039: Los paquetes se versionan juntos hasta la 1.0.0, y por separado después
 
-- **Estado:** aceptada
+- **Estado:** aceptada; `mcp` sale del grupo antes de la 1.0 y sigue en `0.x`, según [ADR-0050](./0050-la-1-0-sale-sin-mcp.md)
 - **Reemplaza:** el grupo `fixed` de [ADR-0016](./0016-release-con-changesets.md), solo para después de la 1.0.0. El resto de ese ADR sigue vigente.
 - **Drivers:** con `fixed`, un cambio en un paquete publica los cuatro. Según [`VERSIONING.md`](../../VERSIONING.md), una major avisa que algo puede romperse, y una major de `@runa-cmd/mcp` le pondría ese aviso a `@runa-cmd/core` sin que haya cambiado. `mcp` es el paquete con menos uso real, así que es el más expuesto a un cambio incompatible. ADR-0016 eligió `fixed` porque separar multiplica los peer ranges durante la beta, y ese motivo termina con la 1.0: `^1.0.0` no cambia en cada versión.
 - **Decisión:** el grupo `fixed` sigue hasta publicar la 1.0.0, y los cuatro paquetes llegan juntos a esa versión. Justo después se vacía `fixed` en `.changeset/config.json`, y cada paquete sigue su propia versión. Cada plugin declara en su peer range el `@runa-cmd/core` mínimo con el que funciona. `onlyUpdatePeerDependentsWhenOutOfRange` sigue activo, para que un `core` nuevo dentro del rango no obligue a publicar los plugins.

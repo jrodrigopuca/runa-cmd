@@ -3,15 +3,13 @@
 Create a CLI made with [Runa](https://github.com/jrodrigopuca/runa-cmd), ready to run, test and publish.
 
 ```bash
-npm create @runa-cmd@beta my-tool
+npm create @runa-cmd my-tool
 cd my-tool
 npm install
 node src/main.ts hello Ana
 ```
 
-Until Runa reaches 1.0, add `@beta`, as above.
-
-It works with pnpm, yarn and bun too, as `pnpm create @runa-cmd@beta my-tool`, and the next steps it prints use the one you ran it with.
+It works with pnpm, yarn and bun too, as `pnpm create @runa-cmd my-tool`, and the next steps it prints use the one you ran it with.
 
 ## Usage
 

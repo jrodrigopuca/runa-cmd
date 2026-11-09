@@ -87,7 +87,7 @@
 | | T-503 | Documentación de v1 | Requerido | Hecho |
 | | T-504 | Grupo de versiones de los paquetes | Requerido | Hecho |
 | | T-505 | Trusted Publishing | Opcional | Pendiente |
-| | T-506 | Salir de pre-release y publicar 1.0.0 | Requerido | Pendiente |
+| | T-506 | Salir de pre-release y publicar 1.0.0 | Requerido | En curso |
 | | T-507 | Referencia de API generada | Opcional | Pendiente |
 | 7. Revisión antes de v1 | T-233 | Peer de `help` al día con lo que usa | Requerido | Hecho |
 | | T-234 | Lista de códigos de error y clases de MCP | Requerido | Hecho |
@@ -955,15 +955,17 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 ### T-506 Salir de pre-release y publicar 1.0.0
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** En curso
 - **Bloqueada por:** todas las tareas requeridas
 - **Descripción:** como usuario de Runa, quiero instalar 1.0.0 desde `latest`.
+- **Decisión, 2026-11-09:** la 1.0 sale sin esperar el fin de la ventana, y `mcp` sigue en `0.x` ([ADR-0050](./adr/0050-la-1-0-sale-sin-mcp.md)). Un dry-run en una copia del repo, el mismo día, mostró dos cosas. Con `mcp` fuera de `fixed` y su peer en `^1.0.0` antes de versionar, `changeset version` da `1.0.0` en los otros cuatro y `0.2.0` en `mcp`. Sin fijar antes ese peer, `onlyUpdatePeerDependentsWhenOutOfRange` lleva `mcp` a `1.0.0`, porque su peer queda fuera de rango.
 - **Criterios de aceptación:**
-  - Se cumple el criterio de T-501.
-  - Se ejecuta `changeset pre exit` y se amplían los peer ranges de help, MCP y completions.
-  - Un dry-run de `changeset version` da las versiones esperadas antes de publicar.
+  - En lugar del criterio de T-501, se aplica ADR-0050.
+  - Se ejecuta `changeset pre exit`; `mcp` sale del grupo `fixed`, y su peer de `core` pasa a `^1.0.0` antes de versionar. Un changeset `major` lleva `core`, `help`, `completions` y `create` a la 1.0, con un resumen de la versión.
+  - Un dry-run de `changeset version` da `1.0.0` en esos cuatro y `0.2.0` en `mcp` antes de publicar.
+  - `VERSIONING.md` y el README dicen que `mcp` sigue en `0.x`, y qué puede cambiar en una minor.
   - Después de `changeset pre exit`, Changesets pasa a la 3.x y el workflow de release a `changesets/action@v2`, que la requiere. No antes: en pre-release, la 3.0.3 descarta la lista de changesets ya publicados de `pre.json` y repite en el CHANGELOG de la beta siguiente todo lo publicado desde la primera beta (341 líneas de más en el de core, medido el 2026-11-08 corriendo `changeset version` con la 2.31.1 y con la 3.0.3 sobre el mismo commit).
-  - Los cinco paquetes quedan en `1.0.0` bajo `latest`, y la tabla del README dice `Stable`.
+  - `core`, `help`, `completions` y `create` quedan en `1.0.0` bajo `latest`, y `mcp` en `0.2.0`; la tabla del README dice `Stable` en los cuatro y `0.x` en `mcp`.
   - Después de publicar, `fixed` queda vacío en `.changeset/config.json`, como pide [ADR-0039](./adr/0039-paquetes-independientes-desde-1-0.md).
   - Con los paquetes independientes, se decide cómo se mantiene al día el peer de `core` de cada plugin, que hasta acá va en lockstep (T-233). La opción anotada es probar cada plugin contra la versión más baja de su peer, instalada desde npm.
   - Después de publicar, `npm view @runa-cmd/core readme` devuelve el README, en los cinco paquetes. Si no, se aplica lo que dice [la investigación](./research/2026-11-readme-in-npm.md).

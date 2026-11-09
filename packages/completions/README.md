@@ -7,7 +7,7 @@ Your Zod schema is the source of truth: enum values become completion candidates
 ## Install
 
 ```bash
-pnpm add @runa-cmd/completions@beta
+pnpm add @runa-cmd/completions
 ```
 
 > Peer dependencies: `@runa-cmd/core` and `zod ^4.0.0`.

@@ -52,8 +52,8 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0035](./0035-listas-desde-env-y-config.md) | Una lista en env se separa por comas, y en config es un array | Aceptada |
 | [0036](./0036-rest-se-declara.md) | `--` llena posicionales, y lo que sobra es un error si el comando no pidió `rest` | Aceptada |
 | [0037](./0037-politica-de-versiones.md) | Lo que es contrato se puede usar en un programa | Aceptada |
-| [0038](./0038-ventana-de-estabilidad.md) | La ventana de estabilidad mide uso sobre una versión publicada | Aceptada |
-| [0039](./0039-paquetes-independientes-desde-1-0.md) | Los paquetes se versionan juntos hasta la 1.0.0, y por separado después | Aceptada, pendiente de código |
+| [0038](./0038-ventana-de-estabilidad.md) | La ventana de estabilidad mide uso sobre una versión publicada | Aceptada; la 1.0 salió antes, y sigue para `mcp`, por ADR-0050 |
+| [0039](./0039-paquetes-independientes-desde-1-0.md) | Los paquetes se versionan juntos hasta la 1.0.0, y por separado después | Aceptada, pendiente de código; `mcp` sale antes, por ADR-0050 |
 | [0040](./0040-forma-del-archivo-de-config.md) | La raíz del config tiene las globales y los comandos | Aceptada |
 | [0041](./0041-funcion-de-pruebas.md) | Una función de pruebas envuelve la CLI | Aceptada |
 | [0042](./0042-lo-devuelto-llega-a-la-terminal.md) | Lo que devuelve un comando llega a la terminal | Aceptada |
@@ -64,3 +64,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0047](./0047-ningun-plugin-termina-el-proceso-con-la-ayuda.md) | Ningún plugin termina el proceso al mostrar la ayuda | Aceptada |
 | [0048](./0048-help-como-comando.md) | `help` donde va un comando es `--help` | Aceptada |
 | [0049](./0049-mcp-rechaza-un-valor-del-operador.md) | Un valor que el modelo manda para una opción del operador se rechaza | Aceptada |
+| [0050](./0050-la-1-0-sale-sin-mcp.md) | La 1.0 sale antes de completar la ventana, y `mcp` sigue en `0.x` | Aceptada, pendiente de código |

@@ -7,7 +7,7 @@ Themeable help output for Runa CLIs with composable layout primitives.
 ## Install
 
 ```bash
-pnpm add @runa-cmd/help@beta
+pnpm add @runa-cmd/help
 ```
 
 > Peer dependency: `@runa-cmd/core`.

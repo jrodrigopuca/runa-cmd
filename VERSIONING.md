@@ -4,6 +4,8 @@ Runa follows [Semantic Versioning](https://semver.org/) from `1.0.0`. This page 
 
 **Before 1.0**, any `0.x` or beta release can break things. Each one says how to migrate in its changelog.
 
+**`@runa-cmd/mcp` is still at `0.x`**, while `core`, `help`, `completions` and `create` are at 1.0. Until its own 1.0, a minor version of `mcp` may change what this page lists for it, as its error `class` values, its `code`s and its options, and says how to migrate in its changelog. A patch never does.
+
 ## What is covered
 
 A change here needs a major version.

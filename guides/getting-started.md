@@ -2,9 +2,9 @@
 
 From an empty folder to a CLI you can test, install and publish. It takes about ten minutes.
 
-You need Node 24 or later. Until Runa reaches 1.0, install it with `@beta`: without it, npm gives you the older `0.1.0`.
+You need Node 24 or later.
 
-> **In a hurry?** `npm create @runa-cmd@beta my-tool` creates the project this guide builds, named after yours. This guide explains every file it makes.
+> **In a hurry?** `npm create @runa-cmd my-tool` creates the project this guide builds, named after yours. This guide explains every file it makes.
 
 ## 1. Create the project
 
@@ -12,7 +12,7 @@ You need Node 24 or later. Until Runa reaches 1.0, install it with `@beta`: with
 mkdir greet && cd greet
 npm init -y
 npm pkg set type=module
-npm install @runa-cmd/core@beta zod
+npm install @runa-cmd/core zod
 npm install -D typescript @types/node
 ```
 

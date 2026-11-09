@@ -4,7 +4,7 @@
 
 Runa is a schema-driven, TypeScript-first CLI framework. One Zod schema powers your types, validation, help text, shell completions and MCP tools. No duplication. No drift.
 
-> **Beta.** The API can still change before 1.0: see the [status](./docs/status.md), the [known issues](./docs/known-issues.md) and the [roadmap](./docs/backlog.md).
+> **Stable.** `core`, `help`, `completions` and `create` are at 1.0: what [`VERSIONING.md`](./VERSIONING.md) covers only breaks in a major version. `@runa-cmd/mcp` is still at `0.x`. See the [status](./docs/status.md), the [known issues](./docs/known-issues.md) and the [roadmap](./docs/backlog.md).
 
 ```ts
 import { defineCommand, runCLI } from '@runa-cmd/core';
@@ -33,7 +33,7 @@ HELLO, WORLD!
 
 | Feature | Commander.js | Yargs | Runa |
 |---|---|---|---|
-| Type inference from schema | No | No | **Yes** |
+| Type inference from schema | With `@commander-js/extra-typings` | Yes, with `@types/yargs` | **Yes** |
 | Built-in validation | Manual | Manual | **Zod v4** |
 | Help generation | Built-in (basic) | Built-in (basic) | **Themeable plugin** |
 | MCP server mode | No | No | **One flag: `--mcp`** |
@@ -41,36 +41,36 @@ HELLO, WORLD!
 | Zero runtime deps (core) | Yes | No | **Yes**, with Zod as a required peer |
 | Middleware (onion model) | No | Middleware | **Yes** |
 | Plugin system | No | No | **Yes** |
-| Config file loading | No | No | **Built-in** |
+| Config file loading | No | `.config()` | **Built-in**, validated by the same schema |
 
 ## Packages
 
 | Package | Description | Status |
 |---|---|---|
-| [`@runa-cmd/core`](./packages/core) | CLI engine — commands, parsing, plugins, middleware | Beta |
-| [`@runa-cmd/help`](./packages/help) | Themeable help output with layout primitives | Beta |
-| [`@runa-cmd/mcp`](./packages/mcp) | Model Context Protocol server mode | Beta |
-| [`@runa-cmd/completions`](./packages/completions) | Shell completions (bash, zsh, fish) | Beta |
-| [`@runa-cmd/create`](./packages/create) | `npm create @runa-cmd@beta my-tool`: a new CLI project | Beta |
+| [`@runa-cmd/core`](./packages/core) | CLI engine — commands, parsing, plugins, middleware | Stable |
+| [`@runa-cmd/help`](./packages/help) | Themeable help output with layout primitives | Stable |
+| [`@runa-cmd/mcp`](./packages/mcp) | Model Context Protocol server mode | `0.x`: a minor may still change its contract |
+| [`@runa-cmd/completions`](./packages/completions) | Shell completions (bash, zsh, fish) | Stable |
+| [`@runa-cmd/create`](./packages/create) | `npm create @runa-cmd my-tool`: a new CLI project | Stable |
 
 ## Quick Start
 
-Requires Node 24+. This README describes the `beta` release: without `@beta`, npm installs the older `0.1.0`.
+Requires Node 24+.
 
 To start a new CLI, ready to run, test and publish:
 
 ```bash
-npm create @runa-cmd@beta my-tool
+npm create @runa-cmd my-tool
 ```
 
 To add Runa to a project you already have:
 
 ```bash
-pnpm add @runa-cmd/core@beta zod
+pnpm add @runa-cmd/core zod
 # Optional:
-pnpm add @runa-cmd/help@beta  # Themes and layout for --help
-pnpm add @runa-cmd/mcp@beta   # --mcp server mode
-pnpm add @runa-cmd/completions@beta  # Shell completions
+pnpm add @runa-cmd/help  # Themes and layout for --help
+pnpm add @runa-cmd/mcp   # --mcp server mode
+pnpm add @runa-cmd/completions  # Shell completions
 ```
 
 Zod is required: it's how you define commands.
