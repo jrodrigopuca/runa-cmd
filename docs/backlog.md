@@ -108,7 +108,7 @@
 | | T-249 | Docs internas al día | Opcional | Hecho |
 | | T-250 | Detalles de coherencia | Opcional | En curso |
 | | T-251 | MCP rechaza un valor que fijó el operador | Requerido | Pendiente |
-| | T-252 | Alias que chocan dentro de un comando | Requerido | Pendiente |
+| | T-252 | Alias que chocan dentro de un comando | Requerido | Hecho |
 | | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Pendiente |
 | | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Pendiente |
 | | T-255 | Un valor inválido del operador, por MCP | Requerido | Pendiente |
@@ -1199,7 +1199,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-252 Alias que chocan dentro de un comando
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor, quiero que dos nombres para lo mismo frenen la CLI al arrancar, como dice el README de `OPTION_COLLISION`. Dentro de un comando no se valida: dos opciones con `-e` (gana la primera), un alias igual a la flag de otra opción (`--extra` en `env` le roba la flag a `extra`), un alias `--no-x` que le quita la negación a `x`, y un alias igual a la flag de su propia opción, que descarta el valor escrito. Verificado el 2026-11-08: `alias: ['--env']` en `env` hace que `--env prod` dé el default, con exit 0.
 - **Criterios de aceptación:**
   - Cada uno de esos casos frena la CLI al arrancar con `OPTION_COLLISION` y exit 1, nombrando las dos opciones y el token.

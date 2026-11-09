@@ -512,7 +512,7 @@ These stop the CLI at startup, all with exit 1. They point at the CLI's code, so
 
 | Code | When |
 |---|---|
-| `OPTION_COLLISION` | Two options end up as the same flag or alias: two keys of a command, two globals, a global and a command's option, or an option where `format` adds `--json` |
+| `OPTION_COLLISION` | Two options end up as the same flag or alias: two keys or two aliases of a command, an alias equal to another option's flag or `--no-` negation, two globals, a global and a command's option, or an option where `format` adds `--json`. Also an alias equal to its own option's flag |
 | `INVALID_OPTION_NAME` | A boolean `noCache` would clash with `--no-cache`, which already negates `cache` |
 | `INVALID_OPTION_ALIAS` | An alias isn't `-x`, one character, nor `--word`, as `'e'` or `'-ab'`: the message says how to write it |
 | `INVALID_META_OPTIONS` | `meta.options` names a key that `options` doesn't have |

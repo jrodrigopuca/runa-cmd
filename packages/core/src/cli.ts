@@ -50,6 +50,7 @@ import {
 	STATIC_GLOBAL_OPTION_SOURCE,
 	topologicalSort,
 	validateCommandNames,
+	validateCommandTokens,
 	validateOptionAliases,
 	validateOptionCollisions,
 	validateOptionNames,
@@ -771,6 +772,7 @@ async function runCLILifecycle(
 		validateCommandNames(mutableCommands, rootName);
 		validateOptionNames(mutableCommands, mutableGlobalOptions);
 		validateOptionAliases(mutableCommands, mutableGlobalMeta);
+		validateCommandTokens(mutableCommands);
 		validateOptionCollisions(
 			mutableCommands,
 			mutableGlobalOptions,

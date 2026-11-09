@@ -373,6 +373,51 @@ export function validateOptionAliases(
 	walk(commands, []);
 }
 
+/**
+ * Inside a command, every token names one option. Two options with `-e`, an
+ * alias equal to another option's flag or negation, or to its own flag: parseArgs
+ * kept one of them, or threw the typed value away, without a word (T-252).
+ */
+export function validateCommandTokens(commands: CommandTree): void {
+	const collide = (message: string): never => {
+		throw new RunaError(message, { code: ERROR_CODES.OPTION_COLLISION, exitCode: 1 });
+	};
+
+	const check = (command: Command, label: string): void => {
+		const options = command.options ?? {};
+		const meta = (command.meta.options ?? {}) as Record<string, OptionMeta>;
+		const owners = new Map<string, string>();
+
+		// Flags first: an alias is what collides with them, not the other way round
+		for (const { name, zodType } of walkSchema(options)) {
+			owners.set(`--${flagName(name)}`, name);
+			if (zodType === 'boolean') owners.set(`--no-${flagName(name)}`, name);
+		}
+		for (const name of Object.keys(options)) {
+			for (const alias of meta[name]?.alias ?? []) {
+				const owner = owners.get(alias);
+				if (owner === name) {
+					collide(
+						`Option '${name}' of ${label} has '${alias}' as an alias, which is already its flag. Remove the alias.`,
+					);
+				}
+				if (owner !== undefined) {
+					collide(`Options '${name}' and '${owner}' of ${label} both use '${alias}'.`);
+				}
+				owners.set(alias, name);
+			}
+		}
+	};
+
+	const walk = (tree: CommandTree, path: string[]): void => {
+		for (const [key, entry] of Object.entries(tree)) {
+			if (isCommandNode(entry)) check(entry, `command '${[...path, key].join(' ')}'`);
+			else walk(entry, [...path, key]);
+		}
+	};
+	walk(commands, []);
+}
+
 /** Keys that can't become a usable flag fail at startup, not on the first use. */
 export function validateOptionNames(
 	commands: CommandTree,
