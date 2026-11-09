@@ -1,6 +1,6 @@
 {
 	"name": "@runa-cmd/mcp",
-	"version": "0.2.0-beta.6",
+	"version": "0.2.0-beta.7",
 	"description": "MCP (Model Context Protocol) server mode for Runa CLIs. Turn commands into AI-callable tools.",
 	"license": "MIT",
 	"type": "module",
@@ -35,7 +35,7 @@
 		"@modelcontextprotocol/sdk": "^1.32.2"
 	},
 	"peerDependencies": {
-		"@runa-cmd/core": "^0.2.0-beta.6",
+		"@runa-cmd/core": "^0.2.0-beta.7",
 		"zod": "^4.0.0"
 	},
 	"engines": {

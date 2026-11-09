@@ -1,5 +1,157 @@
 # @runa-cmd/core
 
+## 0.2.0-beta.7
+
+### Minor Changes
+
+- 3d8584a: An alias that can't work stops the CLI at startup, with `INVALID_OPTION_ALIAS` and the way to write it:
+
+  ```
+  Alias 'e' of option 'env' of command 'deploy' must be '-e'.
+  ```
+
+  An alias is one character as `-e`, or a word as `--environment`. Before, `alias: ['e']` or `['-ab']` showed in the help, and `-e` was an unknown option, with nothing saying why.
+
+  **Breaking:** a CLI with such an alias doesn't start until it's fixed. The alias never worked, and the error shows up the first time its author runs it.
+
+- 277d21d: **Breaking:** a `z.boolean()` option without `.default()` or `.optional()` stops the CLI at startup, with `INVALID_BOOLEAN_OPTION`:
+
+  ```
+  Boolean option 'shout' of command 'hello' has no default: a flag that isn't passed needs one. Use z.boolean().default(false), or .optional().
+  ```
+
+  Before, it was required: `greet hello Ana` failed with `Missing required option: --shout` on every run, and the person running the CLI couldn't fix it. Now its author sees it the first time it runs, with the fix.
+
+- 7fd5dd6: Error codes are now a list you can import. `ERROR_CODES` from `@runa-cmd/core` has every code core throws, and the README says when each one comes up. `isRunaError(error, code?)` tells if something is a `RunaError` with that code, and works even when two copies of `@runa-cmd/core` are installed, where `instanceof` fails. It takes your own codes too, as a `CommandError`'s:
+
+  ```ts
+  if (isRunaError(error, ERROR_CODES.INVALID_CONFIG)) {
+    /* the config file is wrong */
+  }
+  if (isRunaError(error, "DEPLOY_FAILED")) {
+    /* your own code */
+  }
+  ```
+
+  `@runa-cmd/mcp` exports `ERROR_CLASSES`, the `class` values of a failed call, and `MCP_ERROR_CODES`, its own startup codes. Its README lists each class with its `effect`.
+
+  **Breaking:** three codes are renamed, before they're fixed for 1.0.
+
+  | Before                                                            | Now                                 |
+  | ----------------------------------------------------------------- | ----------------------------------- |
+  | `CONFIG_INVALID` (a `ConfigError`)                                | `INVALID_CONFIG`                    |
+  | `OPTION_NAME`, when two keys give the same flag                   | `OPTION_COLLISION`, as with globals |
+  | `OPTION_NAME`, when a boolean `noCache` clashes with `--no-cache` | `INVALID_OPTION_NAME`               |
+
+  **Migration:** compare against the new names, or against `ERROR_CODES`. Messages and exit codes don't change.
+
+- 2c5e9f0: An error from another copy of `@runa-cmd/core`, as one a plugin brings, ends as one of ours. A `CommandError` keeps its exit code and its message, at the terminal and through MCP, and a `ValidationError` is a usage error. `isRunaError` already recognized them, but the exit code and the message were decided by `instanceof`.
+
+  **Breaking:** a `CommandError` with exit code 3 from another copy used to come out as `Unexpected error in 'boom': …` with exit 1. It now exits with 3 and its message as written, as the docs always said.
+
+- 485220a: `RunResult` is exported: the type of what `format` receives, so a `format` written apart from `defineCommand` can name both of its parameters, with `FormatContext`.
+- 447f156: `help` works where a command goes, as in commander, yargs, cac and oclif. `tool help` is `tool --help`, `tool help db migrate` is `tool db migrate --help`, and `tool db help` shows the help of the group, on stdout with exit 0. Before, `tool help` exited with 127 and suggested another command, and a model that tried it lost a turn.
+
+  A command of yours named `help` still runs, and inside a command `help` is a value: `tool greet help` passes it to the argument. With `runCLI` nothing changes, since the command is the CLI. A name that doesn't exist after it is reported as any other: `tool help deplo` exits with 127 and suggests `deploy`. It isn't a command, so it's not in the list, nor an MCP tool.
+
+- 11818a4: The help of a command lists its own options first, and the global ones, as `--help`, `--version` or `--mcp`, apart under `GLOBAL OPTIONS`. `OptionSchema` gains an optional `inherited` that marks them, so a custom renderer still gets every option and can tell them apart. With `runCLI` nothing moves: the command is the CLI.
+
+  Also:
+
+  - A usage error points to the help of its command: `Run 'tool build --help' for usage.`, instead of the CLI's.
+  - The core help shows the values of a positional enum, as the help plugin does: `target  What to build for (web | node)`.
+  - `bold()`, `fg()` and the other ANSI helpers of `@runa-cmd/help` say in their docs that they always write codes; `styled()` respects the output.
+
+- 4ecfba3: A middleware that forgets `next()`, or calls it without `await`, now fails instead of passing in silence:
+
+  - Returning without calling `next()` fails with `MIDDLEWARE_DID_NOT_CALL_NEXT`, exit 1. Before, the command didn't run and the CLI exited with 0. Through MCP, such a call now reports `class: 'rejected'` instead of `'not_run'`, with the same `effect: 'none'`, and its text says why.
+  - Calling `next()` without `await` fails with `MIDDLEWARE_DID_NOT_AWAIT_NEXT`, after the command ends. Before, `afterRun` and `cleanup` ran while the command still worked.
+
+  To skip a command on purpose, throw: `new CommandError('Dry run: would deploy api', { exitCode: 0 })`. `RunaError` also takes a `cause`.
+
+- f69c9fc: **Breaking:** a command that doesn't exist exits with 127 even when a required global option is missing, and nothing to run shows the help on stderr with exit 2. Before, with a required global, `tool nope`, `tool db nope` and `tool` all said `Missing required option: --token`, with exit 2. A command that exists still says the global is missing, with exit 2.
+- 597a8fd: Inside a command, two options that claim the same token stop the CLI at startup with `OPTION_COLLISION`, as its docs always said:
+
+  ```
+  Options 'extra' and 'env' of command 'deploy' both use '-e'.
+  Option 'env' of command 'deploy' has '--env' as an alias, which is already its flag. Remove the alias.
+  ```
+
+  Before, only collisions with a global option were caught. Two options with `-e` kept the first one; an alias equal to another option's flag, or to the `--no-` of a boolean, took it over; and an alias equal to its own option's flag threw the typed value away, so `--env prod` gave the default, with exit 0.
+
+  **Breaking:** a CLI with one of those aliases doesn't start until it's fixed. None of them worked as written.
+
+- db60a2d: A tool call that's missing a value only the operator gives, as an option's env var, now fails with `class: "not_configured"`, not `invalid_input`. Its text starts with `The operator of this server has to set NOTES_FILE. It isn't a value you can send.`, so a model doesn't take it as its own mistake, nor ask the user for it. The server also says it at startup, on stderr, one line per tool, and keeps serving:
+
+  ```
+  mcpPlugin: tool 'add' can't run until the operator sets NOTES_FILE (--file).
+  ```
+
+  An input error the model can fix names the key it sent, as `Invalid value for 'limit': must be greater than 0`, instead of `--limit`, a flag it never saw. The line about an operator's value still names the flag and the variable, for whoever runs the server.
+
+  **Breaking:** a plain `Error` thrown from `run()` is now `class: "crashed"`, with `The command did not finish.`, instead of `command_failed`. Only a `CommandError` is `command_failed`, with its message as you wrote it. A client can now tell a failure you foresaw from a bug, as the README always said.
+
+  **Migration:** to have the model read your message as is, throw a `CommandError`.
+
+- 52ef44c: A command of `defineCLI` with `meta.version` stops the CLI at startup, with `INVALID_COMMAND_VERSION`:
+
+  ```
+  Command 'deploy' declares meta.version: 'version' only applies with runCLI; set it in defineCLI's meta.
+  ```
+
+  There it did nothing, without a word: `--version` prints the CLI's version, from `defineCLI`'s `meta`. On the command of `runCLI`, which is the CLI, it still works as before.
+
+  **Breaking:** a CLI with a command like that doesn't start until the version moves to `defineCLI`'s `meta`.
+
+### Patch Changes
+
+- 402ef3f: A wrong config file says what's wrong the same way in every case, and with the words the terminal uses. Each error names the file first:
+
+  ```
+  my-tool.config.json: invalid value for 'clear.limit': must be greater than 0
+  my-tool.config.json: unknown key 'clear.limt'. Did you mean 'limit'?
+  my-tool.config.json: invalid JSON: Unexpected token '}', ..."force":tru}}" is not valid JSON
+  ```
+
+  Before, a value said `Too small: expected number to be >0`, and broken JSON came in another format, over several lines. A boolean that gets anything else now says `expected true or false`, from the file, from env or from the terminal, instead of `expected boolean`. The README says which values a file takes: its JSON type, or the text you'd type at the terminal, as `"5"` or `"true"`.
+
+- 1ba1f73: Every public type, function and option now has a description, so your editor shows what each one is for. `HookContext.rawArgs` says what it holds at each step: the whole argv in `beforeParse`, and only the command's part from `onGlobalFlags` on. No code changed.
+- ff89521: Help and errors without noise:
+
+  - A boolean whose default is `true` shows as `--[no-]cache`, so people see how to turn it off.
+  - An empty list as a default no longer shows `(default: )`.
+  - A value that breaks a rule of its schema names the flag in plain words: `Invalid value for --limit: must be greater than 0`, instead of `limit: Too small: expected number to be >0`.
+  - Shell completions offer `--no-x` only for a boolean that starts on: `--no-help`, `--no-version` and `--no-mcp` are gone.
+  - The custom renderer example of the help README compiles, and handles the help of a command too.
+
+- 53208e9: The help README said a command's own `-h` stops the CLI with `OPTION_COLLISION`, and that `db migrate --help` shows the help of `db`. Neither is true: a command keeps its `-h`, and nested commands get their own help at any depth. The core README now explains what `ctx.rawArgs` holds in each hook, and `ctx.invocation`.
+- a8edd77: A required value that's missing says so, whatever its type. A missing `z.enum` or `z.literal` said `Invalid value for --env. Expected one of: staging, production`, so the main example of the README didn't give the error the same page promises. Now it's `Missing required option: --env, or set DEPLOY_ENV`, as for any other type, and a missing enum argument, as the shell of `completions`, is `Missing required argument: <shell>`. A wrong value is still an invalid value.
+- 23c3c19: A command without `meta.description` has one type error, the one that says so. TypeScript also reported `Type 'string' is not assignable to type 'void | Promise<void>'` on `run`, which looked like a problem with what the command returns: when a field fails, TypeScript can't infer the types of `defineCommand` and uses their defaults, and the default of what `run()` returns was `void`. It's `unknown` now. `description` is still required: it's what a model reads to choose a tool.
+- ba4bdee: **Breaking:** a tool call that fails because a value the operator gave breaks its schema, in env or in the config file, now comes with `class: "not_configured"`, as a missing value does, instead of `invalid_input`. Its text says what the operator has to fix, never the value, so a model doesn't take it as its own mistake:
+
+  ```
+  The operator of this server has to fix 'deploy.replicas' in the config file. It isn't a value you can send.
+  ```
+
+  The server also says it at startup, on stderr, with the reason, and keeps serving the other tools:
+
+  ```
+  mcpPlugin: tool 'deploy' can't run until the operator fixes DEPLOY_ENV (--env): expected one of: staging, production.
+  ```
+
+  Values are checked with the rules the CLI uses, so `"5"` for a number in the config file is fine.
+
+- 1304aa0: A wrong value is repeated in its error, as commander and oclif do, so you see what you typed:
+
+  ```
+  Invalid value 'abc' for --times: expected number
+  Invalid value 'mars' for --env. Expected one of: staging, production
+  ```
+
+  Only a value typed at the terminal or sent by a model, cut after 40 characters and kept on one line. A value from env or from the config file is never shown, nor the value of an option that declares `env`, even typed, since those often hold a secret and an error can end up in a CI log.
+
+- 5e21a16: `testCLI()` rejects when given `config` for a CLI that doesn't declare `config` in `defineCLI`, instead of applying the values. The real program would read no file, so the test passed while the CLI didn't work. The message says what to add. For a single command, `config` still stands for the file of `runCLI(command, { config })`.
+
 ## 0.2.0-beta.6
 
 ### Minor Changes
