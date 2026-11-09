@@ -281,6 +281,16 @@ The value is only repeated if it was typed at the terminal or sent by a model, a
 
 A boolean named `noCache` stops the CLI at startup, because `--no-cache` already negates `cache`. Declare `cache` with `.default(true)` instead.
 
+A boolean needs `.default()` or `.optional()`, or the CLI stops at startup: a flag that isn't passed would fail every run. To make someone confirm with `--yes`, let it default to `false` and check it in `run()`, with a message of yours:
+
+```ts
+options: { yes: z.boolean().default(false).describe('Confirm the deletion') },
+run({ options }) {
+  if (!options.yes) throw new CommandError('This deletes everything. Pass --yes to confirm.', { exitCode: 2 });
+  // ...
+},
+```
+
 ### Environment variables
 
 An option reads a variable only if it declares one, in `meta.options`. Nothing is read by a prefix, so the environment can't turn on an option you didn't mean it to, like `--force`:
