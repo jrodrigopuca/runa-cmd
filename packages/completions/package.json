@@ -1,6 +1,6 @@
 {
 	"name": "@runa-cmd/completions",
-	"version": "0.2.0-beta.7",
+	"version": "1.0.0",
 	"description": "Shell completion script generation for Runa CLIs. Auto-generate bash, zsh, and fish completions from your Zod schemas.",
 	"license": "MIT",
 	"type": "module",
@@ -33,7 +33,7 @@
 		"clean": "rm -rf dist"
 	},
 	"peerDependencies": {
-		"@runa-cmd/core": "^0.2.0-beta.7",
+		"@runa-cmd/core": "^1.0.0",
 		"zod": "^4.0.0"
 	},
 	"engines": {
