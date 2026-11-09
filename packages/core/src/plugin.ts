@@ -7,7 +7,7 @@
  */
 import type { ZodType } from 'zod';
 import { JSON_OPTION } from './command.js';
-import { ERROR_CODES, RunaError } from './errors.js';
+import { ERROR_CODES, isRunaError, RunaError } from './errors.js';
 import { flagName, longFlag } from './flag-name.js';
 import { walkSchema } from './parse/schema-walker.js';
 import type {
@@ -69,7 +69,8 @@ export async function resolvePlugins(plugins: PluginInput[]): Promise<PluginConf
 				}
 				resolved.push(mod.default);
 			} catch (err) {
-				if (err instanceof RunaError) throw err;
+				// A plugin may bring its own copy of core: its errors are still ours (T-254)
+				if (isRunaError(err)) throw err;
 				throw new RunaError(
 					`Failed to load lazy plugin: ${err instanceof Error ? err.message : String(err)}`,
 					{ code: ERROR_CODES.PLUGIN_LOAD_ERROR, exitCode: 1 },

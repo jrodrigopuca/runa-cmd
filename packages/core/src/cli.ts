@@ -1044,7 +1044,7 @@ async function runCLILifecycle(
 			console.error('runa: onError handler threw:', hookErr);
 		}
 
-		failureExitCode = lifecycleError instanceof RunaError ? lifecycleError.exitCode : 1;
+		failureExitCode = isRunaError(lifecycleError) ? lifecycleError.exitCode : 1;
 
 		// Report BEFORE cleanup: the reason stays visible even if cleanup hangs.
 		// `handled` means the plugin owns the output, not that the run succeeded.

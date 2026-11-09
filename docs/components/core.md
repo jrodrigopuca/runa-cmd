@@ -132,7 +132,7 @@ Una clave desconocida, un valor inválido o un JSON roto dan exit 2, y nombran p
 | `RunaError` | Configurable | 1 por defecto |
 | Otro error | No aplica | 1 |
 
-Cada `code` de `core` está en `ERROR_CODES`, en `packages/core/src/errors.ts`, y el README de `core` los lista con su exit code y cuándo salen (T-234). Una prueba falla si el código usa un `code` literal, o si la constante y la tabla del README no coinciden. `isRunaError(error, code?)` reconoce un `RunaError` por una marca con `Symbol.for`, así que funciona con dos copias de `core` instaladas, donde `instanceof` falla.
+Cada `code` de `core` está en `ERROR_CODES`, en `packages/core/src/errors.ts`, y el README de `core` los lista con su exit code y cuándo salen (T-234). Una prueba falla si el código usa un `code` literal, o si la constante y la tabla del README no coinciden. `isRunaError(error, code?)` reconoce un `RunaError` por una marca con `Symbol.for`, así que funciona con dos copias de `core` instaladas, donde `instanceof` falla. Por eso `core` decide con ella, y no con `instanceof`, todo lo que depende del error que tira el código del autor: el exit code, si el mensaje sale tal cual, si es un error de uso (por `name`), el `Code:` de `RUNA_DEBUG` y el error de un plugin diferido (T-254).
 
 Los middleware que no llaman a `next()` (`MIDDLEWARE_DID_NOT_CALL_NEXT`, y el comando no corrió) o que lo llaman sin esperarlo (`MIDDLEWARE_DID_NOT_AWAIT_NEXT`) salen con 1. En el segundo caso Runa espera a que el comando termine antes de `afterRun` y `cleanup`, y su error queda como `cause` (T-231).
 

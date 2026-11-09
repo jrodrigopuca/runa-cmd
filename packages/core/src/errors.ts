@@ -238,7 +238,7 @@ export function isDebugEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
 
 function debugDetails(error: Error): string[] {
 	const details = [error.stack ?? error.name];
-	if (error instanceof RunaError) details.push(`Code: ${error.code}`);
+	if (isRunaError(error)) details.push(`Code: ${error.code}`);
 	if (error.cause !== undefined) {
 		const cause = error.cause instanceof Error ? error.cause.stack : String(error.cause);
 		details.push(`Caused by: ${cause}`);
@@ -254,12 +254,19 @@ export class InterruptedError extends RunaError {
 	}
 }
 
+// By the mark, not instanceof: an error from another copy of core, as one a
+// plugin brings, ends the same way (T-254)
 const isExpectedFailure = (error: Error): boolean =>
-	error instanceof RunaError && error.message.trim() !== '';
+	isRunaError(error) && error.message.trim() !== '';
 
 /** Whether the failure comes from how the CLI was called, not from running it. */
 export function isUsageError(error: Error): boolean {
-	return error instanceof ValidationError || error instanceof CommandNotFoundError;
+	const usage = ['ValidationError', 'CommandNotFoundError'];
+	return (
+		error instanceof ValidationError ||
+		error instanceof CommandNotFoundError ||
+		(isRunaError(error) && usage.includes(error.name))
+	);
 }
 
 /**

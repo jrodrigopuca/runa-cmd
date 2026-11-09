@@ -110,7 +110,7 @@
 | | T-251 | MCP rechaza un valor que fijó el operador | Requerido | Hecho |
 | | T-252 | Alias que chocan dentro de un comando | Requerido | Hecho |
 | | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Hecho |
-| | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Pendiente |
+| | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Hecho |
 | | T-255 | Un valor inválido del operador, por MCP | Requerido | Hecho |
 | | T-256 | Un booleano sin default frena al arrancar | Requerido | Pendiente |
 | | T-257 | Un valor inválido de env nombra la variable | Opcional | Pendiente |
@@ -1219,7 +1219,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-254 Un `CommandError` de otra copia de `core`
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como autor cuyo plugin trae su propia copia de `core`, quiero que mi `CommandError` termine como uno. `isRunaError` lo reconoce, pero la CLI usa `instanceof` para el exit code y el mensaje: sale con 1 y `Unexpected error in 'boom':` en lugar de su exit code y su texto. Verificado el 2026-11-08: exit 1 en lugar de 3.
 - **Criterios de aceptación:**
   - Un `RunaError` o `CommandError` de otra copia sale con su exit code y su mensaje, sin el prefijo de error inesperado, en la terminal y por MCP.
