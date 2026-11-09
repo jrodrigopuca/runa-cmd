@@ -68,7 +68,7 @@ Lo que ve el modelo tiene un snapshot en `packages/mcp/src/__tests__/exposure.te
 
 ## Lo que decide quien opera
 
-Quien lanza el servidor le gana al modelo ([ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md)). Una opción que declara `env`, o que tiene valor de config, no entra en el schema, y si el modelo la envía igual, se descarta. La regla vale aunque la variable no esté definida: si falta un valor requerido, la llamada falla, y el modelo no puede pedírselo a nadie.
+Quien lanza el servidor le gana al modelo ([ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md)). Una opción que declara `env`, o que tiene valor de config, no entra en el schema, y si el modelo la envía igual, la llamada falla con `invalid_input` sin correr nada, y sin mostrar el valor del operador ([ADR-0049](../adr/0049-mcp-rechaza-un-valor-del-operador.md)). Antes se descartaba, y la llamada respondía éxito con el valor del operador. La regla vale aunque la variable no esté definida: si falta un valor requerido, la llamada falla, y el modelo no puede pedírselo a nadie.
 
 ```ts
 mcpPlugin({

@@ -45,7 +45,7 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0028](./0028-coercion-booleana.md) | Los booleanos aceptan solo true, false, 1 y 0 | Aceptada |
 | [0029](./0029-cada-campo-tiene-efecto.md) | Cada campo de la API tiene efecto | Aceptada |
 | [0030](./0030-tools-mcp-en-subproceso.md) | Cada tool MCP corre en un subproceso de la propia CLI | Aceptada |
-| [0031](./0031-quien-opera-gana-al-modelo.md) | Quien opera el servidor le gana al modelo | Aceptada |
+| [0031](./0031-quien-opera-gana-al-modelo.md) | Quien opera el servidor le gana al modelo | Aceptada; un valor del modelo para una opción del operador se rechaza, por ADR-0049 |
 | [0032](./0032-postura-sobre-secretos.md) | Postura sobre secretos | Aceptada |
 | [0033](./0033-parar-recorre-el-arbol-de-procesos.md) | Parar recorre el árbol de procesos | Aceptada |
 | [0034](./0034-sin-nada-que-correr-es-un-error-de-uso.md) | Sin nada que correr, la ayuda sale por stderr con exit 2 | Aceptada |
@@ -63,3 +63,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0046](./0046-una-parada-termina-por-la-senal.md) | Una parada termina por la señal, y no con su código | Aceptada |
 | [0047](./0047-ningun-plugin-termina-el-proceso-con-la-ayuda.md) | Ningún plugin termina el proceso al mostrar la ayuda | Aceptada |
 | [0048](./0048-help-como-comando.md) | `help` donde va un comando es `--help` | Aceptada |
+| [0049](./0049-mcp-rechaza-un-valor-del-operador.md) | Un valor que el modelo manda para una opción del operador se rechaza | Aceptada |

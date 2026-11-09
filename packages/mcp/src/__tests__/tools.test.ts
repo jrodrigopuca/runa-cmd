@@ -561,9 +561,8 @@ describe('values the operator fixed', () => {
 		const client = await serve();
 		const result = await client.call('operated', { service: 'api', token: 'made-up' });
 		expect(result.isError).toBe(true);
-		expect(text(result)).toContain('Missing required option: --token');
-		// Who operates the server learns what to set, and the made-up value isn't echoed
-		expect(text(result)).toContain('TEST_TOKEN');
+		// The model learns it can't send it; the operator learned what to set at startup
+		expect(text(result)).toMatch(/^'token' is set by the operator of this server/);
 		expect(text(result)).not.toContain('made-up');
 	});
 
@@ -586,7 +585,9 @@ describe('values the operator fixed', () => {
 		expect(JSON.parse(text(result))).toMatchObject({ token: SECRET, bucket: 'config-bucket' });
 	});
 
-	it('does not let the model change them', async () => {
+	// It used to drop them and answer success with the operator's values: the
+	// model believed its value was used (T-251)
+	it('rejects a call that tries to change them, and runs nothing', async () => {
 		const client = await serve({ TEST_REGION: 'eu-west-1', TEST_TOKEN: SECRET, CONFIG_DIR: dir });
 		const result = await client.call('operated', {
 			service: 'api',
@@ -595,12 +596,22 @@ describe('values the operator fixed', () => {
 			bucket: 'other',
 		});
 
-		expect(result.isError).toBeUndefined();
-		expect(JSON.parse(text(result))).toMatchObject({
-			region: 'eu-west-1',
-			token: SECRET,
-			bucket: 'config-bucket',
-		});
+		expect(result.isError).toBe(true);
+		expect(result._meta?.['runa/error']).toEqual({ class: 'invalid_input', effect: 'none' });
+		expect(text(result)).toBe(
+			"'region', 'token' and 'bucket' are set by the operator of this server, so they can't be sent.\n\nThe command did not run.",
+		);
+		expect(text(result)).not.toContain(SECRET);
+		expect(text(result)).not.toContain('eu-west-1');
+	});
+
+	it('names one value alone', async () => {
+		const client = await serve({ TEST_TOKEN: SECRET, CONFIG_DIR: dir });
+		const result = await client.call('operated', { service: 'api', bucket: 'other' });
+
+		expect(text(result)).toMatch(
+			/^'bucket' is set by the operator of this server, so it can't be sent\./,
+		);
 	});
 
 	it('keeps an unknown key as an error', async () => {

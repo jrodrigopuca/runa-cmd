@@ -33,7 +33,7 @@ sequenceDiagram
 
 ## Cada llamada
 
-- **Entrada:** se descartan las opciones que fijó quien opera ([ADR-0031](../adr/0031-quien-opera-gana-al-modelo.md)), y el resto viaja sin validar, como JSON por fd 3. La valida el hijo, así que un `.transform` corre una sola vez, y los errores son los de la CLI.
+- **Entrada:** si la llamada trae una opción que fijó quien opera, falla con `invalid_input` antes de lanzar el hijo ([ADR-0049](../adr/0049-mcp-rechaza-un-valor-del-operador.md)). Si no, viaja sin validar, como JSON por fd 3. La valida el hijo, así que un `.transform` corre una sola vez, y los errores son los de la CLI.
 - **Comando:** se elige por su ruta, no por tokens. Un dato nunca puede ejecutar otro comando.
 - **Globales:** el hijo recibe el argv con que arrancó el servidor, sin `--mcp`.
 - **Entorno:** el hijo hereda el del servidor. La variable del canal se borra al leerla, así que una CLI que lance el comando es una CLI normal.

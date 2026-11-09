@@ -1,6 +1,6 @@
 # ADR-0031: Quien opera el servidor le gana al modelo
 
-- **Estado:** aceptada
+- **Estado:** aceptada; un valor que manda el modelo para una opción del operador se rechaza en lugar de descartarse, según [ADR-0049](./0049-mcp-rechaza-un-valor-del-operador.md)
 - **Complementa:** [ADR-0008](./0008-config-merge-en-core.md), [ADR-0025](./0025-control-de-mcp-en-el-plugin.md) y [ADR-0030](./0030-tools-mcp-en-subproceso.md)
 - **Drivers:** en la CLI, una flag le gana a env porque la misma persona pone ambas. Con una tool, quien configura el servidor y quien la llama son distintos: un modelo no debería pasar de `staging` a `production`, ni ver un token. MCP indica tomar las credenciales del entorno en stdio.
 - **Decisión:** una opción con valor de env o config sale del schema de la tool, y si el modelo la envía igual, se descarta. `mcpPlugin({ tools: { deploy: { expose, serverOnly } } })` ajusta esto por tool: `expose` la deja en manos del modelo, y `serverOnly` exige un valor para arrancar. Los valores fijos de 8 caracteres o más, incluidas las globales de arranque, se redactan del stdout y el stderr devueltos al modelo. Lo que `run()` devuelve no se altera.

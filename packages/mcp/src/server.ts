@@ -120,6 +120,18 @@ const failure = (reason: string, found: ToolFailure): CallToolResult => ({
 	_meta: { 'runa/error': found },
 });
 
+/** A call that sends options the operator fixed. It names them, never their values. */
+function operatorSets(keys: string[]): CallToolResult {
+	const names = keys.map((key) => `'${key}'`);
+	const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
+	const verb = names.length > 1 ? 'are' : 'is';
+	const pronoun = names.length > 1 ? 'they' : 'it';
+	return failure(
+		`${list} ${verb} set by the operator of this server, so ${pronoun} can't be sent.`,
+		{ class: ERROR_CLASSES.INVALID_INPUT, effect: 'none' },
+	);
+}
+
 function failedChild(
 	reg: ToolRegistration,
 	outcome: ChildOutcome,
@@ -214,10 +226,11 @@ export function createMcpServer(registrations: ToolRegistration[], options: Serv
 			});
 		}
 
-		// A fixed option stays what the operator set, whatever the call says
-		const input = Object.fromEntries(
-			Object.entries(params.arguments ?? {}).filter(([key]) => !reg.fixed.has(key)),
-		);
+		// The operator's value wins, and the model has to know its own isn't used:
+		// running with another value and answering success told it otherwise (ADR-0049)
+		const input = params.arguments ?? {};
+		const fixed = Object.keys(input).filter((key) => reg.fixed.has(key));
+		if (fixed.length > 0) return operatorSets(fixed);
 
 		const outcome = await runChild(
 			{ kind: 'call', path: reg.path, input, maxResultBytes: reg.maxOutput },

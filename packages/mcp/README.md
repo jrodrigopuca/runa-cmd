@@ -182,7 +182,7 @@ An unknown name in `exclude`, an excluded tool with settings, or a tool both rea
 
 ## What the Operator Decides
 
-Whoever starts the server beats the model. An option that declares `env`, or has a value for that command in the config file, stays out of the tool's schema, and if a model sends it anyway, it's dropped. This holds even if the env var isn't set: a missing required value fails the call with `class: "not_configured"`, and its text tells the model that the operator has to set it, so it doesn't take it as its own mistake. The server also says it at startup, on stderr, which clients show in their logs: `mcpPlugin: tool 'deploy' can't run until the operator sets DEPLOY_TOKEN (--token).` It keeps serving, because the other tools work.
+Whoever starts the server beats the model. An option that declares `env`, or has a value for that command in the config file, stays out of the tool's schema. If a model sends it anyway, the call fails with `class: "invalid_input"` and nothing runs: `'replicas' is set by the operator of this server, so it can't be sent.` The text never shows the operator's value. To let the model choose, list the option in `expose`. This holds even if the env var isn't set: a missing required value fails the call with `class: "not_configured"`, and its text tells the model that the operator has to set it, so it doesn't take it as its own mistake. The server also says it at startup, on stderr, which clients show in their logs: `mcpPlugin: tool 'deploy' can't run until the operator sets DEPLOY_TOKEN (--token).` It keeps serving, because the other tools work.
 
 ```ts
 mcpPlugin({

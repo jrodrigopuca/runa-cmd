@@ -107,7 +107,7 @@
 | | T-248 | Alias y env junto al schema | Opcional | Pendiente |
 | | T-249 | Docs internas al día | Opcional | Hecho |
 | | T-250 | Detalles de coherencia | Opcional | En curso |
-| | T-251 | MCP rechaza un valor que fijó el operador | Requerido | Pendiente |
+| | T-251 | MCP rechaza un valor que fijó el operador | Requerido | Hecho |
 | | T-252 | Alias que chocan dentro de un comando | Requerido | Hecho |
 | | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Pendiente |
 | | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Pendiente |
@@ -1188,7 +1188,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-251 MCP rechaza un valor que fijó el operador
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como modelo que llama una tool, quiero saber si un valor que mando no se va a usar. Una opción que declara `env`, o que tiene valor en el config, sale del schema de la tool; si el modelo la manda igual, se descarta en silencio y la llamada responde éxito con el valor del operador. Verificado el 2026-11-08: el modelo manda `replicas: 5` y recibe éxito con `replicas 2`. Sale de [la segunda revisión](./research/2026-11-second-review-before-v1.md).
 - **Decisión, 2026-11-08:** se rechaza la llamada, como una clave que no existe. Se descartó correr igual y avisarlo en la respuesta: el comando ya habría corrido con un valor que el modelo no pidió, y eso es lo peligroso en un comando destructivo. El operador que quiera que el modelo elija usa `expose`. Cambia lo que hace una llamada, así que es incompatible y entra en la `0.2.0-beta.7`.
 - **Criterios de aceptación:**
