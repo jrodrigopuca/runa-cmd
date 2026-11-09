@@ -1,5 +1,72 @@
 # @runa-cmd/mcp
 
+## 0.2.0-beta.7
+
+### Minor Changes
+
+- 7fd5dd6: Error codes are now a list you can import. `ERROR_CODES` from `@runa-cmd/core` has every code core throws, and the README says when each one comes up. `isRunaError(error, code?)` tells if something is a `RunaError` with that code, and works even when two copies of `@runa-cmd/core` are installed, where `instanceof` fails. It takes your own codes too, as a `CommandError`'s:
+
+  ```ts
+  if (isRunaError(error, ERROR_CODES.INVALID_CONFIG)) {
+    /* the config file is wrong */
+  }
+  if (isRunaError(error, "DEPLOY_FAILED")) {
+    /* your own code */
+  }
+  ```
+
+  `@runa-cmd/mcp` exports `ERROR_CLASSES`, the `class` values of a failed call, and `MCP_ERROR_CODES`, its own startup codes. Its README lists each class with its `effect`.
+
+  **Breaking:** three codes are renamed, before they're fixed for 1.0.
+
+  | Before                                                            | Now                                 |
+  | ----------------------------------------------------------------- | ----------------------------------- |
+  | `CONFIG_INVALID` (a `ConfigError`)                                | `INVALID_CONFIG`                    |
+  | `OPTION_NAME`, when two keys give the same flag                   | `OPTION_COLLISION`, as with globals |
+  | `OPTION_NAME`, when a boolean `noCache` clashes with `--no-cache` | `INVALID_OPTION_NAME`               |
+
+  **Migration:** compare against the new names, or against `ERROR_CODES`. Messages and exit codes don't change.
+
+- db60a2d: A tool call that's missing a value only the operator gives, as an option's env var, now fails with `class: "not_configured"`, not `invalid_input`. Its text starts with `The operator of this server has to set NOTES_FILE. It isn't a value you can send.`, so a model doesn't take it as its own mistake, nor ask the user for it. The server also says it at startup, on stderr, one line per tool, and keeps serving:
+
+  ```
+  mcpPlugin: tool 'add' can't run until the operator sets NOTES_FILE (--file).
+  ```
+
+  An input error the model can fix names the key it sent, as `Invalid value for 'limit': must be greater than 0`, instead of `--limit`, a flag it never saw. The line about an operator's value still names the flag and the variable, for whoever runs the server.
+
+  **Breaking:** a plain `Error` thrown from `run()` is now `class: "crashed"`, with `The command did not finish.`, instead of `command_failed`. Only a `CommandError` is `command_failed`, with its message as you wrote it. A client can now tell a failure you foresaw from a bug, as the README always said.
+
+  **Migration:** to have the model read your message as is, throw a `CommandError`.
+
+- ba4bdee: **Breaking:** a tool call that fails because a value the operator gave breaks its schema, in env or in the config file, now comes with `class: "not_configured"`, as a missing value does, instead of `invalid_input`. Its text says what the operator has to fix, never the value, so a model doesn't take it as its own mistake:
+
+  ```
+  The operator of this server has to fix 'deploy.replicas' in the config file. It isn't a value you can send.
+  ```
+
+  The server also says it at startup, on stderr, with the reason, and keeps serving the other tools:
+
+  ```
+  mcpPlugin: tool 'deploy' can't run until the operator fixes DEPLOY_ENV (--env): expected one of: staging, production.
+  ```
+
+  Values are checked with the rules the CLI uses, so `"5"` for a number in the config file is fine.
+
+- 67e3865: **Breaking:** a tool call that sends an option the operator fixed now fails, and nothing runs:
+
+  ```
+  'replicas' is set by the operator of this server, so it can't be sent.
+
+  The command did not run.
+  ```
+
+  It comes with `class: "invalid_input"` and `effect: "none"`, and never shows the operator's value. Before, the value was dropped and the call answered success with the operator's value: a model that sent `replicas: 5` got back a deploy with 2, and believed it had done what it was asked. An option that declares `env`, or has a value in the config file, is the operator's. To let the model choose it, list it in `expose`.
+
+### Patch Changes
+
+- 6592957: Each plugin requires the `@runa-cmd/core` it was released with. The peer of `help` was `^0.2.0-beta.1`, so npm could install it with an older `core` where `defaultDescription` and the `GLOBAL OPTIONS` section did nothing, without a warning. Until 1.0, the peer is always core's current version.
+
 ## 0.2.0-beta.6
 
 ## 0.2.0-beta.5

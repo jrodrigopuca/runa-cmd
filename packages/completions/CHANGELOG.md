@@ -1,5 +1,21 @@
 # @runa-cmd/completions
 
+## 0.2.0-beta.7
+
+### Patch Changes
+
+- 6d58adf: TAB keeps completing after a positional or an option's value. `greet hello Ana --lang <TAB>` offered nothing in bash and zsh, nor did `greet hello --times 2 --l<TAB>`: bash took `Ana` and `2` as part of the command, and zsh didn't know where to place `Ana`. Now bash only follows words that name a command, and skips an option's value, so `--lang plain` never leads to a command named `plain`. zsh declares each command's positionals. fish already worked. Regenerate the script to get it: `my-tool completions bash`.
+- cd18a6d: In fish, TAB after an enum option offers only its values. It also listed the files of the current folder next to them, as `CHANGELOG.md` and `src/` after `--lang`. An option that takes text still completes file names, since its value may be a path.
+- ff89521: Help and errors without noise:
+
+  - A boolean whose default is `true` shows as `--[no-]cache`, so people see how to turn it off.
+  - An empty list as a default no longer shows `(default: )`.
+  - A value that breaks a rule of its schema names the flag in plain words: `Invalid value for --limit: must be greater than 0`, instead of `limit: Too small: expected number to be >0`.
+  - Shell completions offer `--no-x` only for a boolean that starts on: `--no-help`, `--no-version` and `--no-mcp` are gone.
+  - The custom renderer example of the help README compiles, and handles the help of a command too.
+
+- 6592957: Each plugin requires the `@runa-cmd/core` it was released with. The peer of `help` was `^0.2.0-beta.1`, so npm could install it with an older `core` where `defaultDescription` and the `GLOBAL OPTIONS` section did nothing, without a warning. Until 1.0, the peer is always core's current version.
+
 ## 0.2.0-beta.6
 
 ## 0.2.0-beta.5

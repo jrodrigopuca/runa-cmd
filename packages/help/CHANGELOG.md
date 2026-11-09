@@ -1,5 +1,43 @@
 # @runa-cmd/help
 
+## 0.2.0-beta.7
+
+### Minor Changes
+
+- 66dd1c7: Every color of the default help now comes from the theme. Command names take `primary`, as the section titles do, and flags and arguments take `secondary`, as `(required)` does: before, all of them were a fixed yellow that no theme could change. This changes the default look: flags, arguments and command names were yellow, and now they're the theme's colors.
+
+  The README and the docs of `Theme` say the same thing about each slot. `error` and `success` are for a renderer of your own: the default one doesn't use them, since the help shows no errors and no successes.
+
+- 182e6fb: **Breaking:** `helpPlugin({ exitOnHelp })` is removed. It brought back the `process.exit(0)` of 0.1.0, which skips `cleanup` and can cut stdout in a pipe, and it exited with 0 even with nothing to run. The help now always ends like any command: `cleanup` runs, and the process exits with 0 for `--help`, or with 2 when there's nothing to run.
+
+  In TypeScript, passing it is a type error. In JS, the plugin says on stderr that it was removed, and the CLI keeps working.
+
+  **Migration:** remove the option. If your CLI stayed open after the help, close what keeps it open in a `cleanup` hook.
+
+  The README also says now that `--help` and `-h` are core's, and that the plugin only changes how the help looks.
+
+### Patch Changes
+
+- 1ba1f73: Every public type, function and option now has a description, so your editor shows what each one is for. `HookContext.rawArgs` says what it holds at each step: the whole argv in `beforeParse`, and only the command's part from `onGlobalFlags` on. No code changed.
+- ff89521: Help and errors without noise:
+
+  - A boolean whose default is `true` shows as `--[no-]cache`, so people see how to turn it off.
+  - An empty list as a default no longer shows `(default: )`.
+  - A value that breaks a rule of its schema names the flag in plain words: `Invalid value for --limit: must be greater than 0`, instead of `limit: Too small: expected number to be >0`.
+  - Shell completions offer `--no-x` only for a boolean that starts on: `--no-help`, `--no-version` and `--no-mcp` are gone.
+  - The custom renderer example of the help README compiles, and handles the help of a command too.
+
+- 11818a4: The help of a command lists its own options first, and the global ones, as `--help`, `--version` or `--mcp`, apart under `GLOBAL OPTIONS`. `OptionSchema` gains an optional `inherited` that marks them, so a custom renderer still gets every option and can tell them apart. With `runCLI` nothing moves: the command is the CLI.
+
+  Also:
+
+  - A usage error points to the help of its command: `Run 'tool build --help' for usage.`, instead of the CLI's.
+  - The core help shows the values of a positional enum, as the help plugin does: `target  What to build for (web | node)`.
+  - `bold()`, `fg()` and the other ANSI helpers of `@runa-cmd/help` say in their docs that they always write codes; `styled()` respects the output.
+
+- 53208e9: The help README said a command's own `-h` stops the CLI with `OPTION_COLLISION`, and that `db migrate --help` shows the help of `db`. Neither is true: a command keeps its `-h`, and nested commands get their own help at any depth. The core README now explains what `ctx.rawArgs` holds in each hook, and `ctx.invocation`.
+- 6592957: Each plugin requires the `@runa-cmd/core` it was released with. The peer of `help` was `^0.2.0-beta.1`, so npm could install it with an older `core` where `defaultDescription` and the `GLOBAL OPTIONS` section did nothing, without a warning. Until 1.0, the peer is always core's current version.
+
 ## 0.2.0-beta.6
 
 ## 0.2.0-beta.5
