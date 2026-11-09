@@ -235,12 +235,12 @@ Pick the affected package(s) and bump type, describe the change — the generate
 `.changeset/*.md` file is committed with your PR. Private packages, like the
 examples, are never versioned (`privatePackages: false`): `examples/getting-started`
 is the template of `@runa-cmd/create`, and a bump there would give every new
-project a version that `--version` doesn't print. `core`, `help`,
-`completions` and `create` are a `fixed` group up to their 1.0.0, and
-`@runa-cmd/mcp` versions on its own, at `0.x`, until its own 1.0
-([ADR-0050](./docs/adr/0050-la-1-0-sale-sin-mcp.md)). After the 1.0 is out, the
-group empties and each package versions on its own
+project a version that `--version` doesn't print. Since the 1.0, each package
+versions on its own: the `fixed` group is empty
 ([ADR-0039](./docs/adr/0039-paquetes-independientes-desde-1-0.md)).
+`core`, `help`, `completions` and `create` reached 1.0.0 together, and
+`@runa-cmd/mcp` is at `0.x` until its own 1.0
+([ADR-0050](./docs/adr/0050-la-1-0-sale-sin-mcp.md)).
 
 > The repo left changesets pre-release mode for the 1.0: publishes land under
 > the npm `latest` dist-tag.
@@ -278,21 +278,19 @@ git push --follow-tags
 > pre-release mode that escalation would publish `1.0.0-beta.0`.
 > `devDependencies` still use `workspace:*` (unpublished).
 >
-> **Until 1.0, the peer is the current version of `core`** (T-233). The range is
-> a floor, and changesets doesn't raise it: a plugin using something new from
-> `core` would install with an older one, where that feature does nothing. So
-> while the packages release together, in the `fixed` group, each plugin's peer
-> is `^` plus `core`'s version. The `Release` workflow keeps it there: it runs
-> `pnpm version-packages`, which is `changeset version` followed by
-> `node scripts/peers.mjs --write`. Changesets never sees that edit, so nothing
-> escalates. `pnpm docs:check` fails if a peer doesn't match. If you run
-> `changeset version` by hand, run `node scripts/peers.mjs --write` after it.
-> After 1.0, with independent packages, T-506 decides how each peer is kept.
+> **The peer is a floor, and changesets doesn't raise it.** A plugin using
+> something new from `core` would install with an older one, where that feature
+> does nothing. Up to the 1.0, while the packages released together in the
+> `fixed` group, each plugin's peer was `^` plus `core`'s version, kept by
+> `pnpm version-packages` (`changeset version` followed by
+> `node scripts/peers.mjs --write`), and `pnpm docs:check` failed if one didn't
+> match (T-233). With the group empty, `peers.mjs` checks nothing: every peer is
+> `^1.0.0`, and raising it when a plugin starts using something newer from
+> `core` is by hand, until T-506 decides how to check it.
 >
-> `@runa-cmd/mcp` is out of the group, so `peers.mjs` doesn't keep its peer:
-> it's `^1.0.0`, set by hand before the 1.0 was versioned. Without that,
-> `onlyUpdatePeerDependentsWhenOutOfRange` would take `mcp` to a major along
-> with `core`. Raise it by hand when `mcp` starts using something newer.
+> Before the 1.0 was versioned, `@runa-cmd/mcp`'s peer was set to `^1.0.0` by
+> hand. Without that, `onlyUpdatePeerDependentsWhenOutOfRange` would have taken
+> `mcp` to a major along with `core`.
 
 ### Post-Publish Verification
 
@@ -313,7 +311,7 @@ npm install @runa-cmd/core @runa-cmd/help @runa-cmd/mcp zod
 cd /tmp && npm create @runa-cmd runa-created && cd runa-created
 npm install && npm test && npm run build && node dist/main.js hello Ana
 
-# The README reaches npm view (KI-041)
+# The README reaches npm view: it didn't through the betas, and did from 1.0.0
 npm view @runa-cmd/core readme | head -3
 ```
 

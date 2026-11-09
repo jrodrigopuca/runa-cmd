@@ -118,6 +118,7 @@
 | | T-259 | Detalles de la segunda revisión | Opcional | Pendiente |
 | | T-260 | Guías después de la segunda revisión | Opcional | Pendiente |
 | | T-261 | El aviso de MCP llega aunque el cliente descarte stderr | Opcional | Pendiente |
+| | T-262 | `testCLI()` conserva la salida binaria | Opcional | Hecho |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
@@ -956,6 +957,7 @@ Cada tool corre en un subproceso de la propia CLI ([ADR-0030](./adr/0030-tools-m
 
 - **v1:** Requerido
 - **Estado:** En curso
+- **Progreso, 2026-11-09:** publicada a las 02:25 UTC y verificada desde npm: `latest` es `1.0.0` en `core`, `help`, `completions` y `create`, y `0.2.0` en `mcp`, con los peers en `^1.0.0`. `npm view` muestra el README de los cinco, así que ese known issue se cerró. `fixed` quedó vacío. Faltan Changesets 3.x con `changesets/action@v2`, y la decisión sobre cómo se comprueba el peer de cada plugin.
 - **Bloqueada por:** todas las tareas requeridas
 - **Descripción:** como usuario de Runa, quiero instalar 1.0.0 desde `latest`.
 - **Decisión, 2026-11-09:** la 1.0 sale sin esperar el fin de la ventana, y `mcp` sigue en `0.x` ([ADR-0050](./adr/0050-la-1-0-sale-sin-mcp.md)). Un dry-run en una copia del repo, el mismo día, mostró dos cosas. Con `mcp` fuera de `fixed` y su peer en `^1.0.0` antes de versionar, `changeset version` da `1.0.0` en los otros cuatro y `0.2.0` en `mcp`. Sin fijar antes ese peer, `onlyUpdatePeerDependentsWhenOutOfRange` lleva `mcp` a `1.0.0`, porque su peer queda fuera de rango.
@@ -1297,6 +1299,18 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
   - El servidor declara la capacidad `logging` y, cuando el cliente se conecta, manda cada aviso como `notifications/message` con nivel `warning`.
   - Una prueba con un cliente MCP real comprueba los dos caminos.
   - Se le pide a `local-beacon` que compruebe si opencode muestra la descripción y los logs.
+
+### T-262 `testCLI()` conserva la salida binaria
+
+- **v1:** Opcional
+- **Estado:** Hecho
+- **Descripción:** como autor de una CLI que escribe un PNG, un zip o un tar a stdout, quiero probarla con `testCLI()`. Lo reportó un consumidor el 2026-11-09, sobre la 1.0.0, y se reprodujo: `process.stdout.write(uint8array)` llega a `stdout` decodificado como UTF-8, así que cada byte que no forma UTF-8 válido pasa a ser U+FFFD, sin aviso y con `code` 0. El mismo comando, en un proceso real, escribe los bytes exactos. La causa es `testing.ts`, que hace `Buffer.from(chunk).toString()` en cada escritura. Además ignora `encoding`: `write('ff', 'hex')` queda como el texto `ff`.
+- **Decisión, 2026-11-09:** `TestResult` suma `stdoutBytes` y `stderrBytes`, con los bytes exactos, y `stdout` sigue siendo el mismo texto. Si lo escrito no es UTF-8 válido, `testCLI()` emite un warning de Node que apunta a los bytes. Se descartó solo documentarlo, porque seguiría fallando en silencio, y solo avisar, porque no permitiría probar la salida binaria. Son campos nuevos en un tipo que construye Runa: una minor de `core`.
+- **Criterios de aceptación:**
+  - `stdoutBytes` y `stderrBytes` tienen los bytes exactos que escribió el comando, como `Uint8Array`, respetando el `encoding` de `write`.
+  - `stdout` y `stderr` no cambian para texto, y un carácter de varios bytes partido entre dos escrituras se decodifica entero.
+  - Si `stdout` o `stderr` no son UTF-8 válido, `testCLI()` emite un warning de Node con código `RUNA_` que dice qué stream y que use los bytes.
+  - El README de `testCLI` y la guía de testing lo dicen.
 
 ## Después de v1 o si llega a tiempo
 

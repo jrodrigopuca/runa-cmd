@@ -31,10 +31,14 @@ export interface TestOptions
 export interface TestResult {
 	/** The exit code the process would end with */
 	code: number;
-	/** What it wrote to stdout: the result, or what the command printed */
+	/** What it wrote to stdout, as UTF-8 text: the result, or what the command printed */
 	stdout: string;
-	/** What it wrote to stderr: errors, warnings and progress */
+	/** What it wrote to stderr, as UTF-8 text: errors, warnings and progress */
 	stderr: string;
+	/** The exact bytes it wrote to stdout, as a PNG or a tar: `stdout` can't hold them */
+	stdoutBytes: Uint8Array;
+	/** The exact bytes it wrote to stderr */
+	stderrBytes: Uint8Array;
 	/** What run() returned */
 	result: unknown;
 	/** The original error of a failed run */
@@ -43,17 +47,21 @@ export interface TestResult {
 	trace: TraceEvent[];
 }
 
+/**
+ * Bytes, not text: decoding each write as UTF-8 turned every byte of a PNG
+ * over 127 into U+FFFD, for good (T-262). The text is decoded once, at the end.
+ */
 interface Capture {
-	stdout: string;
-	stderr: string;
+	stdout: Buffer[];
+	stderr: Buffer[];
 	trace: TraceEvent[];
 }
 
 const capture = new AsyncLocalStorage<Capture>();
 
-function record(run: Capture, stream: 'stdout' | 'stderr', text: string): void {
-	run[stream] += text;
-	run.trace.push({ step: 'output', stream, text });
+function record(run: Capture, stream: 'stdout' | 'stderr', bytes: Buffer): void {
+	run[stream].push(bytes);
+	run.trace.push({ step: 'output', stream, text: bytes.toString() });
 }
 
 function routedWrite(stream: 'stdout' | 'stderr', real: typeof process.stdout.write) {
@@ -65,7 +73,12 @@ function routedWrite(stream: 'stdout' | 'stderr', real: typeof process.stdout.wr
 		const run = capture.getStore();
 		if (!run) return real.call(process[stream], chunk, encoding as BufferEncoding, callback);
 
-		record(run, stream, typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString());
+		// A string is written with its encoding, as `write('ff', 'hex')` writes one byte
+		const bytes =
+			typeof chunk === 'string'
+				? Buffer.from(chunk, typeof encoding === 'string' ? encoding : 'utf8')
+				: Buffer.from(chunk);
+		record(run, stream, bytes);
 		const done = typeof encoding === 'function' ? encoding : callback;
 		done?.();
 		return true;
@@ -110,7 +123,7 @@ function routeOutput(): () => void {
 		routed[method] = (...args: unknown[]) => {
 			const run = capture.getStore();
 			if (!run) return realConsole[method].apply(console, args);
-			record(run, CONSOLE_STREAMS[method], `${format(...args)}\n`);
+			record(run, CONSOLE_STREAMS[method], Buffer.from(`${format(...args)}\n`));
 		};
 		console[method] = routed[method];
 	}
@@ -168,6 +181,25 @@ function assertReadsConfig(target: CLI | Command, config: CLIConfig, options: Te
 	);
 }
 
+const utf8 = new TextDecoder('utf-8', { fatal: true });
+
+/**
+ * Bytes that aren't UTF-8 come out of `stdout` with U+FFFD in their place. A
+ * test reading only the text would fail for the tool, not the command, so it
+ * says so (T-262).
+ */
+function warnIfNotText(stream: 'stdout' | 'stderr', bytes: Buffer, name: string): void {
+	try {
+		utf8.decode(bytes);
+	} catch {
+		process.emitWarning(
+			`testCLI(): ${stream} of '${name}' isn't valid UTF-8, so result.${stream} has U+FFFD in place of some bytes. ` +
+				`Read result.${stream}Bytes for the exact bytes.`,
+			{ code: 'RUNA_TESTCLI_NOT_UTF8' },
+		);
+	}
+}
+
 /**
  * Run a CLI or a command through its real lifecycle, without ending the process.
  *
@@ -178,7 +210,7 @@ export async function testCLI(
 	argv: string[] = [],
 	options: TestOptions = {},
 ): Promise<TestResult> {
-	const run: Capture = { stdout: '', stderr: '', trace: [] };
+	const run: Capture = { stdout: [], stderr: [], trace: [] };
 	const outcome: { code?: number; result?: unknown; error?: Error } = {};
 
 	const harness: RunHarness = {
@@ -214,10 +246,17 @@ export async function testCLI(
 	const setByCommand = process.exitCode === exitCodeBefore ? undefined : process.exitCode;
 	process.exitCode = exitCodeBefore;
 
+	const stdoutBytes = Buffer.concat(run.stdout);
+	const stderrBytes = Buffer.concat(run.stderr);
+	warnIfNotText('stdout', stdoutBytes, config.meta.name);
+	warnIfNotText('stderr', stderrBytes, config.meta.name);
+
 	return {
 		code: outcome.code ?? Number(setByCommand ?? 0),
-		stdout: run.stdout,
-		stderr: run.stderr,
+		stdout: stdoutBytes.toString(),
+		stderr: stderrBytes.toString(),
+		stdoutBytes: new Uint8Array(stdoutBytes),
+		stderrBytes: new Uint8Array(stderrBytes),
 		result: outcome.result,
 		error: outcome.error,
 		trace: run.trace,

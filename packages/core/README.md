@@ -612,7 +612,8 @@ const result = await testCLI(cli, ['add', 'x'], {
 });
 
 result.code;    // The exit code the process would end with
-result.stdout;  // What it printed, and result.stderr
+result.stdout;  // What it printed, as UTF-8 text, and result.stderr
+result.stdoutBytes; // The exact bytes it wrote, and result.stderrBytes
 result.result;  // What run() returned
 result.error;   // The original error, with its class, code and cause
 result.trace;   // What happened, in order
@@ -637,6 +638,13 @@ A value from env is left out, because it can be a secret. The shape of `trace` i
 **What's isolated:** the test doesn't read the real environment or config files, and several runs can share a process, as with `it.concurrent`.
 
 **`config` needs a CLI that reads one:** if the CLI doesn't declare `config` in `defineCLI`, `testCLI()` rejects with a message saying so, because the real program would read no file. For a single command, `config` stands for the file of `runCLI(command, { config })`.
+
+**Binary output,** as a PNG or a tar written to stdout, is in `stdoutBytes`, byte for byte. `stdout` is that output decoded as UTF-8, so a byte that isn't valid UTF-8 becomes U+FFFD there. When that happens, `testCLI()` emits a Node warning, `RUNA_TESTCLI_NOT_UTF8`, that says which stream and points to the bytes:
+
+```ts
+const result = await testCLI(cli, ['export', '--format', 'png']);
+assert.deepEqual(result.stdoutBytes.subarray(0, 4), Uint8Array.from([0x89, 0x50, 0x4e, 0x47]));
+```
 
 **What isn't:** a command that reads `process.env` by itself sees the real one. A child process, or a write straight to a file descriptor, isn't captured. `process.exitCode` is global, so it isn't reliable with concurrent runs: exit or throw instead.
 

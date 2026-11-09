@@ -63,7 +63,8 @@ export const cli = defineCLI({
 | Field | What it is |
 |---|---|
 | `code` | The exit code the process would end with |
-| `stdout`, `stderr` | What it printed |
+| `stdout`, `stderr` | What it printed, as UTF-8 text |
+| `stdoutBytes`, `stderrBytes` | The exact bytes it wrote, for binary output such as a PNG or a tar. If a stream isn't valid UTF-8, `testCLI()` warns, because its text has U+FFFD in place of those bytes |
 | `result` | What `run()` returned, before `format` |
 | `error` | The original error, with its class, `code` and cause |
 | `trace` | What happened, in order: where each value came from, the hooks that ran, what was written |
