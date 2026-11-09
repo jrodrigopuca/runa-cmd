@@ -324,7 +324,7 @@ definePlugin({
 
 With nothing to run, as in `tool` on a CLI with several commands or `tool db` on a group, help goes to stderr and the exit code is 2. A script with an empty command fails instead of passing. A name that doesn't exist is still a 127, with a suggestion.
 
-`--help` and `--version` work even if a required global option is missing.
+`--help` and `--version` work even if a required global option is missing. So does any run where nothing would run: a command that doesn't exist is still a 127, and nothing to run still shows the help with exit 2. A command that exists says the global is missing.
 
 ### `--version`
 

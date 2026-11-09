@@ -109,7 +109,7 @@
 | | T-250 | Detalles de coherencia | Opcional | En curso |
 | | T-251 | MCP rechaza un valor que fijó el operador | Requerido | Hecho |
 | | T-252 | Alias que chocan dentro de un comando | Requerido | Hecho |
-| | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Pendiente |
+| | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Hecho |
 | | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Pendiente |
 | | T-255 | Un valor inválido del operador, por MCP | Requerido | Hecho |
 | | T-256 | Un booleano sin default frena al arrancar | Requerido | Pendiente |
@@ -1209,7 +1209,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-253 Un comando que no existe es 127, aunque falte una global
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como persona o script, quiero que `tool nope` diga que el comando no existe. Con una opción global obligatoria, una ruta inválida o vacía da `Missing required option: --token` con exit 2, contra ADR-0034 y ADR-0048. Verificado el 2026-11-08.
 - **Criterios de aceptación:**
   - `tool nope`, `tool db nope` y `tool help nope` dan 127 con su sugerencia, aunque falte una global obligatoria; `tool` y `tool db` dan la ayuda con exit 2.

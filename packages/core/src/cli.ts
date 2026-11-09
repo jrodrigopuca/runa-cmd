@@ -897,11 +897,10 @@ async function runCLILifecycle(
 			});
 
 			// Asking how to use a CLI can't require already knowing its options.
-			const answer = findBuiltInAnswer(
-				config,
-				findRoute(mutableCommands, commandArgv, rootName),
-				commandArgv,
-			);
+			const route = findRoute(mutableCommands, commandArgv, rootName);
+			const answer = findBuiltInAnswer(config, route, commandArgv);
+			// Nor a command that doesn't exist: nothing runs, and its 127 is the answer (T-253)
+			const leadsNowhere = !toolCall && !route.command && !route.isIncomplete && !route.flag;
 			// With a tool call, the command comes from the call, not from argv.
 			const { configValues, configSource } =
 				answer && !toolCall ? ({} as CommandConfig) : await loadConfig([]);
@@ -919,8 +918,9 @@ async function runCLILifecycle(
 				const names = Object.keys(mutableGlobalOptions);
 				optionEvents('global', names, parsedOptions, optionSources).forEach(trace);
 			} catch (err) {
-				const isQuestion = answer === 'help' || answer === 'version';
-				if (!isQuestion || !(err instanceof ValidationError)) throw err;
+				// 'usage' too: with nothing to run, the help on stderr is the answer
+				const runsNothing = answer !== undefined || leadsNowhere;
+				if (!runsNothing || !(err instanceof ValidationError)) throw err;
 			}
 
 			reportDeprecations({
