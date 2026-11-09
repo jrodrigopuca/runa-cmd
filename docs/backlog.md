@@ -107,6 +107,16 @@
 | | T-248 | Alias y env junto al schema | Opcional | Pendiente |
 | | T-249 | Docs internas al día | Opcional | Hecho |
 | | T-250 | Detalles de coherencia | Opcional | En curso |
+| | T-251 | MCP rechaza un valor que fijó el operador | Requerido | Pendiente |
+| | T-252 | Alias que chocan dentro de un comando | Requerido | Pendiente |
+| | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Pendiente |
+| | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Pendiente |
+| | T-255 | Un valor inválido del operador, por MCP | Requerido | Pendiente |
+| | T-256 | Un booleano sin default frena al arrancar | Requerido | Pendiente |
+| | T-257 | Un valor inválido de env nombra la variable | Opcional | Pendiente |
+| | T-258 | La ayuda muestra los rangos | Opcional | Pendiente |
+| | T-259 | Detalles de la segunda revisión | Opcional | Pendiente |
+| | T-260 | Guías después de la segunda revisión | Opcional | Pendiente |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
@@ -1174,6 +1184,103 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
   - Cada punto se corrige, o se descarta con su motivo.
   - Un comando con `meta.version` dentro de `defineCLI` frena al arrancar con exit 1, un `code` de la lista de T-234 y el mensaje `'version' only applies with runCLI; set it in defineCLI's meta.`
   - Los tests no tienen errores de tipos, medido con el tsconfig de cada paquete. Se decide si `pnpm typecheck` los incluye, para que un mock que quedó atrás de los tipos no vuelva a pasar inadvertido.
+
+### T-251 MCP rechaza un valor que fijó el operador
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como modelo que llama una tool, quiero saber si un valor que mando no se va a usar. Una opción que declara `env`, o que tiene valor en el config, sale del schema de la tool; si el modelo la manda igual, se descarta en silencio y la llamada responde éxito con el valor del operador. Verificado el 2026-11-08: el modelo manda `replicas: 5` y recibe éxito con `replicas 2`. Sale de [la segunda revisión](./research/2026-11-second-review-before-v1.md).
+- **Decisión, 2026-11-08:** se rechaza la llamada, como una clave que no existe. Se descartó correr igual y avisarlo en la respuesta: el comando ya habría corrido con un valor que el modelo no pidió, y eso es lo peligroso en un comando destructivo. El operador que quiera que el modelo elija usa `expose`. Cambia lo que hace una llamada, así que es incompatible y entra en la `0.2.0-beta.7`.
+- **Criterios de aceptación:**
+  - Una llamada que manda una opción fijada por el operador falla con `class: invalid_input`, `effect: none`, y el texto `'replicas' is set by the operator of this server, so it can't be sent.`, sin mostrar el valor del operador. El comando no corre.
+  - El README de `mcp` y la guía de MCP dicen eso, no que se descarta.
+  - Una prueba con un cliente MCP real cubre config y env.
+
+### T-252 Alias que chocan dentro de un comando
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como autor, quiero que dos nombres para lo mismo frenen la CLI al arrancar, como dice el README de `OPTION_COLLISION`. Dentro de un comando no se valida: dos opciones con `-e` (gana la primera), un alias igual a la flag de otra opción (`--extra` en `env` le roba la flag a `extra`), un alias `--no-x` que le quita la negación a `x`, y un alias igual a la flag de su propia opción, que descarta el valor escrito. Verificado el 2026-11-08: `alias: ['--env']` en `env` hace que `--env prod` dé el default, con exit 0.
+- **Criterios de aceptación:**
+  - Cada uno de esos casos frena la CLI al arrancar con `OPTION_COLLISION` y exit 1, nombrando las dos opciones y el token.
+  - Vale también para un comando que agrega un plugin.
+  - Es incompatible para una CLI con uno de esos alias, que deja de arrancar, y entra en la beta.7.
+
+### T-253 Un comando que no existe es 127, aunque falte una global
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como persona o script, quiero que `tool nope` diga que el comando no existe. Con una opción global obligatoria, una ruta inválida o vacía da `Missing required option: --token` con exit 2, contra ADR-0034 y ADR-0048. Verificado el 2026-11-08.
+- **Criterios de aceptación:**
+  - `tool nope`, `tool db nope` y `tool help nope` dan 127 con su sugerencia, aunque falte una global obligatoria; `tool` y `tool db` dan la ayuda con exit 2.
+  - Un comando que existe, con la global que falta, sigue dando `Missing required option` con exit 2.
+  - Cambia un exit code, así que entra en la beta.7.
+
+### T-254 Un `CommandError` de otra copia de `core`
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como autor cuyo plugin trae su propia copia de `core`, quiero que mi `CommandError` termine como uno. `isRunaError` lo reconoce, pero la CLI usa `instanceof` para el exit code y el mensaje: sale con 1 y `Unexpected error in 'boom':` en lugar de su exit code y su texto. Verificado el 2026-11-08: exit 1 en lugar de 3.
+- **Criterios de aceptación:**
+  - Un `RunaError` o `CommandError` de otra copia sale con su exit code y su mensaje, sin el prefijo de error inesperado, en la terminal y por MCP.
+  - Ningún lugar de `core` decide por `instanceof RunaError` lo que `isRunaError` decide por la marca.
+  - Cambia un exit code, así que entra en la beta.7.
+
+### T-255 Un valor inválido del operador, por MCP
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como quien opera un servidor MCP, quiero enterarme si un valor mío está mal, y que el modelo no lo tome como su error. Un valor inválido en el config o en env del operador hace fallar cada llamada con `class: invalid_input`, y no se avisa al arrancar. Verificado el 2026-11-08 con el config.
+- **Decisión, 2026-11-08:** se trata igual que un valor del operador que falta (T-236): `class: not_configured`, que pasa a significar que un valor del operador falta o está mal, y un aviso al arrancar, sin frenar el servidor. Se descartó frenar el servidor, porque una tool con un valor malo dejaría sin servir a las demás, y una clase nueva, porque el cliente haría lo mismo con las dos. Cambia la clase de este caso, así que entra en la beta.7.
+- **Criterios de aceptación:**
+  - Una llamada a una tool con un valor inválido del operador sale con `class: not_configured` y `effect: none`, y el texto dice que el operador tiene que corregir ese archivo y esa clave, o esa variable, sin mostrar el valor.
+  - Al arrancar, el servidor escribe en stderr qué tool no va a poder correr y por qué, una línea por tool, y sigue sirviendo.
+  - El README de `mcp` describe `not_configured` como un valor del operador que falta o está mal.
+
+### T-256 Un booleano sin default frena al arrancar
+
+- **v1:** Requerido
+- **Estado:** Pendiente
+- **Descripción:** como autor que escribe `shout: z.boolean()`, quiero enterarme yo, y no quien usa mi CLI, de que eso es obligatorio. Hoy `greet hello Ana` da `Missing required option: --shout`, exit 2, y ninguna otra herramienta trata así una flag. Verificado el 2026-11-08.
+- **Decisión, 2026-11-08:** un `z.boolean()` sin `.default()` ni `.optional()` frena la CLI al arrancar, con un mensaje que dice cómo arreglarlo. Se descartó un `false` implícito, porque contradice el schema, que es la fuente de verdad (ADR-0001), y obligaría a acomodar MCP, la ayuda y la introspección; y mejorar solo el mensaje, porque le llega a quien usa la CLI y no lo puede arreglar. Es incompatible para una CLI con un booleano obligatorio, y entra en la beta.7.
+- **Criterios de aceptación:**
+  - Un `z.boolean()` sin default ni `.optional()`, en un comando o como global, frena al arrancar con exit 1, un `code` de la lista de T-234 y el mensaje `Boolean option 'shout' of command 'hello' has no default: a flag that isn't passed needs one. Use z.boolean().default(false), or .optional().`
+  - `z.literal(true)`, para un `--yes` obligatorio, no frena.
+  - La guía de migración desde commander lo dice donde habla de `.requiredOption()`.
+
+### T-257 Un valor inválido de env nombra la variable
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que configuró una variable, quiero que el error la nombre. `DEPLOY_ENV=qa` da `Invalid value for --env…` y el hint de `--help`, como si se hubiera escrito una flag, contra el README de `core` ("the message says where"). commander dice `from env 'DEPLOY_ENV'`. Lo reprodujeron los dos agentes.
+- **Criterios de aceptación:**
+  - Un valor inválido que vino de env nombra la variable y la flag, sin mostrar el valor.
+
+### T-258 La ayuda muestra los rangos
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como persona que lee la ayuda, quiero ver las reglas que el modelo ya ve. `--replicas <number> (default: 1)` no dice que es un entero de 1 a 10, y el JSON Schema de MCP sí tiene `minimum`, `maximum` e `integer`.
+- **Criterios de aceptación:**
+  - La ayuda de `core` y la del plugin muestran el rango y si un número es entero, con las mismas palabras que los errores.
+
+### T-259 Detalles de la segunda revisión
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** los menores de [la segunda revisión](./research/2026-11-second-review-before-v1.md), del 8 al 18: el texto de `not_configured` que no lista todos los errores; los errores de `defineCommand` que salen como excepción con stack; un plugin sin `definePlugin`; una lista del config que no acepta texto; el hint del generador; la `'` sin escapar en el valor repetido; `z.literal()` en la ayuda y en las completions; la tabla de propiedades de `defineCommand`; el ejemplo viejo de un changeset; los errores de TypeScript fuera del camino.
+- **Criterios de aceptación:**
+  - Cada punto se corrige, o se descarta con su motivo.
+
+### T-260 Guías después de la segunda revisión
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como dev que compara, quiero que la guía sea exacta también donde Runa gana. La segunda revisión encontró lo que la guía comparativa dice mal o le falta, y lo mismo en la guía de migración y en algunos READMEs.
+- **Criterios de aceptación:**
+  - `guides/runa-compared.md` corrige lo de yargs y el config, lo que detectan los tipos, y la fila de exit codes de yargs; suma una fila de variables de entorno, `@stricli/core`, la latencia de MCP, que un config en la carpeta actual cambia el schema de una tool, y el ERESOLVE de `mcp` sin `@beta` junto a `core@beta`.
+  - La guía de migración nombra extra-typings y la versión actual de commander.
+  - Los READMEs de `mcp` y `completions` usan `await cli.run()`, y el de `completions` no dice que el plugin hace obligatorio el nombre del comando.
 
 ## Después de v1 o si llega a tiempo
 
