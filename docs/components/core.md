@@ -207,6 +207,7 @@ Ninguna falla sale en silencio ([ADR-0027](../adr/0027-toda-salida-explica-el-mo
 | Falla previa a resolver el comando | Igual, con el nombre de la CLI | El del error, o 1 |
 | `onError` marca `ctx.handled` | Nada de Runa | El del error, o 1 |
 
+- **Si otro módulo ya explica el error:** el módulo lanza en vez de imprimir, y `run()` relanza su mensaje en un `CommandError`. Sale una sola línea, y por MCP llega como `command_failed`. Imprimir y fijar `process.exitCode` se ve igual en la terminal, pero por MCP hoy se clasifica como `after_run_failed` ([KI-050](../known-issues.md), [T-264](../backlog.md#t-264-un-exit-code-fijado-a-mano-por-mcp)).
 - **Para quien desarrolla la CLI:** `RUNA_DEBUG=1` agrega stack, código y causa, y muestra por stderr cada paso: archivo de config, fuente de cada opción y duración de hooks y comando. No imprime valores ([ADR-0045](../adr/0045-registro-de-la-ejecucion.md)). `RUNA_DEBUG=0` lo desactiva.
 
 ## Probar una CLI

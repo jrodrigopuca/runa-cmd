@@ -65,3 +65,4 @@ Un ADR (Architecture Decision Record) registra una decisión difícil de reverti
 | [0048](./0048-help-como-comando.md) | `help` donde va un comando es `--help` | Aceptada |
 | [0049](./0049-mcp-rechaza-un-valor-del-operador.md) | Un valor que el modelo manda para una opción del operador se rechaza | Aceptada |
 | [0050](./0050-la-1-0-sale-sin-mcp.md) | La 1.0 sale antes de completar la ventana, y `mcp` sigue en `0.x` | Aceptada, pendiente de código |
+| [0051](./0051-esm-que-se-carga-con-require.md) | Los paquetes se publican en ESM, y un proyecto CommonJS los carga con `require` | Propuesta, pendiente de código |

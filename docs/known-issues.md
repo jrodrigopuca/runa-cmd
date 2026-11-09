@@ -18,7 +18,9 @@ No hay problemas abiertos de esta severidad.
 
 ## Severidad media
 
-No hay problemas abiertos de esta severidad.
+| ID | Problema | Evidencia | Causa | Tarea |
+|---|---|---|---|---|
+| KI-050 | Por MCP, un comando que imprime el motivo y fija `process.exitCode` en vez de lanzar se informa como `after_run_failed`, con `effect: completed` y `The command already ran.`: el modelo lee que falló algo posterior al comando, no el comando. El workaround es lanzar un `CommandError`, que llega como `command_failed` | Observado el 2026-11-09 con el cliente oficial del SDK de MCP, sobre el `dist` de la 1.0.0 | `findFailure`, en `packages/mcp/src/server.ts`: si `run()` devolvió y el exit code no es 0, lo toma como una falla después de `run()` | [T-264](./backlog.md#t-264-un-exit-code-fijado-a-mano-por-mcp) |
 
 ## Severidad baja
 

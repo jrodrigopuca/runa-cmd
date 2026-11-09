@@ -119,6 +119,9 @@
 | | T-260 | Guías después de la segunda revisión | Opcional | Pendiente |
 | | T-261 | El aviso de MCP llega aunque el cliente descarte stderr | Opcional | Pendiente |
 | | T-262 | `testCLI()` conserva la salida binaria | Opcional | Hecho |
+| | T-263 | Fallar con el mensaje de otro módulo | Opcional | Hecho |
+| | T-264 | Un exit code fijado a mano, por MCP | Opcional | Pendiente |
+| | T-265 | Cargar los paquetes desde CommonJS | Opcional | Decisión pendiente |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
@@ -1311,6 +1314,43 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
   - `stdout` y `stderr` no cambian para texto, y un carácter de varios bytes partido entre dos escrituras se decodifica entero.
   - Si `stdout` o `stderr` no son UTF-8 válido, `testCLI()` emite un warning de Node con código `RUNA_` que dice qué stream y que use los bytes.
   - El README de `testCLI` y la guía de testing lo dicen.
+
+### T-263 Fallar con el mensaje de otro módulo
+
+- **v1:** Opcional
+- **Estado:** Hecho
+- **Descripción:** como autor de una CLI que envuelve un módulo que ya explica sus errores, quiero fallar con mi exit code sin agregar una línea redundante. Lo reportó un consumidor el 2026-11-09, sobre la 1.0.0: su CLI imprimía "No se generó el componente. El motivo está en el mensaje anterior." después del mensaje del módulo, porque no encontró en el README otra forma de salir.
+- **Decisión, 2026-11-09:** se documenta relanzar el mensaje del módulo en un `CommandError`, sin API nueva. Se probó con el cliente oficial del SDK de MCP: así la llamada llega como `command_failed`, con el mensaje tal cual, mientras que imprimir y fijar `process.exitCode` llega como `after_run_failed` con `The command already ran.` ([T-264](#t-264-un-exit-code-fijado-a-mano-por-mcp)). Se descartó `CommandError({ silent: true })`, porque contradice [ADR-0027](./adr/0027-toda-salida-explica-el-motivo.md) sin un pedido que lo justifique.
+- **Criterios de aceptación:**
+  - El README de `core` muestra el patrón en "How a failed run ends", y avisa qué pasa por MCP con `process.exitCode`.
+  - El ejemplo se probó con `testCLI()`: una sola línea en stderr, con el mensaje del módulo, y `code` 3.
+- **Resultado, 2026-11-09:** el README de `core` y `docs/components/core.md` lo dicen.
+
+### T-264 Un exit code fijado a mano, por MCP
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como modelo que llama una tool, quiero que un comando que falló se informe como fallo del comando, aunque su autor haya impreso el motivo y fijado `process.exitCode` en vez de lanzar. Hoy `findFailure`, en `packages/mcp/src/server.ts`, ve que `run()` devolvió y que el proceso salió con un código distinto de 0 sin reportar un error, y lo clasifica como `after_run_failed` con `effect: completed`, que significa que algo falló después de `run()`. Se observó el 2026-11-09 con el cliente oficial del SDK de MCP: el texto fue el stderr del comando seguido de `The command already ran.` ([KI-050](./known-issues.md)).
+- **Criterios de aceptación:**
+  - Si `run()` devolvió, ningún paso posterior reportó un error y el proceso sale con un código distinto de 0, la llamada no se clasifica como `after_run_failed`. Qué `class` y qué `effect` le tocan se decide al empezar, y si cambia lo que significa una `class` existente, va en el changelog de `mcp`, que sigue en 0.x.
+  - El texto es lo que el comando escribió en stderr, y no dice que algo falló después de `run()`.
+  - Un `afterRun` que falla sigue siendo `after_run_failed`.
+  - Una prueba con un cliente MCP real lo comprueba.
+  - Al cerrarla, el README de `core` puede presentar `process.exitCode` como alternativa válida para cuando el módulo ya imprimió.
+
+### T-265 Cargar los paquetes desde CommonJS
+
+- **v1:** Opcional
+- **Estado:** Decisión pendiente
+- **Descripción:** como autor de una CLI en un proyecto CommonJS, quiero cargar Runa con `require`, sin pasar el binario a `.mjs` ni usar `createRequire`. Lo reportó un consumidor el 2026-11-09, sobre la 1.0.0. `require('@runa-cmd/core')` falla con `ERR_PACKAGE_PATH_NOT_EXPORTED` aunque el `dist` carga con `require` en Node 24.13 y 26.11, y las cinco alternativas de la comparación cargan con `require`.
+- **Decisión propuesta, 2026-11-09:** la opción B de [ADR-0051](./adr/0051-esm-que-se-carga-con-require.md): un solo build ESM, con `"default"` en `exports`. Espera la revisión del mantenedor; mientras tanto rige [ADR-0015](./adr/0015-plataforma-y-ci.md). Se descartaron dejarlo como está y publicar un segundo build en CommonJS.
+- **Criterios de aceptación:**
+  - Las entradas de `exports` de `core`, `help`, `mcp` y `completions` declaran `"types"` y `"default"`, y `require` de cada una funciona desde un archivo `.cjs` en Node 24.
+  - Una prueba en CI hace `require` de cada entrada de cada paquete compilado, y falla si alguna tiene `await` de nivel superior.
+  - Una CLI CommonJS que arma sus schemas con `require('zod')` convierte y rechaza valores igual que desde ESM.
+  - Se verifica con `tsc` que un proyecto CommonJS con `module: nodenext` recibe los tipos, y la guía dice con qué versión de TypeScript se comprobó. Si falla, se documenta el límite antes de publicar.
+  - `guides/getting-started.md` deja de decir "Runa is ESM only" como requisito, y los README dicen que se puede usar con `require`.
+  - ADR-0051 pasa a aceptada y ADR-0015 indica qué parte reemplaza. Lleva changeset minor en cada paquete.
 
 ## Después de v1 o si llega a tiempo
 

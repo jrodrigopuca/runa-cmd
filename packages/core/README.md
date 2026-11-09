@@ -559,6 +559,21 @@ No failure exits silently. The reason goes to stderr, `cleanup` runs, and then t
 - Set `RUNA_DEBUG=1` to add the stack trace, error code and cause, and to see each step on stderr while it happens: which config file was read, where each option came from, and how long hooks and the command took. It never prints a value, because this output ends up in CI logs.
 - `ctx.handled` only stops the default output. If a plugin truly recovered, it sets `process.exitCode = 0` in `onError`.
 
+**When another module already explains the error,** let it throw instead of printing, and pass its message on in a `CommandError`. The person reads one line, as the module wrote it, and an agent calling the command over MCP gets the same text as a `command_failed`:
+
+```ts
+async run({ options }) {
+  try {
+    await generate(options);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CommandError(message, { code: 'GENERATE_FAILED', exitCode: 3 });
+  }
+}
+```
+
+Printing the message and setting `process.exitCode` looks the same in a terminal, but over MCP the call is reported as a failure after the command ran, with `The command already ran.` added. Throw instead.
+
 #### How a run stops
 
 On `SIGINT` or `SIGTERM`, Runa aborts `ctx.signal` and runs `cleanup`, and the process ends by that same signal, so the shell sees 130 or 143. A command that ignores the signal stops being waited for after 2 seconds, and the process ends after 5 at most. A second signal leaves at once.
