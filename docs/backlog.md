@@ -117,6 +117,7 @@
 | | T-258 | La ayuda muestra los rangos | Opcional | Pendiente |
 | | T-259 | Detalles de la segunda revisión | Opcional | Pendiente |
 | | T-260 | Guías después de la segunda revisión | Opcional | Pendiente |
+| | T-261 | El aviso de MCP llega aunque el cliente descarte stderr | Opcional | Pendiente |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
@@ -1282,6 +1283,18 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
   - `guides/runa-compared.md` corrige lo de yargs y el config, lo que detectan los tipos, y la fila de exit codes de yargs; suma una fila de variables de entorno, `@stricli/core`, la latencia de MCP, que un config en la carpeta actual cambia el schema de una tool, y el ERESOLVE de `mcp` sin `@beta` junto a `core@beta`.
   - La guía de migración nombra extra-typings y la versión actual de commander.
   - Los READMEs de `mcp` y `completions` usan `await cli.run()`, y el de `completions` no dice que el plugin hace obligatorio el nombre del comando.
+
+### T-261 El aviso de MCP llega aunque el cliente descarte stderr
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como quien opera un servidor MCP, quiero enterarme de que una tool no va a poder correr aunque mi cliente no muestre el stderr del servidor. El aviso al arrancar de T-236 y T-255 sale solo por stderr, y `local-beacon` reportó el 2026-11-09 que opencode 2.1.3 lo descarta: registra `mcp connected tools=3` y nada más. El modelo se entera recién al llamar la tool, con `not_configured`.
+- **Decisión, 2026-11-09:** el aviso llega por dos caminos más, sin dejar de salir por stderr. La descripción de la tool lo dice, porque el modelo siempre la lee antes de llamar y se lo puede contar a la persona; y el servidor lo manda como log de MCP, para los clientes que muestran los logs. Es aditivo: no cambia ninguna `class` ni el resultado de una llamada. Se descartó dejarlo como estaba, porque el operador no se entera.
+- **Criterios de aceptación:**
+  - Una tool que no va a poder correr tiene en su descripción, después de la del autor, `Not available until the operator sets LBEACON_SOCKET.`, o `fixes 'deploy.replicas' in the config file.`, sin mostrar ningún valor. Una tool que sí puede correr no cambia.
+  - El servidor declara la capacidad `logging` y, cuando el cliente se conecta, manda cada aviso como `notifications/message` con nivel `warning`.
+  - Una prueba con un cliente MCP real comprueba los dos caminos.
+  - Se le pide a `local-beacon` que compruebe si opencode muestra la descripción y los logs.
 
 ## Después de v1 o si llega a tiempo
 
