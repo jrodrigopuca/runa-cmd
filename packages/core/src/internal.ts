@@ -4,6 +4,7 @@
  */
 export { longFlag } from './flag-name.js';
 export { renderHelp } from './help.js';
+export { operatorValueProblem } from './parse/resolve.js';
 export { killProcessTree, STOP_DEADLINE_MS } from './stop.js';
 export type { ToolReport, ToolRequest } from './tool-channel.js';
 export { TOOL_CALL_ENV, TOOL_INPUT_FD, TOOL_REPORT_FD } from './tool-channel.js';

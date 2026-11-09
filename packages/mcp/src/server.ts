@@ -19,7 +19,7 @@ import { RunaError } from '@runa-cmd/core';
 import type { ToolReport } from '@runa-cmd/core/internal';
 import { type ZodType, z } from 'zod';
 import { ERROR_CLASSES, type ErrorClass, MCP_ERROR_CODES } from './errors.js';
-import { missingValues } from './operator.js';
+import { operatorNote } from './operator.js';
 import type { ChildOutcome, RunOptions } from './runner.js';
 import { childrenFinished, runChild } from './runner.js';
 import type { ToolRegistration } from './schema.js';
@@ -97,7 +97,8 @@ function findFailure(
 	}
 	if (failed?.reason === 'input') {
 		// What the operator didn't set is what's missing first, whatever the model sent
-		const configured = reg.unconfigured.length === 0;
+		// Missing or wrong, a value of the operator is the operator's to fix (T-255)
+		const configured = reg.unconfigured.length === 0 && reg.misconfigured.length === 0;
 		return { class: configured ? INVALID_INPUT : NOT_CONFIGURED, effect: 'none' };
 	}
 	if (failed) return { class: REJECTED, effect: 'none' };
@@ -151,7 +152,7 @@ function failedChild(
 	if (found.class !== ERROR_CLASSES.NOT_CONFIGURED) return failure(reason, found);
 
 	// The model reads this: it can't send the value, nor ask the user for it
-	const note = `The operator of this server has to set ${missingValues(reg)}. It isn't a value you can send.`;
+	const note = operatorNote(reg);
 	return failure(`${note}\n\n${reason}`, found);
 }
 

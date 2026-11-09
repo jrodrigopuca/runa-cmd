@@ -109,6 +109,19 @@ await defineCLI({
 			options: { bucket: z.string().default('sibling-bucket') },
 			run: ({ options }) => options,
 		}),
+		// Values the operator gives, by env or by the config file, that can be wrong (T-255)
+		tuned: command('tuned', {
+			meta: {
+				name: 'tuned',
+				description: 'Uses values the operator may get wrong',
+				options: { level: { env: 'TEST_LEVEL' } },
+			},
+			options: {
+				level: z.enum(['low', 'high']).default('low'),
+				size: z.number().int().positive().default(1),
+			},
+			run: ({ options }) => options,
+		}),
 		leaky: command('leaky', {
 			meta: {
 				name: 'leaky',

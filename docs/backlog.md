@@ -111,7 +111,7 @@
 | | T-252 | Alias que chocan dentro de un comando | Requerido | Hecho |
 | | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Pendiente |
 | | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Pendiente |
-| | T-255 | Un valor inválido del operador, por MCP | Requerido | Pendiente |
+| | T-255 | Un valor inválido del operador, por MCP | Requerido | Hecho |
 | | T-256 | Un booleano sin default frena al arrancar | Requerido | Pendiente |
 | | T-257 | Un valor inválido de env nombra la variable | Opcional | Pendiente |
 | | T-258 | La ayuda muestra los rangos | Opcional | Pendiente |
@@ -1229,7 +1229,7 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-255 Un valor inválido del operador, por MCP
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
 - **Descripción:** como quien opera un servidor MCP, quiero enterarme si un valor mío está mal, y que el modelo no lo tome como su error. Un valor inválido en el config o en env del operador hace fallar cada llamada con `class: invalid_input`, y no se avisa al arrancar. Verificado el 2026-11-08 con el config.
 - **Decisión, 2026-11-08:** se trata igual que un valor del operador que falta (T-236): `class: not_configured`, que pasa a significar que un valor del operador falta o está mal, y un aviso al arrancar, sin frenar el servidor. Se descartó frenar el servidor, porque una tool con un valor malo dejaría sin servir a las demás, y una clase nueva, porque el cliente haría lo mismo con las dos. Cambia la clase de este caso, así que entra en la beta.7.
 - **Criterios de aceptación:**

@@ -117,7 +117,7 @@ The `class` says what failed. Each one is part of the [contract](../../VERSIONIN
 |---|---|---|
 | `unknown_tool` | `none` | No tool has that name, or it's excluded |
 | `invalid_input` | `none` | An argument or option the model sent is missing or breaks its schema |
-| `not_configured` | `none` | A value only the operator gives is missing, as an option's env var. The model can't send it, so the text says the operator has to set it |
+| `not_configured` | `none` | A value only the operator gives is missing, as an option's env var, or breaks its schema, in env or in the config file. The model can't send it nor fix it, so the text says what the operator has to set or fix |
 | `rejected` | `none` | The call failed before `run()`, as in a hook or a middleware |
 | `not_run` | `none` | The call ended well without running the command, because a hook or a middleware skipped it |
 | `command_failed` | `unknown` | `run()` threw a `CommandError`: the failure you wrote, with your message as is |
@@ -183,6 +183,8 @@ An unknown name in `exclude`, an excluded tool with settings, or a tool both rea
 ## What the Operator Decides
 
 Whoever starts the server beats the model. An option that declares `env`, or has a value for that command in the config file, stays out of the tool's schema. If a model sends it anyway, the call fails with `class: "invalid_input"` and nothing runs: `'replicas' is set by the operator of this server, so it can't be sent.` The text never shows the operator's value. To let the model choose, list the option in `expose`. This holds even if the env var isn't set: a missing required value fails the call with `class: "not_configured"`, and its text tells the model that the operator has to set it, so it doesn't take it as its own mistake. The server also says it at startup, on stderr, which clients show in their logs: `mcpPlugin: tool 'deploy' can't run until the operator sets DEPLOY_TOKEN (--token).` It keeps serving, because the other tools work.
+
+A value the operator gave that breaks its schema works the same way, checked with the rules the CLI uses, so `"5"` for a number is fine. The call fails with `not_configured`, and the server says at startup what to fix, without the value: `mcpPlugin: tool 'deploy' can't run until the operator fixes DEPLOY_ENV (--env): expected one of: staging, production.`, or `fixes 'deploy.replicas' in the config file: expected number.`
 
 ```ts
 mcpPlugin({

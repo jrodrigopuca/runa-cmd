@@ -8,7 +8,7 @@
  * turn into a parameter the model can ask a person for.
  */
 import { type OptionMeta, RunaError } from '@runa-cmd/core';
-import { longFlag } from '@runa-cmd/core/internal';
+import { longFlag, operatorValueProblem } from '@runa-cmd/core/internal';
 import { MCP_ERROR_CODES } from './errors.js';
 import type { ToolRegistration } from './schema.js';
 import type { McpPluginOptions, ToolOptions } from './types.js';
@@ -102,6 +102,7 @@ function applyToTool(
 	const fixed = new Set<string>();
 	const fixedValues: unknown[] = [];
 	const unconfigured: ToolRegistration['unconfigured'] = [];
+	const misconfigured: ToolRegistration['misconfigured'] = [];
 
 	for (const key of reg.optionKeys) {
 		if (options.expose?.includes(key)) continue;
@@ -121,9 +122,23 @@ function applyToTool(
 		if (!belongsToOperator) continue;
 
 		// A model can't send it, so without a value no call can run (T-236)
-		const required = inputShape[key]?.safeParse(undefined).success === false;
+		const schema = inputShape[key];
+		const required = schema?.safeParse(undefined).success === false;
 		if (value === undefined && envName !== undefined && required) {
 			unconfigured.push({ key, env: envName });
+		}
+
+		// Nor with a value that breaks its schema: checked as the CLI checks it (T-255)
+		if (value !== undefined && schema) {
+			const fromEnv = envName !== undefined && values.env[envName] !== undefined;
+			const reason = operatorValueProblem(schema, value, fromEnv ? 'env' : 'config');
+			if (reason !== undefined) {
+				misconfigured.push(
+					fromEnv
+						? { key, env: envName, reason }
+						: { key, configKey: [...reg.path, key].join('.'), reason },
+				);
+			}
 		}
 
 		delete inputShape[key];
@@ -138,6 +153,7 @@ function applyToTool(
 		inputShape,
 		fixed,
 		unconfigured,
+		misconfigured,
 		redactions: redactable([...fixedValues, ...Object.values(values.globals)]),
 		maxOutput: options.maxOutput ?? maxOutput ?? reg.maxOutput,
 	};
@@ -164,25 +180,47 @@ export function applyOperatorValues(
 }
 
 /** The variables, as `NOTES_FILE` or `A (--a) and B (--b)` with their flags. */
+const listOf = (names: string[]): string =>
+	names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : `${names[0]}`;
+
 export function missingValues(reg: ToolRegistration, withFlags = false): string {
-	const names = reg.unconfigured.map(({ key, env }) =>
-		withFlags ? `${env} (${longFlag(key)})` : env,
+	return listOf(
+		reg.unconfigured.map(({ key, env }) => (withFlags ? `${env} (${longFlag(key)})` : env)),
 	);
-	return names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : `${names[0]}`;
+}
+
+/** Where a wrong value is: its variable, or its key in the config file. Never the value. */
+function wrongValueAt(
+	{ key, env, configKey }: ToolRegistration['misconfigured'][number],
+	withFlags: boolean,
+): string {
+	if (env !== undefined) return withFlags ? `${env} (${longFlag(key)})` : env;
+	return `'${configKey}' in the config file`;
+}
+
+/** What the model reads first: what the operator has to set, and what to fix. */
+export function operatorNote(reg: ToolRegistration): string {
+	const set = reg.unconfigured.length > 0 ? [`set ${missingValues(reg)}`] : [];
+	const wrong = reg.misconfigured.map((item) => wrongValueAt(item, false));
+	const fix = wrong.length > 0 ? [`fix ${listOf(wrong)}`] : [];
+	return `The operator of this server has to ${[...set, ...fix].join(' and ')}. It isn't a value you can send.`;
 }
 
 /**
- * What the operator has to set before each tool can run. Said at startup, so
- * it doesn't wait for a model to call the tool, and the server keeps serving:
- * the other tools work.
+ * What the operator has to set or fix before each tool can run. Said at
+ * startup, so it doesn't wait for a model to call the tool, and the server
+ * keeps serving: the other tools work.
  */
 export function unconfiguredWarnings(registrations: ToolRegistration[]): string[] {
-	return registrations
-		.filter((reg) => reg.unconfigured.length > 0)
-		.map(
-			(reg) =>
-				`mcpPlugin: tool '${reg.name}' can't run until the operator sets ${missingValues(reg, true)}.`,
+	return registrations.flatMap((reg) => {
+		const prefix = `mcpPlugin: tool '${reg.name}' can't run until the operator`;
+		const missing =
+			reg.unconfigured.length > 0 ? [`${prefix} sets ${missingValues(reg, true)}.`] : [];
+		const wrong = reg.misconfigured.map(
+			(item) => `${prefix} fixes ${wrongValueAt(item, true)}: ${item.reason}.`,
 		);
+		return [...missing, ...wrong];
+	});
 }
 
 /** Hide fixed values from text a command wrote without meaning to expose them. */

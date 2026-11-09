@@ -453,6 +453,25 @@ function humanizeOptionIssues(
 	});
 }
 
+/**
+ * Why a value the operator gives, from env or from the config file, breaks
+ * its schema, in the words of the terminal, or undefined if it's fine. The MCP
+ * server checks these at startup with the same rules the CLI applies, so a
+ * `"5"` that the CLI takes isn't reported (T-255). Internal, not public API.
+ */
+export function operatorValueProblem(
+	schema: ZodType,
+	value: unknown,
+	source: 'env' | 'config',
+): string | undefined {
+	const [field] = walkSchema({ value: schema });
+	const fromEnv = source === 'env' && field?.isArray && typeof value === 'string';
+	const parsed = schema.safeParse(coerceField(fromEnv ? splitEnvList(value) : value, field));
+	if (parsed.success) return undefined;
+	const [issue] = parsed.error.issues;
+	return issue ? valueReason(issue, field?.enumValues) : 'invalid value';
+}
+
 /** No flag was typed: the person has to find the value in the file, by its key. */
 function configIssue(
 	issue: ZodIssue,

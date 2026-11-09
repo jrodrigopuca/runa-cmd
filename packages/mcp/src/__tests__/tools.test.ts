@@ -273,6 +273,60 @@ describe('a value the operator has to give', () => {
 	});
 });
 
+// A value of the operator that's wrong is the operator's to fix, as a missing one (T-255)
+describe('a value the operator got wrong', () => {
+	const meta = (result: { _meta?: Record<string, unknown> }) => result._meta?.['runa/error'];
+	let dir: string;
+
+	beforeAll(() => {
+		dir = mkdtempSync(join(tmpdir(), 'runa-tuned-'));
+		writeFileSync(join(dir, 'server.config.json'), JSON.stringify({ tuned: { size: 'big' } }));
+	});
+	afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+	it('in the config file, the call is not_configured, and says what to fix', async () => {
+		const client = await serve({ CONFIG_DIR: dir });
+		const result = await client.call('tuned', {});
+
+		expect(meta(result as never)).toEqual({ class: 'not_configured', effect: 'none' });
+		expect(text(result)).toMatch(
+			/^The operator of this server has to fix 'tuned.size' in the config file\. It isn't a value you can send\./,
+		);
+		expect(text(result)).toContain('The command did not run.');
+	});
+
+	it('in env, the call is not_configured, naming the variable but not its value', async () => {
+		const client = await serve({ TEST_LEVEL: 'extreme' });
+		const result = await client.call('tuned', {});
+
+		expect(meta(result as never)).toEqual({ class: 'not_configured', effect: 'none' });
+		expect(text(result)).toMatch(/^The operator of this server has to fix TEST_LEVEL\./);
+		expect(text(result)).not.toContain('extreme');
+	});
+
+	it('the server says at startup what to fix, and keeps serving', async () => {
+		const client = await serve({ CONFIG_DIR: dir, TEST_LEVEL: 'extreme' });
+		await client.tools();
+
+		expect(client.stderr).toContain(
+			"mcpPlugin: tool 'tuned' can't run until the operator fixes TEST_LEVEL (--level): expected one of: low, high.",
+		);
+		expect(client.stderr).toContain(
+			"mcpPlugin: tool 'tuned' can't run until the operator fixes 'tuned.size' in the config file: expected number.",
+		);
+		expect(client.stderr).not.toContain('extreme');
+		expect(text(await client.call('greet', { name: 'Ana' }))).toBe('Hello Ana');
+	});
+
+	it('a value the terminal would take, as text in env, is fine', async () => {
+		const client = await serve({ TEST_LEVEL: 'high' });
+		await client.tools();
+
+		expect(client.stderr).not.toContain("tool 'tuned' can't run until");
+		expect(meta((await client.call('tuned', {})) as never)).toBeUndefined();
+	});
+});
+
 // The model sends keys, not flags: an error names what it sent (T-236)
 describe('an input error names the key of the schema', () => {
 	it.each([
