@@ -122,6 +122,7 @@
 | | T-263 | Fallar con el mensaje de otro módulo | Opcional | Hecho |
 | | T-264 | Un exit code fijado a mano, por MCP | Opcional | Pendiente |
 | | T-265 | Cargar los paquetes desde CommonJS | Opcional | Decisión pendiente |
+| | T-266 | Un valor después de `--no-x` es un error de uso | Opcional | Pendiente |
 | Después | T-601 | `ctx.stdin` | Opcional | Pendiente |
 | | T-602 | Ancho correcto para CJK y emoji | Opcional | Pendiente |
 | | T-603 | Completions de rutas de archivo | Opcional | Pendiente |
@@ -1351,6 +1352,21 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
   - Se verifica con `tsc` que un proyecto CommonJS con `module: nodenext` recibe los tipos, y la guía dice con qué versión de TypeScript se comprobó. Si falla, se documenta el límite antes de publicar.
   - `guides/getting-started.md` deja de decir "Runa is ESM only" como requisito, y los README dicen que se puede usar con `require`.
   - ADR-0051 pasa a aceptada y ADR-0015 indica qué parte reemplaza. Lleva changeset minor en cada paquete.
+
+### T-266 Un valor después de `--no-x` es un error de uso
+
+- **v1:** Opcional
+- **Estado:** Pendiente
+- **Descripción:** como usuario de una CLI, quiero que `--no-css=true` me diga que está mal, en vez de ignorarlo en silencio. Lo reportó un consumidor el 2026-11-09, sobre la 1.0.0, y se reprodujo con más casos ([KI-051](./known-issues.md)): con un booleano, `--no-x=<valor>` deja la opción en su default y sale con 0, sea cual sea el valor. Ningún test ni documento cubría `--no-x=<valor>`.
+- **Decisión, 2026-11-09:** se rechaza con exit 2, sin interpretar el valor. Es lo que pide [ADR-0028](./adr/0028-coercion-booleana.md), así que según [`VERSIONING.md`](../VERSIONING.md) es un bug y sale como patch de `core`. Se comparó con las alternativas de la guía: commander 15.1, yargs 18.2 en modo `strict` y cac 7.1 lo rechazan con exit 1, oclif con exit 2, y solo citty 0.2 lo ignora con exit 0, como Runa hoy. Ninguna invierte el valor. Se descartó invertirlo, como que `--no-css=true` sea `false`: `--no-css=false` es una doble negación que confunde, y sumaría una forma de booleano al contrato, que después no se puede quitar sin una major. Aceptar más formas más adelante sí es una minor.
+- **Criterios de aceptación:**
+  - `--no-x=<valor>` sobre un booleano sale con exit 2, código `VALIDATION_ERROR` y `Option --no-x does not take a value`, más la línea habitual de `Run '<cli> --help' for usage.`. Vale para cualquier valor, incluidos `true`, `false`, `1`, `0` y el vacío, y para una opción global y una de comando.
+  - `--no-x`, `--x`, `--x=false` y `--x=0` siguen como hoy, y env y config no cambian.
+  - `--no-y=<valor>` donde `y` no es un booleano sigue siendo `Unknown option`, con su sugerencia.
+  - La guarda de `assertKnownOptions` deja de suponer que las claves `no-*` no aparecen, y su comentario dice el caso real.
+  - Un test de aceptación en `boolean-values.test.ts` ejecuta la CLI real con los casos de arriba y comprueba el exit code y stderr.
+  - Una tool MCP no cambia, porque recibe valores y no argv: se comprueba con la suite de `mcp`.
+  - Lleva changeset patch de `core`, y al cerrarla se borra KI-051.
 
 ## Después de v1 o si llega a tiempo
 
