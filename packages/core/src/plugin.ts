@@ -303,7 +303,7 @@ const NEGATED_KEY = /^no(?:-|(?=[A-Z]))(.+)$/;
 function assertUsableNames(options: Record<string, ZodType>, owner: string): void {
 	const keysByFlag = new Map<string, string>();
 
-	for (const { name, zodType } of walkSchema(options)) {
+	for (const { name, zodType, isOptional } of walkSchema(options)) {
 		const flag = flagName(name);
 		const other = keysByFlag.get(flag);
 		if (other) {
@@ -321,6 +321,15 @@ function assertUsableNames(options: Record<string, ZodType>, owner: string): voi
 				`Boolean option '${name}' of ${owner} would clash with '--no-${flagName(key)}', ` +
 					`which already negates '${key}'. Declare '${key}' instead, with .default(true).`,
 				{ code: ERROR_CODES.INVALID_OPTION_NAME, exitCode: 1 },
+			);
+		}
+
+		// A flag that isn't passed would fail every run: the author hears it, not the user (T-256)
+		if (zodType === 'boolean' && !isOptional) {
+			throw new RunaError(
+				`Boolean option '${name}' of ${owner} has no default: a flag that isn't passed needs one. ` +
+					'Use z.boolean().default(false), or .optional().',
+				{ code: ERROR_CODES.INVALID_BOOLEAN_OPTION, exitCode: 1 },
 			);
 		}
 	}

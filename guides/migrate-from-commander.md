@@ -163,7 +163,7 @@ Piece by piece:
 | `.option('--text-color <hex>', 'Text', '#fff')` | `textColor: z.string().default('#fff').describe('Text')`, with `valueName: 'hex'` in `meta.options` |
 | `-o, --output` | The key is `output`, and `alias: ['-o']` goes in `meta.options` |
 | `.option('--uppercase')` | `z.boolean().default(false)`. `--no-uppercase` works with no extra code |
-| `.requiredOption()` | A schema without `.default()` or `.optional()` |
+| `.requiredOption()` | A schema without `.default()` or `.optional()`. Not for a boolean: a `z.boolean()` needs one of them, or the CLI stops at startup and says so |
 | `new Option().choices([...])` | `z.enum([...])` |
 | `new Option().env('BADGE_STYLE')` | `env: 'BADGE_STYLE'` in `meta.options` |
 | `.argParser()` or a check in `.action()` | The schema: `.regex()`, `.min()`, `.refine()`, or `z.number()` to get a number |

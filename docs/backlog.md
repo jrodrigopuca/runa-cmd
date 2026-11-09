@@ -112,7 +112,7 @@
 | | T-253 | Un comando que no existe es 127, aunque falte una global | Requerido | Hecho |
 | | T-254 | Un `CommandError` de otra copia de `core` | Requerido | Hecho |
 | | T-255 | Un valor inválido del operador, por MCP | Requerido | Hecho |
-| | T-256 | Un booleano sin default frena al arrancar | Requerido | Pendiente |
+| | T-256 | Un booleano sin default frena al arrancar | Requerido | Hecho |
 | | T-257 | Un valor inválido de env nombra la variable | Opcional | Pendiente |
 | | T-258 | La ayuda muestra los rangos | Opcional | Pendiente |
 | | T-259 | Detalles de la segunda revisión | Opcional | Pendiente |
@@ -1240,7 +1240,8 @@ Salen de [la revisión de coherencia y la comparación](./research/2026-11-revie
 ### T-256 Un booleano sin default frena al arrancar
 
 - **v1:** Requerido
-- **Estado:** Pendiente
+- **Estado:** Hecho
+- **Resultado, 2026-11-08:** frena con `INVALID_BOOLEAN_OPTION`. El criterio de `z.literal(true)` se cumple, porque no frena, pero no sirve como salida para un `--yes` obligatorio: hoy `z.literal(true)` no funciona como flag. `--yes` da `Option --yes requires a value`, y `--yes true` da `expected true`, porque el texto no se convierte. La decisión del caso 7 lo dio por bueno sin verificarlo. Queda por decidir si se hace funcionar como flag.
 - **Descripción:** como autor que escribe `shout: z.boolean()`, quiero enterarme yo, y no quien usa mi CLI, de que eso es obligatorio. Hoy `greet hello Ana` da `Missing required option: --shout`, exit 2, y ninguna otra herramienta trata así una flag. Verificado el 2026-11-08.
 - **Decisión, 2026-11-08:** un `z.boolean()` sin `.default()` ni `.optional()` frena la CLI al arrancar, con un mensaje que dice cómo arreglarlo. Se descartó un `false` implícito, porque contradice el schema, que es la fuente de verdad (ADR-0001), y obligaría a acomodar MCP, la ayuda y la introspección; y mejorar solo el mensaje, porque le llega a quien usa la CLI y no lo puede arreglar. Es incompatible para una CLI con un booleano obligatorio, y entra en la beta.7.
 - **Criterios de aceptación:**

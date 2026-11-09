@@ -172,7 +172,8 @@ describe('runToolCall', () => {
 			['an array option', { tags: z.array(z.string()) }, { tags: ['a', 'b'] }],
 			['an object option', { filter: z.object({ age: z.number() }) }, { filter: { age: 3 } }],
 			['a number option', { size: z.number() }, { size: 0 }],
-			['a boolean false', { force: z.boolean() }, { force: false }],
+			// Against a default of true, so false can only come from the call
+			['a boolean false', { force: z.boolean().default(true) }, { force: false }],
 			['text starting with dashes', { note: z.string() }, { note: '--force' }],
 		])('takes %s', async (_case, options, input) => {
 			const { seen, command } = capture();
