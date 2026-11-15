@@ -1,5 +1,25 @@
 # @runa-cmd/core
 
+## 1.1.0
+
+### Minor Changes
+
+- 1446d62: `testCLI()` keeps the exact bytes a command writes, in the new `stdoutBytes` and `stderrBytes` of its result, so a CLI that writes a PNG, a zip or a tar to stdout can be tested without a subprocess:
+
+  ```ts
+  const result = await testCLI(cli, ["export", "--format", "png"]);
+  assert.deepEqual(
+    result.stdoutBytes.subarray(0, 4),
+    Uint8Array.from([0x89, 0x50, 0x4e, 0x47])
+  );
+  ```
+
+  Before, every write was decoded as UTF-8 on its own, so each byte that isn't valid UTF-8 became U+FFFD in `stdout`, with no way back and no warning. `stdout` and `stderr` are still the same text, now decoded once, so a character split across two writes comes out whole, and a string written with an encoding, as `write('ff', 'hex')`, keeps it. When a stream isn't valid UTF-8, `testCLI()` emits a Node warning, `RUNA_TESTCLI_NOT_UTF8`, that points to the bytes.
+
+### Patch Changes
+
+- 65f1cda: A value after a negated boolean is now a usage error, exit 2: `--no-cache=true` says `Option --no-cache does not take a value`. Before, the value was dropped and the option kept its default with exit 0, so `--no-cache=true` left `cache` on, the opposite of what was asked. It also applies to a long alias and a global option, and with `strictOptions: false`. To pass a value, write `--cache=false`.
+
 ## 1.0.0
 
 ### Major Changes
