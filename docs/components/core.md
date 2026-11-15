@@ -212,10 +212,11 @@ Ninguna falla sale en silencio ([ADR-0027](../adr/0027-toda-salida-explica-el-mo
 
 ## Probar una CLI
 
-`testCLI(cli, argv, options)`, de `@runa-cmd/core/testing`, ejecuta el ciclo de vida real sin terminar el proceso ([ADR-0041](../adr/0041-funcion-de-pruebas.md)). Devuelve `code`, `stdout`, `stderr`, `result`, `error` y `trace`.
+`testCLI(cli, argv, options)`, de `@runa-cmd/core/testing`, ejecuta el ciclo de vida real sin terminar el proceso ([ADR-0041](../adr/0041-funcion-de-pruebas.md)). Devuelve `code`, `stdout`, `stderr`, `stdoutBytes`, `stderrBytes`, `result`, `error` y `trace`.
 
 - **Entrada:** `env` y `config` reemplazan el entorno y el archivo. No lee `process.env` ni archivos, para que la máquina no cambie el resultado.
 - **Salida:** se dirige con `AsyncLocalStorage`, así que varias ejecuciones comparten un proceso sin mezclarse. También se dirigen los métodos de `console`, porque un runner puede reemplazarlos. El resto del proceso escribe donde siempre ([experimento](../research/2026-10-testcli-capture-spike.md)).
+- **Bytes y texto:** cada `write()` se guarda como bytes, y un string se convierte con su encoding, así que `write('ff', 'hex')` guarda un byte. `stdoutBytes` y `stderrBytes` tienen los bytes exactos, para una salida binaria como un PNG o un tar. `stdout` y `stderr` se decodifican como UTF-8 una sola vez, al final, así que un carácter partido entre dos `write()` sale entero. Si un stream no es UTF-8 válido, su texto lleva U+FFFD en lugar de esos bytes, y `testCLI()` emite un warning de Node, `RUNA_TESTCLI_NOT_UTF8`, que apunta a `stdoutBytes` o `stderrBytes`. Desde `core` 1.1.0; antes cada `write()` se decodificaba por separado y los bytes se perdían sin aviso.
 - **`trace`:** eventos `config`, `option`, `hook`, `run` y `output`. Un valor de `env` no aparece, solo su fuente. No es contrato.
 - **`process.exit` en un comando:** termina la ejecución con su código y sin `cleanup`, igual que en una real.
 - **Señales:** no registra listeners por ejecución, así que `ctx.signal` no se aborta.

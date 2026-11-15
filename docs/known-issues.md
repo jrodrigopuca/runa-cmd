@@ -1,6 +1,6 @@
 # Problemas conocidos
 
-> **Verificado:** 2026-11-09, sobre la 1.0.0 publicada. El README vacío en `npm view` se resolvió con la publicación de la 1.0.0: el campo `readme` del registro tiene el texto en los cinco paquetes.
+> **Verificado:** 2026-11-15, sobre `core` 1.1.0 publicada. El valor después de `--no-x`, que se ignoraba, se resolvió en esa versión (T-266). El README vacío en `npm view` se resolvió con la publicación de la 1.0.0: el campo `readme` del registro tiene el texto en los cinco paquetes.
 
 Cada problema tiene una tarea en el [backlog](./backlog.md). Al cerrarla, se borra la fila y el historial queda en git.
 
