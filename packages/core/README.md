@@ -273,7 +273,7 @@ Write `darkColor` in code and `--dark-color` at the terminal. `run()`, config fi
 | `outputURL` | `--output-url` |
 | `dark-color` | `--dark-color`, a key with hyphens stays as written |
 
-`--darkColor` is a usage error that points to `--dark-color`. `--no-dark-mode` negates `darkMode`. A boolean whose default is `true` shows in help as `--[no-]dark-mode`, and is the only kind that shell completions offer a `--no-` for: one that starts off has nothing to turn off.
+`--darkColor` is a usage error that points to `--dark-color`. `--no-dark-mode` negates `darkMode`, and takes no value: `--no-dark-mode=true` is a usage error, exit 2. To pass a value, write `--dark-mode=false`. A boolean whose default is `true` shows in help as `--[no-]dark-mode`, and is the only kind that shell completions offer a `--no-` for: one that starts off has nothing to turn off.
 
 A value that breaks a rule of its schema names the flag, repeats what was typed, and says what's wrong: `.positive()` gives `Invalid value '0' for --limit: must be greater than 0`, and `.min(3)` on a string `must have at least 3 characters`. Write your own message for other rules, as with `.regex(re, '--color must start with #')`, and it's shown as you wrote it.
 

@@ -16,13 +16,13 @@ export interface ParseArgsBridgeConfig {
 	longAliasMap: Record<string, string>;
 	/**
 	 * Every key util.parseArgs may legitimately produce for this config:
-	 * canonical option names + registered long aliases, plus a defensive
-	 * `no-{name}` per boolean option (parseArgs folds `--no-x` into `x: false`
-	 * under allowNegative — pinned by parseargs-negation.test.ts — but the
-	 * allowance guards against a future representation change).
+	 * canonical option names + registered long aliases, plus `no-{name}` per
+	 * boolean flag and long alias. parseArgs folds `--no-x` into `x: false`, but
+	 * `--no-x=value` comes out as a `no-x` key, which assertOptionValues rejects
+	 * (T-266). Both are pinned by parseargs-negation.test.ts.
 	 */
 	knownKeys: Set<string>;
-	/** Canonical names of boolean options (for the strict check's `no-*` allowance) */
+	/** Boolean flags and long aliases (for the strict check's `no-*` allowance) */
 	booleanKeys: Set<string>;
 }
 
@@ -71,6 +71,11 @@ export function buildParseArgsConfig(
 					// Register the long alias in parseArgs too
 					options[longName] = { type: parseArgsType, ...(param.isArray ? { multiple: true } : {}) };
 					knownKeys.add(longName);
+					// `--no-alias=x` must reach assertOptionValues, which says what's wrong
+					if (parseArgsType === 'boolean') {
+						booleanKeys.add(longName);
+						knownKeys.add(`no-${longName}`);
+					}
 				} else if (alias.startsWith('-') && alias.length === 2) {
 					// Short alias: single char after '-'
 					optConfig.short = alias[1];

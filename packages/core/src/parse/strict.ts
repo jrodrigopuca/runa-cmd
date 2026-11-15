@@ -92,6 +92,14 @@ export function assertOptionValues(input: AssertOptionValuesInput): void {
 	const flags = registeredFlags(options);
 
 	for (const { kind, name: key = '', rawName, value, inlineValue } of tokens) {
+		// `--no-x=value` isn't folded into `x`: its key stays `no-x` (T-266)
+		if (kind === 'option' && value !== undefined && key.startsWith('no-')) {
+			if (options[key.slice(3)]?.type === 'boolean') {
+				const message = `Option ${rawName ?? `--${key}`} does not take a value`;
+				throw new ValidationError([{ code: 'custom', message, path: [] }]);
+			}
+		}
+
 		if (kind !== 'option' || options[key]?.type !== 'string') continue;
 
 		const name = longAliasMap[key] ?? key;
@@ -119,10 +127,9 @@ export function assertKnownOptions(input: AssertKnownOptionsInput): void {
 	for (const key of producedKeys) {
 		if (knownKeys.has(key)) continue;
 
-		// Defensive allowance: on Node 24, parseArgs folds `--no-x` into
-		// `x: false` even for unregistered keys (see parseargs-negation.test.ts),
-		// so `no-*` keys never appear today — this guards a future Node line
-		// surfacing the negation token un-folded.
+		// parseArgs folds `--no-x` into `x: false`, but `--no-x=value` comes out
+		// as a `no-x` key (see parseargs-negation.test.ts). It isn't unknown: it's
+		// a negation with a value, and assertOptionValues rejects it (T-266).
 		if (key.startsWith('no-') && booleanKeys.has(key.slice(3))) continue;
 
 		const flag = tokens.find(({ name }) => name === key)?.rawName ?? renderFlag(key);

@@ -7,7 +7,7 @@ const show = defineCommand({
 		name: 'show',
 		description: 'Print resolved values',
 		options: {
-			minify: { env: 'MINIFY' },
+			minify: { env: 'MINIFY', alias: ['--compress'] },
 			cache: { env: 'CACHE' },
 			watch: { env: 'WATCH' },
 		},
@@ -26,6 +26,7 @@ const noop = defineCommand({ meta: { name: 'noop', description: 'noop' }, run() 
 
 await defineCLI({
 	meta: { name: 'values' },
+	globalOptions: { quiet: z.boolean().default(false) },
 	commands: { show, noop },
 	config: process.env.CONFIG_DIR
 		? { name: 'values', searchPaths: [process.env.CONFIG_DIR] }

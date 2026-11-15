@@ -14,6 +14,9 @@
  * - UNREGISTERED `--no-y` + strict: false + allowNegative → values = { y: false }
  *   (parseArgs folds negation even for unregistered keys — the produced key
  *   is `y`, NOT `no-y`; strict checking therefore sees the bare name)
+ * - Registered boolean `x` + `--no-x=value` → values = { 'no-x': 'value' }
+ *   (with a value there's no folding: the strict check lets the `no-x` key
+ *   through, and assertOptionValues rejects it, T-266)
  */
 import { parseArgs } from 'node:util';
 import { describe, expect, it } from 'vitest';
@@ -67,5 +70,23 @@ describe('util.parseArgs negation-key representation (pinned)', () => {
 		});
 
 		expect(values['forse']).toBe(true);
+	});
+
+	it('--no-x=value does NOT fold: it produces a no-x key with the value (T-266)', () => {
+		// The case the folding above doesn't cover: assertOptionValues rejects it,
+		// and the `no-*` allowance in the strict check lets it get there.
+		const { values, tokens } = parseArgs({
+			options: { x: { type: 'boolean', default: true } },
+			args: ['--no-x=false'],
+			strict: false,
+			allowNegative: true,
+			tokens: true,
+		});
+
+		expect(values['no-x']).toBe('false');
+		expect(values['x']).toBe(true);
+		expect(tokens).toContainEqual(
+			expect.objectContaining({ name: 'no-x', rawName: '--no-x', inlineValue: true }),
+		);
 	});
 });

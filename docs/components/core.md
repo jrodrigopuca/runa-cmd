@@ -162,7 +162,7 @@ En el código, `darkColor`; en la terminal, `--dark-color` ([ADR-0024](../adr/00
 | `dark-color` | `--dark-color`: una clave con guiones se respeta |
 
 - **Solo vale la forma kebab.** `--darkColor` da exit 2 y sugiere `--dark-color`.
-- **Negación:** `--no-dark-mode` niega `darkMode`.
+- **Negación:** `--no-dark-mode` niega `darkMode`, también por un alias largo, y no lleva valor: `--no-dark-mode=<valor>` sale con exit 2 y `Option --no-dark-mode does not take a value`, sea cual sea el valor. `parseArgs` no lo pliega en `darkMode`, sino que da una clave `no-dark-mode`; el check estricto la deja pasar y `assertOptionValues` la rechaza, así que también falla con `strictOptions: false` (T-266).
 - **Lo que no es una terminal conserva la clave:** las tools MCP y los archivos de config usan `darkColor`.
 - **Un plural de siglas no se separa bien:** `baseURLs` da `--base-ur-ls`. Para esos casos, escribí la clave con guiones: `'base-urls'`.
 

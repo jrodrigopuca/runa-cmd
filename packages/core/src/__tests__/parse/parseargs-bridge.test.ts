@@ -134,7 +134,7 @@ describe('buildParseArgsConfig', () => {
 			);
 		});
 
-		it('booleanKeys contains only canonical names of boolean options', () => {
+		it('booleanKeys contains boolean flags and their long aliases, nothing else', () => {
 			const metadata = walkSchema({
 				verbose: z.boolean(),
 				force: z.boolean().default(false),
@@ -142,11 +142,15 @@ describe('buildParseArgsConfig', () => {
 				replicas: z.number(),
 			});
 
-			const { booleanKeys } = buildParseArgsConfig(metadata, {
+			const { booleanKeys, knownKeys } = buildParseArgsConfig(metadata, {
 				verbose: { alias: ['-v', '--loud'] },
+				env: { alias: ['--environment'] },
 			});
 
-			expect(booleanKeys).toEqual(new Set(['verbose', 'force']));
+			// A long alias is negated too, so `--no-loud=x` must reach assertOptionValues (T-266)
+			expect(booleanKeys).toEqual(new Set(['verbose', 'loud', 'force']));
+			expect(knownKeys.has('no-loud')).toBe(true);
+			expect(knownKeys.has('no-environment')).toBe(false);
 		});
 
 		it('short aliases do not appear in knownKeys (parseArgs maps them to canonical)', () => {

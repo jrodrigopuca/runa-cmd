@@ -55,6 +55,24 @@ describe('assertOptionValues', () => {
 		expect(() => check(args)).not.toThrow();
 	});
 
+	it.each([
+		['true', ['--no-force=true']],
+		['false', ['--no-force=false']],
+		['an empty value', ['--no-force=']],
+		['anything else', ['--no-force=banana']],
+	])('rejects a negated boolean with %s', (_case, args) => {
+		expect(() => check(args)).toThrow(ValidationError);
+		expect(() => check(args)).toThrow('Option --no-force does not take a value');
+	});
+
+	it.each([
+		['a negated boolean', ['--no-force']],
+		['a boolean with an inline value', ['--force=false']],
+		['a negated unknown flag, left to the strict check', ['--no-nope=1']],
+	])('accepts %s', (_case, args) => {
+		expect(() => check(args)).not.toThrow();
+	});
+
 	it('accepts a result without tokens', () => {
 		expect(() =>
 			assertOptionValues({ tokens: undefined, options, longAliasMap: {} }),

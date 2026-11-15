@@ -115,3 +115,46 @@ describe('values written on the command line', () => {
 		expect(result.stderr).toContain('--minify');
 	});
 });
+
+// T-266: a negation takes no value. Before, the value was dropped and the
+// option kept its default with exit 0, so --no-cache=true left cache on.
+describe('a value after a negated boolean', () => {
+	it.each([
+		['--no-cache=true'],
+		['--no-cache=false'],
+		['--no-cache=1'],
+		['--no-cache=0'],
+		['--no-cache='],
+		['--no-cache=banana'],
+	])('rejects %s with exit 2, naming the flag', (flag) => {
+		const result = show([flag]);
+		expect(result.status).toBe(2);
+		expect(result.stdout).toBe('');
+		expect(result.stderr).toContain('Option --no-cache does not take a value');
+		expect(result.stderr).toContain('for usage.');
+	});
+
+	it('names the flag as typed, for a long alias', () => {
+		const result = show(['--no-compress=true']);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain('Option --no-compress does not take a value');
+	});
+
+	it('rejects it on a global option too', () => {
+		const result = show(['--no-quiet=true']);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain('Option --no-quiet does not take a value');
+	});
+
+	it('still negates without a value, on a command and a global option', () => {
+		expect(resolved(['--no-cache']).cache).toBe(false);
+		expect(resolved(['--no-compress']).minify).toBe(false);
+		expect(show(['--no-quiet']).status).toBe(0);
+	});
+
+	it('leaves a negated option that is not a boolean as unknown', () => {
+		const result = show(['--no-nope=1']);
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain('Unknown option: --no-nope');
+	});
+});
